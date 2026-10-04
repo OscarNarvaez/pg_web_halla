@@ -166,3 +166,49 @@ Contra el proyecto real, con dos usuarios de prueba que se crean y se borran:
 ```bash
 SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=... pnpm verificar-rls
 ```
+
+## Ingesta de las normas
+
+`scripts/ingest-normas.mjs` trocea los cinco archivos de `normas/` con `scripts/lib/trocear-normas.mjs`
+y los sube a `criterios_normativos` en lotes de 100 (`upsert` por `archivo, orden`).
+
+```bash
+pnpm ingest:dry                                   # trocea e imprime el resumen, sin subir nada
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... pnpm ingest
+pnpm probar:busqueda                              # carga todo en PGlite y prueba consultas
+```
+
+Resultado actual del troceado:
+
+| Documento | Idioma | Fragmentos | Numerales | Qué se incluye |
+|---|---|---|---|---|
+| NTC-ISO 9001:2015 | es | 55 | 55 | Capítulos 4 a 10 |
+| ISO 45001:2018 | es | 44 | 40 | Capítulos 4 a 10 |
+| NTC-ISO 14001:2015 | es | 31 | 31 | Capítulos 4 a 10 |
+| ISO 19011 | en | 94 | 85 | Capítulos 4 a 7 y Anexo A (incluye A.18 *Audit findings*) |
+| PR13-GQ | es | 22 | 5 | Secciones 1 a 5; el marco conceptual partido por subtítulos |
+
+Reglas del troceado:
+
+- **Solo capítulos con requisitos.** Se descartan prólogo, índice, introducción (0.x), objeto,
+  referencias, términos y definiciones, anexos informativos y bibliografía: no son requisitos citables.
+  ISO 19011 es una guía y su Anexo A trata el registro de hallazgos, por eso se conserva.
+- **Encabezados con defectos de conversión:** numeral y término en líneas separadas, contenido dentro
+  del encabezado, anexos sin numeral que se «comían» el último numeral. Detalle en
+  `docs/RECONOCIMIENTO.md` §C.
+- **Limpieza:** números de página, cabeceras repetidas, renglones de índice con puntos guía, la marca
+  de agua «Copia autorizada a…» de la copia licenciada de 14001 (48 líneas), etiquetas HTML, `**` y `_`.
+- **Fragmentos de máximo 2 400 caracteres**, partidos por párrafos y con el mismo numeral y título
+  (`parte` = 1, 2…). El prompt sugería 6 000, pero `buscar_criterios` entrega a la IA solo los primeros
+  2 500 caracteres de cada fragmento: lo que pasara de ahí nunca llegaría al modelo.
+- **Títulos genéricos** («Generalidades») llevan el título del padre: «Mejora — Generalidades».
+- **PR13-GQ** es OCR de tablas: se quitan cabeceras, firmas y vigencias de cada página, y las celdas se
+  unen en párrafos. Las actividades del procedimiento (numeral 5) quedan legibles pero no en orden de
+  tabla: son criterios de **baja precisión**.
+
+### Limitación: ISO 19011 está en inglés
+
+La búsqueda es léxica en español. Una consulta en español casi nunca empata con texto en inglés
+(«hallazgo» no es «finding»), así que ISO 19011 rara vez se recupera a partir de la entrada del auditor.
+No produce errores, solo menos contexto. Se resuelve con búsqueda semántica multilingüe (`pgvector`,
+Fase 8) o con una traducción oficial de la norma.

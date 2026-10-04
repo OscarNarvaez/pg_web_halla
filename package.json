@@ -13,7 +13,8 @@
     "ingest": "node scripts/ingest-normas.mjs",
     "ingest:dry": "node scripts/ingest-normas.mjs --dry-run",
     "verificar-rls": "node scripts/verificar-rls.mjs",
-    "probar:bd": "node scripts/probar-bd.mjs"
+    "probar:bd": "node scripts/probar-bd.mjs",
+    "probar:busqueda": "node scripts/probar-busqueda.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
