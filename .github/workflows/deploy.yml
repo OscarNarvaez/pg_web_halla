@@ -1,0 +1,70 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # La versión de pnpm sale del campo packageManager de package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      # Pruebas sin red: prompt literal, validación V1–V6, cascada de Gemini, migraciones + RLS y búsqueda
+      - name: Pruebas
+        run: pnpm probar
+
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_APP_NOMBRE: halla
+          VITE_APP_URL: https://halla.ink
+
+      - name: Verificar el artefacto
+        run: |
+          test -f dist/CNAME && grep -qx 'halla.ink' dist/CNAME
+          test -f dist/404.html
+          # La API key de Gemini jamás debe llegar al bundle (formatos AIza… y AQ.…)
+          if grep -rqE 'AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z_-]{20,}' dist; then
+            echo '::error::Se encontró una API key de Google en dist/'
+            exit 1
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

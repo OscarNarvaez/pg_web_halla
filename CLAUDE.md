@@ -21,8 +21,9 @@ Reconocimiento y discrepancias con el prompt: `docs/RECONOCIMIENTO.md`.
 
 - Frontend: React 18 + Vite + **JavaScript (no TypeScript)** + Tailwind CSS **3.4** (`tailwind.config.js`).
 - Backend: Supabase (Postgres + Auth + RLS + Edge Functions en TypeScript/Deno).
-- IA: Gemini `gemini-3.8-flash` con `thinkingLevel: 'low'` (ver `docs/RECONOCIMIENTO.md` §D).
-- Hosting: GitHub Pages con dominio `halla.ink`.
+- IA: Gemini `gemini-3.8-flash` con `thinkingLevel: 'low'` y **cascada de modelos de respaldo**: el nivel
+  gratuito da 20 solicitudes diarias por modelo (ver `docs/RECONOCIMIENTO.md` §D).
+- Hosting: GitHub Pages con dominio `halla.ink` (workflow `.github/workflows/deploy.yml`).
 
 ## Comandos (solo pnpm)
 
@@ -30,12 +31,34 @@ Reconocimiento y discrepancias con el prompt: `docs/RECONOCIMIENTO.md`.
 pnpm install
 pnpm dev                 # http://localhost:5173
 pnpm build               # genera dist/ con 404.html y CNAME
-pnpm lint
+pnpm lint                # debe quedar sin errores NI avisos
+pnpm probar              # pruebas sin red: verificar:prompt, validacion, gemini, bd (PGlite), busqueda
+pnpm probar:motor        # 7 casos del §14 contra Gemini real (lee supabase/functions/.env; gasta cuota)
+pnpm probar:interfaz     # extremo a extremo: Chromium + Supabase simulado (necesita chromium-headless-shell)
+pnpm check:funciones     # deno check de las Edge Functions (vía pnpm dlx deno)
 pnpm ingest:dry          # trocea normas/ sin subir nada; imprime el resumen
 pnpm ingest              # requiere SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en el entorno
 pnpm verificar-rls       # requiere un proyecto Supabase real
-supabase functions serve --env-file supabase/functions/.env
 ```
+
+## Dónde está cada cosa
+
+- `supabase/functions/_shared/`: módulos compartidos. Los que no tocan Deno (`motor.ts`,
+  `validar-salida.ts`, `gemini.ts`, `informe.ts`, `recuperar-criterios.ts`, `config.ts`) se importan
+  también desde Node 24 en los scripts de prueba: **no uses APIs de Deno ni enums de TS en ellos**, y
+  usa extensiones `.ts` explícitas en los imports. Lo específico de Deno va en `supabase.ts` e `index.ts`.
+- `scripts/lib/trocear-normas.mjs`: troceador de las normas (lo usan la ingesta y las pruebas).
+- `scripts/lib/supabase-local.mjs`: Postgres en WASM con roles y `auth.*` de Supabase para probar sin Docker.
+- `scripts/fixtures/motor-casos.json`: salidas reales del motor, usadas por la prueba de interfaz.
+
+## Decisiones tomadas (no re-litigar sin el dueño)
+
+- Alcance V1 = solo el prompt maestro. Riesgo PR13, controles, lista de verificación, matriz CSV y
+  conclusión ISO 19011 del prototipo son Fase 8 (descritas en `docs/RECONOCIMIENTO.md`).
+- Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).
+- Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.
+- Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
+- V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).
 
 ## Convenciones
 

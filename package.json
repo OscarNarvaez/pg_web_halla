@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Sistema experto de clasificación y redacción de hallazgos de auditoría interna en salud",
   "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
