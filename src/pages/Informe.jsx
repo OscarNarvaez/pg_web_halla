@@ -88,7 +88,7 @@ export default function Informe() {
         />
         {!puedeGenerar && (
           <p className="mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
-            Para generar el informe necesitas al menos un hallazgo confirmado.
+            Para generar el informe necesitas al menos un hallazgo validado.
           </p>
         )}
         {lista.length > 1 && (
@@ -107,7 +107,7 @@ export default function Informe() {
         <EstadoVacio
           icono={FileText}
           titulo="Aún no hay informe"
-          descripcion="Genera el informe cuando hayas confirmado los hallazgos. Podrás generar nuevas versiones si los hallazgos cambian."
+          descripcion="Genera el informe cuando hayas validado los hallazgos. Podrás generar nuevas versiones si los hallazgos cambian."
         />
       )}
       {informe && <VistaInforme informe={informe} />}

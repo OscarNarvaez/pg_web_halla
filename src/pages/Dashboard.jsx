@@ -46,7 +46,7 @@ export default function Dashboard() {
       conteo,
       total: hallazgos.length,
       delMes: hallazgos.filter((h) => new Date(h.creado_en) >= inicioMes).length,
-      porRevisar: hallazgos.filter((h) => h.estado === 'generado' || h.estado === 'editado').length,
+      porRevisar: hallazgos.filter((h) => h.estado === 'generado' || h.estado === 'editado' || h.estado === 'cambios_sugeridos').length,
       ultimos: hallazgos.slice(0, 5),
     }
   }, [recientes.datos])
@@ -94,7 +94,7 @@ export default function Dashboard() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Cifra etiqueta="Auditorías abiertas" valor={enCurso.length} detalle={`${lista.length} en total`} />
             <Cifra etiqueta="Hallazgos este mes" valor={resumen.delMes} detalle={`${resumen.total} vigentes en total`} />
-            <Cifra etiqueta="Hallazgos por revisar" valor={resumen.porRevisar} detalle="Generados o editados, sin confirmar" />
+            <Cifra etiqueta="Hallazgos por revisar" valor={resumen.porRevisar} detalle="Pendientes o con cambios sugeridos, sin validar" />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-5">

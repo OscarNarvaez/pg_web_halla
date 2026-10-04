@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FilePlus2, FileText, Lock, LockOpen, Search } from 'lucide-react'
+import { FilePlus2, FileText, Lock, LockOpen, Search, Table2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo, duplicarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { CLASIFICACIONES, ESTADOS_AUDITORIA, ESTADOS_HALLAZGO, ORDEN_INFORME, TONOS, objetoAuditado } from '../lib/catalogos'
 import { fechaLarga } from '../lib/formato'
+import { conteoPorCasilla, faltantesParaValidar, umbralesDe } from '../lib/riesgo'
 import { mensajeError, supabase } from '../lib/supabase'
 import { cx } from '../lib/cx'
 import { Encabezado } from '../components/layout/Encabezado'
@@ -33,6 +34,7 @@ export default function AuditoriaDetalle() {
     [vigentes],
   )
   const confirmados = vigentes.filter((h) => h.estado === 'confirmado').length
+  const conteoMapa = useMemo(() => conteoPorCasilla(hallazgos), [hallazgos])
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -51,6 +53,7 @@ export default function AuditoriaDetalle() {
   if (!auditoria.datos) return <EstadoVacio titulo="Auditoría no encontrada" descripcion="No existe o no tienes acceso a ella." accion={<BotonEnlace a="/app/auditorias" variante="secundario">Ver mis auditorías</BotonEnlace>} />
   const a = auditoria.datos
   const cerrada = a.estado === 'cerrada'
+  const umbrales = umbralesDe(a)
 
   const reemplazar = (nuevo) => {
     setHallazgos((lista) => lista.map((h) => (h.id === nuevo.id ? nuevo : h)))
@@ -68,8 +71,15 @@ export default function AuditoriaDetalle() {
 
   const editar = (cambios) => {
     if (!abierto) return
-    // Editar un hallazgo aún no confirmado lo deja en estado «editado»
+    // Editar un hallazgo pendiente lo deja en «editado»; si estaba validado, el servidor lo devuelve a pendiente
     actualizar(abierto, { ...cambios, ...(abierto.estado === 'generado' ? { estado: 'editado' } : {}) })
+  }
+
+  // Un hallazgo con riesgo incompleto o sin controles adoptados no se puede validar (la matriz quedaría coja)
+  const validar = (h) => {
+    const faltan = faltantesParaValidar(h)
+    if (faltan.length) return notificar(`Para validar H-${String(h.consecutivo).padStart(2, '0')} falta ${faltan.join(', ')}.`, 'error')
+    actualizar(h, { estado: 'confirmado', nota_validacion: null }, 'Hallazgo validado')
   }
 
   const duplicar = async (h) => {
@@ -95,8 +105,9 @@ export default function AuditoriaDetalle() {
         acciones={
           <>
             <BotonEnlace a={`/app/auditorias/${id}/hallazgos/nuevo`} icono={FilePlus2} deshabilitado={cerrada}>Nuevo hallazgo</BotonEnlace>
+            <BotonEnlace a={`/app/auditorias/${id}/matriz`} icono={Table2} variante="secundario">Matriz consolidada</BotonEnlace>
             <BotonEnlace a={`/app/auditorias/${id}/informe`} icono={FileText} variante="secundario" deshabilitado={confirmados === 0}
-              title={confirmados === 0 ? 'Confirma al menos un hallazgo para generar el informe' : undefined}>
+              title={confirmados === 0 ? 'Valida al menos un hallazgo para generar el informe' : undefined}>
               Generar informe
             </BotonEnlace>
           </>
@@ -180,8 +191,9 @@ export default function AuditoriaDetalle() {
             <TarjetaHallazgo
               key={h.id}
               hallazgo={h}
+              umbrales={umbrales}
               alVer={setAbierto}
-              alConfirmar={(x) => actualizar(x, { estado: 'confirmado' }, 'Hallazgo confirmado')}
+              alValidar={validar}
               alDescartar={(x) => actualizar(x, { estado: 'descartado' }, 'Hallazgo descartado')}
               alRestaurar={(x) => actualizar(x, { estado: 'editado' }, 'Hallazgo restaurado')}
               alDuplicar={duplicar}
@@ -194,8 +206,10 @@ export default function AuditoriaDetalle() {
         hallazgo={abierto}
         alCerrar={() => setAbierto(null)}
         alCambiar={editar}
-        alConfirmar={(x) => actualizar(x, { estado: 'confirmado' }, 'Hallazgo confirmado')}
+        alValidar={validar}
         guardando={guardando}
+        umbrales={umbrales}
+        conteo={conteoMapa}
       />
     </>
   )

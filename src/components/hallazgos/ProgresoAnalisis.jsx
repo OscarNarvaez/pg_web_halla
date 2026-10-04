@@ -7,9 +7,10 @@ const PASOS = [
   { desde: 0, texto: 'Buscando criterios aplicables…' },
   { desde: 1500, texto: 'Analizando evidencia…' },
   { desde: 4000, texto: 'Redactando hallazgo…' },
+  { desde: 7000, texto: 'Evaluando el riesgo y los controles…' },
 ]
 
-/** Pasos visibles mientras la IA trabaja. La espera real es de 3 a 8 s, a veces más. */
+/** Pasos visibles mientras la IA trabaja. La espera real es de 5 a 20 s, a veces más. */
 export function ProgresoAnalisis() {
   const [ms, setMs] = useState(0)
   useEffect(() => {

@@ -25,6 +25,20 @@ process.env.VITE_SUPABASE_URL = 'https://demo.supabase.co\r\n'
 process.env.VITE_SUPABASE_ANON_KEY = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ role: 'anon', exp: 9999999999 })}.firma`
 console.log('Compilando la app de prueba…')
 await build({ root: REPO, logLevel: 'error', build: { outDir: `${SALIDA}/dist`, emptyOutDir: true } })
+// PDF de evidencia de prueba: uno con texto (el caso 7) y otro sin texto, como un documento escaneado
+const { jsPDF } = await import('jspdf')
+const ENTRADA7 = motor.resultados.find((r) => r.caso.n === 7).caso.entrada
+const PDF_TEXTO = `${SALIDA}/evidencia.pdf`
+const PDF_ESCANEADO = `${SALIDA}/escaneado.pdf`
+{
+  const conTexto = new jsPDF()
+  conTexto.setFontSize(11)
+  conTexto.text(conTexto.splitTextToSize(ENTRADA7, 180), 15, 20)
+  writeFileSync(PDF_TEXTO, Buffer.from(conTexto.output('arraybuffer')))
+  const sinTexto = new jsPDF()
+  sinTexto.rect(20, 20, 120, 80, 'F')
+  writeFileSync(PDF_ESCANEADO, Buffer.from(sinTexto.output('arraybuffer')))
+}
 const servidor = await preview({ root: REPO, logLevel: 'error', preview: { port: 4173, strictPort: true }, build: { outDir: `${SALIDA}/dist` } })
 
 function rutaChromium() {
@@ -59,7 +73,8 @@ const db = {
     id: A1, user_id: USUARIO, codigo: 'AI-2026-001', titulo: 'Auditoría interna al proceso de Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
     objetivo: 'Evaluar el cumplimiento de los requisitos aplicables al proceso de Urgencias del Hospital Infantil Los Ángeles.',
     criterios: ['NTC-ISO 9001:2015', 'PR13-GQ', 'ISO 19011'], area_auditada: 'Servicio de Urgencias', auditado_nombre: 'Jorge Muñoz', auditado_cargo: 'Coordinador de Urgencias',
-    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', estado: 'en_curso', creado_en: '2026-10-01T08:00:00Z', actualizado_en: ahora,
+    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', estado: 'en_curso', umbrales_riesgo: { bajo: 4, moderado: 9, alto: 16 },
+    creado_en: '2026-10-01T08:00:00Z', actualizado_en: ahora,
   }],
   hallazgos: [],
   informes: [],
@@ -77,7 +92,12 @@ let consecutivo = 0
 const nuevoHallazgo = (h, entrada, estado = 'generado') => ({
   id: crypto.randomUUID(), auditoria_id: A1, user_id: USUARIO, consecutivo: ++consecutivo, entrada_auditor: entrada, clasificacion: h.clasificacion,
   justificacion: h.justificacion, hallazgo_corregido: h.hallazgo_corregido, criterio_requisito: h.criterio_requisito, evidencia: h.evidencia, severidad: h.severidad,
-  estado, editado_por_usuario: false, modelo_ia: 'gemini-3.6-flash', prompt_version: '1.0.0', criterios_citados: h.criterios_citados, avisos: h.avisos ?? [],
+  estado, editado_por_usuario: false, modelo_ia: 'gemini-3.6-flash', prompt_version: '1.1.0', criterios_citados: h.criterios_citados, avisos: h.avisos ?? [],
+  riesgo_descripcion: h.riesgo?.descripcion ?? null, riesgo_dimension: h.riesgo?.dimension ?? null, riesgo_probabilidad: h.riesgo?.probabilidad ?? null,
+  riesgo_impacto: h.riesgo?.impacto ?? null, riesgo_justificacion: h.riesgo?.justificacion ?? null,
+  // Los hallazgos ya validados tienen adoptado su primer control (como exige la matriz)
+  controles: (h.controles ?? []).map((c, i) => ({ ...c, adoptado: estado === 'confirmado' && i === 0 })),
+  evidencia_archivo: null, nota_validacion: null,
   creado_en: new Date(Date.now() - (10 - consecutivo) * 3600e3).toISOString(), actualizado_en: ahora,
 })
 for (const n of [2, 3, 4]) {
@@ -94,6 +114,10 @@ function filtrar(filas, params) {
     const valor = resto.join('.')
     if (op === 'eq') salida = salida.filter((f) => String(f[k]) === valor)
     if (op === 'neq') salida = salida.filter((f) => String(f[k]) !== valor)
+    if (op === 'in') {
+      const lista = valor.replace(/^\(|\)$/g, '').split(',').map((x) => x.replace(/^"|"$/g, ''))
+      salida = salida.filter((f) => lista.includes(String(f[k])))
+    }
     if (op === 'like') salida = salida.filter((f) => new RegExp(`^${valor.replace(/[%*]/g, '.*')}$`).test(String(f[k])))
   }
   const orden = params.get('order')
@@ -162,7 +186,12 @@ async function postgrest(route) {
     for (const f of objetivo) {
       Object.assign(f, cuerpo, { actualizado_en: new Date().toISOString() })
       // el trigger de la BD marca editado_por_usuario
-      if (tabla === 'hallazgos' && ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'severidad'].some((c) => c in cuerpo)) f.editado_por_usuario = true
+      const contenido = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'severidad', 'riesgo_descripcion',
+        'riesgo_dimension', 'riesgo_probabilidad', 'riesgo_impacto', 'riesgo_justificacion', 'controles']
+      if (tabla === 'hallazgos' && contenido.some((c) => c in cuerpo)) {
+        f.editado_por_usuario = true
+        if (f.estado === 'confirmado' && !('estado' in cuerpo)) f.estado = 'editado' // la validación no sobrevive a un cambio
+      }
     }
     return responder(objetivo)
   }
@@ -179,13 +208,15 @@ async function funciones(route) {
   if (nombre === 'clasificar-hallazgo') {
     await new Promise((r) => setTimeout(r, 1800)) // la espera real es de varios segundos
     const caso = motor.resultados.find((r) => r.caso.n === 7)
-    const creados = caso.resultado.hallazgos.map((h) => nuevoHallazgo(h, cuerpo.entrada_auditor))
+    const creados = caso.resultado.hallazgos.map((h) => ({ ...nuevoHallazgo(h, cuerpo.entrada_auditor), evidencia_archivo: cuerpo.evidencia_archivo ?? null }))
     db.hallazgos.push(...creados)
     return json({
       ok: true,
       hallazgos: creados.map((h) => ({ id: h.id, clasificacion: h.clasificacion, justificacion: h.justificacion, hallazgo_corregido: h.hallazgo_corregido,
-        criterio_requisito: h.criterio_requisito, evidencia: h.evidencia, severidad: h.severidad, criterios_citados: h.criterios_citados, avisos: h.avisos })),
-      meta: { modelo: 'gemini-3.5-flash', prompt_version: '1.0.0', latencia_ms: 1800, criterios_recuperados: 12, reparado: false },
+        criterio_requisito: h.criterio_requisito, evidencia: h.evidencia, severidad: h.severidad, criterios_citados: h.criterios_citados, avisos: h.avisos,
+        riesgo_descripcion: h.riesgo_descripcion, riesgo_dimension: h.riesgo_dimension, riesgo_probabilidad: h.riesgo_probabilidad, riesgo_impacto: h.riesgo_impacto,
+        riesgo_justificacion: h.riesgo_justificacion, controles: h.controles })),
+      meta: { modelo: 'gemini-3.5-flash', prompt_version: '1.1.0', latencia_ms: 1800, criterios_recuperados: 12, reparado: false },
     })
   }
   if (nombre === 'completar-auditoria') {
@@ -375,47 +406,130 @@ await p.getByRole('heading', { name: 'Auditoría interna al proceso de Urgencias
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 3, 'el detalle lista los 3 hallazgos previos')
 await p.screenshot({ path: `${CAPTURAS}04-detalle.png`, fullPage: true })
 
-// Pantalla estrella
+// Asistente de 7 pasos
 await p.getByRole('link', { name: 'Nuevo hallazgo' }).first().click()
 await p.getByLabel('Describe lo que observaste durante la auditoría').waitFor()
 const opcionesClasif = await p.locator('select option, input[type=radio]').evaluateAll((els) => els.map((e) => e.textContent || e.value))
 ok(!opcionesClasif.some((t) => /no conformidad|observaci|fortaleza|oportunidad/i.test(t)), 'NO hay ningún control para elegir la clasificación antes del análisis')
+const navPasos = p.getByRole('navigation', { name: 'Pasos del registro del hallazgo' })
+ok((await navPasos.getByRole('button').count()) === 7 && await p.getByRole('button', { name: 'Paso 2: Requisito' }).isDisabled(), 'el asistente muestra los 7 pasos; los siguientes se habilitan tras el análisis')
 await p.getByRole('button', { name: 'Analizar con IA' }).click()
 ok(await p.getByText(/al menos 25 caracteres/).isVisible(), 'exige al menos 25 caracteres')
-const entrada7 = motor.resultados.find((r) => r.caso.n === 7).caso.entrada
-await p.getByLabel('Describe lo que observaste durante la auditoría').fill(entrada7)
+
+// PDF de evidencia: se lee en el navegador; un PDF sin texto (escaneado) pide describirlo
+await p.locator('input[type="file"]').setInputFiles(PDF_ESCANEADO)
+await p.getByText(/El PDF parece escaneado/).waitFor()
+ok(await p.getByText('escaneado.pdf').isVisible(), 'un PDF escaneado queda adjunto y se pide describir su contenido')
+await p.getByRole('button', { name: 'Quitar el PDF escaneado.pdf' }).click()
+await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
+await p.getByText(/Se importó el texto/).waitFor()
+const importado = await p.getByLabel('Describe lo que observaste durante la auditoría').inputValue()
+ok(importado.replace(/\s+/g, ' ').includes('extintor vencido en el área de urgencias'), 'el texto del PDF se extrae en el navegador y llena la evidencia', importado.slice(0, 120))
+const antesAnalisis = peticiones.length
 await p.getByRole('button', { name: 'Analizar con IA' }).click()
 await p.getByText('Buscando criterios aplicables…').waitFor()
 ok(true, 'muestra los pasos del análisis mientras espera')
 await p.screenshot({ path: `${CAPTURAS}05-analizando.png` })
-await p.getByText('Se detectaron 2 situaciones distintas; se guardarán por separado.').waitFor({ timeout: 10000 })
-ok(true, 'caso 7: dos situaciones distintas, con el aviso')
-ok((await p.locator('section[aria-live="polite"] article').count()) === 2, 'dos tarjetas de resultado')
-ok(await p.getByText('No conformidad', { exact: true }).first().isVisible() && await p.getByText('Fortaleza', { exact: true }).first().isVisible(), 'badges con texto: No conformidad y Fortaleza')
-ok(await p.getByText(/Se marcaron fechas o cifras/).isVisible(), 'muestra el aviso de V6 (fecha por confirmar)')
-await p.screenshot({ path: `${CAPTURAS}06-resultado.png`, fullPage: true })
 
-// Chip de criterio → modal con el texto del numeral
-await p.getByRole('button', { name: /NTC-ISO 9001:2015 · 8\.5\.1/ }).click()
-await p.getByRole('dialog').getByText(/Texto del numeral 8\.5\.1/).waitFor()
-ok(true, 'el chip abre el texto completo del numeral')
-await p.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).first().click()
+// Paso 2 · requisito
+await p.getByRole('heading', { name: '2. Requisito' }).waitFor({ timeout: 10000 })
+const llamada = peticiones.slice(antesAnalisis).find((x) => x.metodo === 'FUNC' && x.tabla === 'clasificar-hallazgo')
+const huella = llamada?.cuerpo?.evidencia_archivo
+ok(/^[0-9a-f]{64}$/.test(huella?.sha256 ?? '') && huella.nombre === 'evidencia.pdf' && huella.paginas === 1, 'del PDF solo viaja su huella (nombre, páginas y SHA-256)', JSON.stringify(huella))
+ok(!peticiones.slice(antesAnalisis).some((x) => JSON.stringify(x.cuerpo ?? '').includes('%PDF')), 'el archivo PDF nunca se envía al servidor')
+ok(await p.getByText(/Se detectaron 2 situaciones distintas/).isVisible(), 'caso 7: dos situaciones distintas, con el aviso')
+await p.getByText(/Texto del numeral 8\.5\.1/).first().waitFor()
+ok(await p.getByText('Norma', { exact: true }).first().isVisible() && await p.getByText('Numeral', { exact: true }).first().isVisible(), 'paso 2: la norma, el numeral y el texto del requisito')
+await p.screenshot({ path: `${CAPTURAS}06-paso-requisito.png`, fullPage: true })
 
-// Edición en el sitio
+// Paso 3 · clasificación (una situación a la vez)
+await p.getByRole('button', { name: 'Siguiente: clasificación' }).click()
+await p.getByRole('heading', { name: '3. Clasificación' }).waitFor()
+ok(await p.getByText('No conformidad', { exact: true }).first().isVisible(), 'paso 3: la clasificación de la IA, con texto')
+await p.getByRole('button', { name: 'Situación 2 · Fortaleza' }).click()
+ok(await p.getByText('Fortaleza', { exact: true }).first().isVisible(), 'cada situación se revisa por separado')
+await p.getByRole('button', { name: 'Situación 1 · No conformidad' }).click()
+
+// Paso 4 · redacción
+await p.getByRole('button', { name: 'Siguiente: redacción' }).click()
+await p.getByRole('heading', { name: '4. Redacción' }).waitFor()
 const nuevoTexto = 'Durante la inspección al área de Urgencias se evidenció un extintor con fecha de recarga vencida, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 8.5.1, literal d), sobre la infraestructura adecuada.'
-await p.getByRole('button', { name: /^Hallazgo corregido: Durante la auditoría/ }).click()
-await p.locator('section[aria-live="polite"] textarea').first().fill(nuevoTexto)
+await p.getByRole('button', { name: /^Hallazgo corregido: Durante la/ }).click()
+await p.getByRole('textbox', { name: 'Hallazgo corregido' }).fill(nuevoTexto)
 await p.getByRole('button', { name: 'Aplicar' }).click()
 ok(await p.getByText(nuevoTexto).isVisible(), 'edición en el sitio del hallazgo corregido')
 await p.getByText('Ver texto original del auditor').click()
-ok(await p.locator('details[open] p').getByText(entrada7, { exact: true }).isVisible(), 'el texto original del auditor sigue disponible')
-const antes = peticiones.length
-await p.getByRole('button', { name: 'Guardar hallazgos' }).click()
-await p.waitForURL(`${BASE}/app/auditorias/${A1}`)
-const parches = peticiones.slice(antes).filter((x) => x.metodo === 'PATCH' && x.tabla === 'hallazgos')
-ok(parches.length === 2 && parches.every((x) => x.cuerpo.estado === 'confirmado'), 'guardar confirma los dos hallazgos')
+ok((await p.locator('details[open] p').first().innerText()).replace(/\s+/g, ' ').includes('extintor vencido'), 'el texto original del auditor sigue disponible')
+
+// Paso 5 · riesgo
+await p.getByRole('button', { name: 'Siguiente: riesgo' }).click()
+await p.getByRole('heading', { name: '5. Riesgo' }).waitFor()
+ok(await p.getByText('Alto (12)').first().isVisible(), 'paso 5: la IA propone P3 × I4 y la aplicación calcula el nivel (Alto, 12)')
+ok(await p.getByText('Mapa de calor 5 × 5').isVisible() && (await p.locator('figure table td').count()) === 25 + 1, 'mapa de calor 5 × 5 con su escala')
+await p.getByRole('button', { name: /^Probabilidad 4 \(Probable\) × impacto 4/ }).click()
+await p.getByText('Alto (16)').first().waitFor()
+const grupoP = p.getByRole('group', { name: /^Probabilidad \(1 a 5/ })
+ok((await grupoP.getByRole('button', { name: /^4/ }).getAttribute('aria-pressed')) === 'true', 'elegir una casilla del mapa ajusta la probabilidad y el impacto')
+await p.screenshot({ path: `${CAPTURAS}06b-paso-riesgo.png`, fullPage: true })
+
+// Paso 6 · controles
+await p.getByRole('button', { name: 'Siguiente: controles' }).click()
+await p.getByRole('heading', { name: '6. Controles' }).waitFor()
+const casillas = p.getByRole('checkbox')
+ok((await casillas.count()) === 2 && !(await casillas.first().isChecked()), 'paso 6: dos controles propuestos por la IA, sin adoptar')
+await casillas.first().check()
+await p.getByLabel('Control o acción definida por el auditor').fill('Verificar mensualmente la fecha de recarga de todos los extintores del servicio de Urgencias.')
+await p.getByRole('button', { name: 'Agregar control' }).click()
+ok(await p.getByLabel('Control del auditor 1').isVisible(), 'el auditor adopta un control de la IA y agrega uno propio')
+
+// Paso 7 · enviar a la matriz
+await p.getByRole('button', { name: 'Siguiente: matriz' }).click()
+await p.getByRole('heading', { name: '7. Enviar a la matriz consolidada' }).waitFor()
+ok((await p.getByText('Completo: listo para validar en la matriz.').count()) === 2, 'paso 7: las dos situaciones están completas')
+await p.screenshot({ path: `${CAPTURAS}06c-paso-enviar.png`, fullPage: true })
+await p.getByRole('button', { name: 'Enviar a la matriz consolidada' }).click()
+await p.waitForURL(`${BASE}/app/auditorias/${A1}/matriz`)
+const parches = peticiones.slice(antesAnalisis).filter((x) => x.metodo === 'PATCH' && x.tabla === 'hallazgos')
 ok(parches.some((x) => x.cuerpo.hallazgo_corregido === nuevoTexto) && parches.filter((x) => 'hallazgo_corregido' in x.cuerpo).length === 1, 'solo se envía el campo realmente editado')
-ok(!parches.some((x) => 'entrada_auditor' in x.cuerpo), 'nunca se envía la entrada original')
+ok(parches.some((x) => x.cuerpo.riesgo_probabilidad === 4 && !('riesgo_impacto' in x.cuerpo)), 'se guarda el riesgo ajustado (solo la probabilidad: el impacto 4 ya lo había propuesto la IA)')
+ok(parches.some((x) => x.cuerpo.controles?.some((c) => c.origen === 'ia' && c.adoptado) && x.cuerpo.controles?.some((c) => c.origen === 'auditor')), 'se guardan el control adoptado y el propio')
+ok(!parches.some((x) => 'entrada_auditor' in x.cuerpo) && !parches.some((x) => x.cuerpo.estado === 'confirmado'), 'nunca se envía la entrada original, y enviar a la matriz no valida: los hallazgos quedan pendientes')
+
+// Matriz consolidada: solo se descarga con todo validado
+await p.getByRole('heading', { name: 'Matriz consolidada' }).waitFor()
+const filasMatriz = p.locator('table').filter({ has: p.locator('caption', { hasText: 'Matriz consolidada de hallazgos' }) }).locator('tbody tr')
+await filasMatriz.nth(4).waitFor()
+ok((await filasMatriz.count()) === 5, 'la matriz lista los 5 hallazgos vigentes')
+ok((await p.locator('thead th').allTextContents()).join('|') === 'ID|Clasificación|Norma y numeral|Evidencia|Riesgo|Hallazgo|Evaluación|Controles|Estado', 'columnas: ID, clasificación, norma y numeral, evidencia, riesgo, hallazgo, evaluación, controles y estado')
+await p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()
+const aviso1 = p.getByRole('dialog', { name: 'La matriz aún no se ha validado' })
+await aviso1.waitFor()
+ok(await aviso1.getByText(/Pendientes de validar: H-04, H-05/).isVisible(), 'con hallazgos pendientes, un aviso dice que aún no se ha validado y cuáles faltan')
+await aviso1.getByRole('button', { name: 'Entendido' }).click()
+await p.screenshot({ path: `${CAPTURAS}06d-matriz.png`, fullPage: true })
+await p.getByRole('combobox', { name: 'Estado de H-05' }).selectOption('confirmado')
+await p.getByText('H-05 validado').waitFor()
+await p.getByRole('combobox', { name: 'Estado de H-04' }).selectOption('cambios_sugeridos')
+const notaCambios = p.getByRole('dialog', { name: 'Se sugiere hacer cambios · H-04' })
+await notaCambios.getByLabel(/Qué cambios se sugieren/).fill('Precisar la fecha de vencimiento del extintor.')
+await notaCambios.getByRole('button', { name: 'Guardar' }).click()
+await p.getByText('H-04: se sugieren cambios').waitFor()
+await p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()
+const aviso2 = p.getByRole('dialog', { name: 'Hay hallazgos con cambios sugeridos' })
+await aviso2.waitFor()
+ok(await aviso2.getByText(/Precisar la fecha de vencimiento/).isVisible(), 'con «Se sugiere hacer cambios» tampoco se descarga (y se ve la nota)')
+await aviso2.getByRole('button', { name: 'Entendido' }).click()
+await p.getByRole('combobox', { name: 'Estado de H-04' }).selectOption('confirmado')
+await p.getByText('H-04 validado').waitFor()
+const [descargaMatriz] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()])
+const rutaMatriz = `${CAPTURAS}${descargaMatriz.suggestedFilename()}`
+await descargaMatriz.saveAs(rutaMatriz)
+ok(/^Matriz_AI-2026-001_\d{8}\.xlsx$/.test(descargaMatriz.suggestedFilename()), `con todo validado se descarga el Excel: ${descargaMatriz.suggestedFilename()}`)
+const xlsx = execSync(`unzip -p "${rutaMatriz}"`).toString()
+ok(['Matriz consolidada de hallazgos · AI-2026-001', 'Norma y numeral', 'H-04', 'NTC-ISO 9001:2015, numeral 8.5.1', '= 16 · Alto', 'Validado'].every((t) => xlsx.includes(t)),
+  'el Excel tiene el título, las columnas, los hallazgos, la evaluación del riesgo y el estado')
+
+await p.goto(`${BASE}/app/auditorias/${A1}`)
 await p.locator('article[aria-label^="Hallazgo"]').nth(4).waitFor()
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 5, 'el detalle muestra ahora 5 hallazgos')
 ok(await p.getByText('editado por el auditor').first().isVisible(), 'el hallazgo editado queda marcado')
@@ -552,6 +666,7 @@ console.log('\n▸ Móvil (360 px)')
     ['/app/normas', 'normas', 'Normas'],
     ['/app/perfil', 'perfil', 'Mi perfil'],
     ['/app/auditorias/nueva', 'nueva auditoría', 'Nueva auditoría'],
+    [`/app/auditorias/${A1}/matriz`, 'matriz consolidada', 'Matriz consolidada'],
   ]) {
     await m.goto(`${BASE}${ruta}`)
     await m.getByRole('heading', { name: esperar }).first().waitFor()
@@ -563,6 +678,9 @@ console.log('\n▸ Móvil (360 px)')
   await m.getByRole('button', { name: 'Analizar con IA' }).click()
   await m.getByText(/situaciones distintas/).waitFor({ timeout: 10000 })
   await sinDesborde(m, 'resultado del análisis')
+  await m.getByRole('button', { name: 'Paso 5: Riesgo' }).click()
+  await m.getByRole('heading', { name: '5. Riesgo' }).waitFor()
+  await sinDesborde(m, 'paso de riesgo con el mapa de calor')
   await m.screenshot({ path: `${CAPTURAS}10-movil-resultado.png`, fullPage: true })
   await m.getByRole('button', { name: 'Abrir menú' }).click()
   ok(await m.getByRole('dialog', { name: 'Menú' }).isVisible(), 'el menú móvil se abre')

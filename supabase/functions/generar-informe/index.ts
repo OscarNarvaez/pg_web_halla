@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
   if (error) return respuestaError(req, 'No se pudieron leer los hallazgos.', 500, 'lectura')
   const lista = (hallazgos ?? []) as HallazgoInforme[]
   if (!lista.some((h) => h.estado === 'confirmado')) {
-    return respuestaError(req, 'Confirma al menos un hallazgo antes de generar el informe.', 409, 'sin_confirmados')
+    return respuestaError(req, 'Valida al menos un hallazgo antes de generar el informe.', 409, 'sin_confirmados')
   }
 
   // 3. Estadísticas en código: los números no se alucinan

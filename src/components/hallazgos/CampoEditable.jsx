@@ -12,15 +12,17 @@ import { claseControl } from '../ui/Campo'
  * @param {boolean} [props.deshabilitado]
  * @param {boolean} [props.destacado] Texto principal, en tipografía de lectura.
  * @param {number} [props.minimo] Mínimo de caracteres para aceptar el cambio.
+ * @param {number} [props.maximo] Máximo de caracteres.
+ * @param {string} [props.marcador] Texto que se muestra cuando el campo está vacío.
  */
-export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = false, destacado = false, minimo = 1 }) {
+export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = false, destacado = false, minimo = 1, maximo, marcador = 'Sin definir' }) {
   const [editando, setEditando] = useState(false)
-  const [borrador, setBorrador] = useState(valor)
+  const [borrador, setBorrador] = useState(valor ?? '')
   const area = useRef(null)
   const id = useId()
 
   const empezar = () => {
-    setBorrador(valor)
+    setBorrador(valor ?? '')
     setEditando(true)
   }
   useEffect(() => {
@@ -53,6 +55,7 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
             }}
             rows={Math.min(12, Math.max(3, Math.ceil(borrador.length / 80)))}
             aria-labelledby={`${id}-etiqueta`}
+            maxLength={maximo}
             className={cx(claseControl, 'text-sm leading-relaxed')}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -72,14 +75,14 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
           type="button"
           disabled={deshabilitado}
           onClick={empezar}
-          aria-label={`${etiqueta}: ${valor}. Editar`}
+          aria-label={`${etiqueta}: ${valor || marcador}. Editar`}
           className={cx(
             'group relative block w-full rounded-md border border-transparent px-2 py-1.5 -mx-2 text-left transition-colors',
             !deshabilitado && 'hover:border-tinta-100 hover:bg-tinta-50',
             destacado ? 'font-serif text-[15px] leading-relaxed text-tinta-900' : 'text-sm leading-relaxed text-tinta-700',
           )}
         >
-          <span className="block whitespace-pre-wrap pr-6">{valor}</span>
+          <span className={cx('block whitespace-pre-wrap pr-6', !valor && 'italic text-tinta-500')}>{valor || marcador}</span>
           {!deshabilitado && (
             <Pencil className="absolute right-2 top-2 size-3.5 text-tinta-300 group-hover:text-halla-600" aria-hidden="true" />
           )}
