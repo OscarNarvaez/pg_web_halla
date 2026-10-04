@@ -3,6 +3,7 @@ import { BookCheck, FileText, PenLine, ShieldCheck, Sparkles } from 'lucide-reac
 import { useAuth } from '../contexts/AuthContext'
 import { CLASIFICACIONES, DOCUMENTOS, ESTRUCTURAS, INSTITUCION, MARCADOR_PENDIENTE, TONOS } from '../lib/catalogos'
 import { Marca } from '../components/layout/Marca'
+import { FondoFachada } from '../components/layout/FondoFachada'
 
 const PASOS = [
   { icono: PenLine, titulo: 'Describe lo que observaste', texto: 'En tus palabras: qué revisaste, cuántos registros, qué encontraste y dónde.' },
@@ -30,9 +31,15 @@ export default function Landing() {
       </header>
 
       <main>
-        <section className="bg-tinta-900 text-white">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-            <p className="text-sm font-semibold uppercase tracking-widest text-halla-400">Auditoría interna · {INSTITUCION.nombre}</p>
+        <section className="relative isolate overflow-hidden bg-tinta-900 text-white">
+          <FondoFachada className="absolute inset-0 -z-10" />
+          {/* Velo: el texto queda sobre al menos 75 % de tinta-900, así el contraste es AA aun sobre las nubes blancas */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 bg-tinta-900/75 lg:bg-transparent lg:bg-gradient-to-r lg:from-tinta-900/90 lg:via-tinta-900/75 lg:via-70% lg:to-tinta-900/25"
+          />
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24 lg:py-32">
+            <p className="text-sm font-semibold uppercase tracking-widest text-halla-100">Auditoría interna · {INSTITUCION.nombre}</p>
             <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight sm:text-5xl">
               Hallazgos bien clasificados, bien redactados y sustentados en la norma.
             </h1>
@@ -42,7 +49,7 @@ export default function Landing() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/registro" className="rounded-lg bg-halla-500 px-5 py-3 text-sm font-semibold text-white hover:bg-halla-400">Crear cuenta de auditor</Link>
-              <Link to="/ingresar" className="rounded-lg border border-tinta-500 px-5 py-3 text-sm font-semibold text-white hover:bg-tinta-700">Ya tengo cuenta</Link>
+              <Link to="/ingresar" className="rounded-lg border border-white/60 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">Ya tengo cuenta</Link>
             </div>
           </div>
         </section>

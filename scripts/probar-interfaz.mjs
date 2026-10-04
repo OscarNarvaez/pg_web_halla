@@ -247,9 +247,13 @@ console.log('\n▸ Páginas públicas')
   await p.goto(`${BASE}/`)
   await p.getByRole('heading', { level: 1 }).waitFor()
   ok(await p.locator('html[lang="es-CO"]').count() === 1, 'el documento declara lang="es-CO"')
+  // decode() espera la descarga: falla si la CSP o la ruta del asset bloquean la foto
+  const fachadaCarga = (pagina) => pagina.locator('img[srcset*="fachada-hila"]').first().evaluate((img) => img.decode().then(() => img.naturalWidth > 0, () => false))
+  ok(await fachadaCarga(p), 'landing: la foto de la fachada carga de fondo')
   await p.screenshot({ path: `${CAPTURAS}01-landing.png`, fullPage: true })
 
   await p.goto(`${BASE}/registro`)
+  ok(await fachadaCarga(p), 'registro: la foto de la fachada carga de fondo')
   await p.getByLabel('Correo electrónico').fill('ana@hila.test')
   await p.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('corta123')
   await p.getByLabel('Confirma la contraseña').fill('corta123')
