@@ -9,6 +9,7 @@ export interface Config {
   geminiNivelRazonamiento: 'low' | 'medium' | 'high' | null
   promptVersion: string
   limiteDiario: number
+  limitePorMinuto: number
 }
 
 // Verificados el 3/10/2026 con salida estructurada. Cada modelo tiene su propia cuota diaria gratuita
@@ -38,5 +39,6 @@ export function leerConfig(leer: (clave: string) => string | undefined): Config 
     geminiNivelRazonamiento: nivel === 'off' || nivel === 'none' ? null : (nivel as Config['geminiNivelRazonamiento']),
     promptVersion: leer('PROMPT_VERSION') ?? '1.0.0',
     limiteDiario: Number(leer('LIMITE_IA_DIARIO_POR_USUARIO') ?? 120),
+    limitePorMinuto: Number(leer('LIMITE_IA_POR_MINUTO') ?? 5),
   }
 }

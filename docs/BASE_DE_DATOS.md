@@ -9,6 +9,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0003_criterios_normativos.sql` | `criterios_normativos`, configuración de búsqueda `es_unaccent` y las funciones `buscar_criterios`, `explorar_criterios`, `resumen_documentos` |
 | `0004_informes_y_logs.sql` | `informes` versionados e `ia_eventos` |
 | `0005_rls.sql` | Políticas RLS, `es_admin()` y el bloqueo de cambio de rol |
+| `0006_seguridad.sql` | Aprobación de cuentas, autorización de datos (Ley 1581), citas validadas, marcas de tiempo del servidor, sin borrado físico, historial de hallazgos, cuota de IA atómica y mínimo privilegio (ver `docs/SEGURIDAD.md`) |
 
 ## Modelo
 
@@ -108,19 +109,24 @@ erDiagram
 
 ## RLS
 
+Desde la migración 0006, **solo las cuentas aprobadas** por un administrador (`profiles.aprobado`) acceden a
+los datos: las políticas exigen `public.usuario_activo()`. El administrador también debe estar aprobado.
+
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| `profiles` | propio o admin | propio, solo como `auditor` | propio, sin la columna `rol` | — |
-| `auditorias` | dueño o admin | dueño | dueño | dueño |
-| `hallazgos` | dueño o admin | dueño, sin procedencia de IA | dueño (campos inmutables protegidos) | dueño |
-| `informes` | dueño o admin | dueño | dueño | dueño |
-| `criterios_normativos` | autenticados | solo `service_role` | solo `service_role` | solo `service_role` |
+| `profiles` | propio o admin | propio, como `auditor` sin aprobar y con autorización de datos | propio, sin `rol`, `aprobado` ni la autorización | — |
+| `auditorias` | dueño activo o admin | dueño activo | dueño activo | — |
+| `hallazgos` | dueño activo o admin | dueño activo, sin procedencia de IA, en auditoría no cerrada | dueño activo (campos inmutables protegidos) | — |
+| `hallazgos_historial` | dueño activo o admin | solo el trigger | — | — |
+| `informes` | dueño activo o admin | solo `service_role` | — | — |
+| `criterios_normativos` | usuarios activos | solo `service_role` | solo `service_role` | solo `service_role` |
 | `ia_eventos` | admin | solo `service_role` | — | — |
 
-Para nombrar un administrador, desde el editor SQL de Supabase:
+El rol `anon` no tiene ningún permiso en el esquema `public`. Aprobar o desactivar cuentas se hace con
+`aprobar_auditor(id, aprobado)`, que verifica que quien llama es admin. Para el primer administrador:
 
 ```sql
-update public.profiles set rol = 'admin' where cedula = '<cédula>';
+update public.profiles set rol = 'admin', aprobado = true where cedula = '<cédula>';
 ```
 
 ### Dos correcciones al borrador del prompt maestro (§7.5)

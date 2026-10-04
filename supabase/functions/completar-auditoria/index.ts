@@ -2,10 +2,11 @@
 // La IA propone los campos que no se le piden al auditor: objetivo, normas aplicables y área auditada.
 // El código AI-<año>-<consecutivo> se calcula en código, no con la IA. El auditor puede editar todo.
 import { preflight, respuestaError, respuestaJson } from '../_shared/cors.ts'
-import { clienteAdmin, config, leerJson, registrarEvento, usoUltimas24h, usuarioDelToken } from '../_shared/supabase.ts'
+import { autenticar, clienteAdmin, config, finalizarEvento, leerCuerpo, MENSAJE_NO_APROBADO, reservarUso } from '../_shared/supabase.ts'
 import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { esquemaCompletarAuditoria } from '../_shared/esquema-salida.ts'
-import { documentosParaAlcance, INSTITUCION } from '../_shared/catalogos.ts'
+import { documentosParaAlcance, INSTITUCION, PROCESOS, SISTEMAS } from '../_shared/catalogos.ts'
+import { anonimizar } from '../_shared/anonimizar.ts'
 
 const FUNCION = 'completar-auditoria'
 
@@ -38,17 +39,24 @@ Deno.serve(async (req) => {
   const cfg = config()
   const admin = clienteAdmin()
 
-  const userId = await usuarioDelToken(admin, req)
-  if (!userId) return respuestaError(req, 'Tu sesión no es válida o expiró. Vuelve a ingresar.', 401, 'no_autenticado')
+  const usuario = await autenticar(admin, req)
+  if (!usuario) return respuestaError(req, 'Tu sesión no es válida o expiró. Vuelve a ingresar.', 401, 'no_autenticado')
+  if (!usuario.aprobado) return respuestaError(req, MENSAJE_NO_APROBADO, 403, 'no_aprobado')
+  const userId = usuario.id
 
-  const c = await leerJson<Cuerpo>(req)
+  const { datos: c, error: errCuerpo } = await leerCuerpo<Cuerpo>(req, 4_000)
+  if (errCuerpo === 'grande') return respuestaError(req, 'La solicitud es demasiado grande.', 413, 'demasiado_grande')
   const alcance = c?.alcance
   const objeto = alcance === 'SISTEMAS' ? c?.sistema : c?.proceso
-  if (!alcance || !['PROCESOS', 'SISTEMAS'].includes(alcance) || !objeto) {
-    return respuestaError(req, 'Elige el alcance y el proceso o sistema a auditar.', 400, 'datos_invalidos')
-  }
+  // Solo valores del catálogo: nada arbitrario llega al prompt
+  const objetoValido = alcance === 'SISTEMAS' ? SISTEMAS.includes(String(objeto)) : alcance === 'PROCESOS' && PROCESOS.includes(String(objeto))
+  if (!alcance || !objetoValido) return respuestaError(req, 'Elige el alcance y el proceso o sistema a auditar.', 400, 'datos_invalidos')
+  const fechaValida = (f: unknown) => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(f)
+  const fechaInicio = fechaValida(c?.fecha_inicio) ? String(c?.fecha_inicio) : null
+  const fechaFin = fechaValida(c?.fecha_fin) ? String(c?.fecha_fin) : null
+  const titulo = typeof c?.titulo === 'string' ? anonimizar(c.titulo.slice(0, 200)).texto : null
 
-  const anio = Number((c?.fecha_inicio ?? '').slice(0, 4)) || new Date().getFullYear()
+  const anio = Number((fechaInicio ?? '').slice(0, 4)) || new Date().getFullYear()
   const codigo = await siguienteCodigo(admin, userId, anio)
 
   // Solo normas aplicables al alcance Y efectivamente cargadas en criterios_normativos
@@ -63,15 +71,18 @@ Deno.serve(async (req) => {
     area_auditada: String(objeto),
   }
 
-  if (!aplicables.length || (await usoUltimas24h(admin, userId)) >= cfg.limiteDiario) {
-    return respuestaJson(req, { ok: true, sugerencia: respaldo, meta: { modelo: null, ia: false } })
+  if (!aplicables.length) return respuestaJson(req, { ok: true, sugerencia: respaldo, meta: { modelo: null, ia: false } })
+  // Cuota reservada antes de llamar a la IA; sin cupo, la planeación no se bloquea: propuesta básica
+  const reserva = await reservarUso(admin, userId, FUNCION, cfg)
+  if ('error' in reserva) {
+    return respuestaJson(req, { ok: true, sugerencia: respaldo, meta: { modelo: null, ia: false, aviso: 'Se alcanzó el límite de uso de la IA; se propusieron valores básicos.' } })
   }
 
   const mensaje = [
     `Alcance: ${alcance}`,
     `${alcance === 'SISTEMAS' ? 'Sistema' : 'Proceso'} auditado: ${objeto}`,
-    c?.titulo ? `Título propuesto por el auditor: ${c.titulo}` : '',
-    c?.fecha_inicio ? `Periodo: ${c.fecha_inicio} a ${c.fecha_fin ?? c.fecha_inicio}` : '',
+    titulo ? `Título propuesto por el auditor: ${titulo}` : '',
+    fechaInicio ? `Periodo: ${fechaInicio} a ${fechaFin ?? fechaInicio}` : '',
     `Normas disponibles: ${aplicables.join(' | ')}`,
   ].filter(Boolean).join('\n')
 
@@ -82,8 +93,8 @@ Deno.serve(async (req) => {
     )
     const s = r.json as { objetivo?: string; area_auditada?: string; criterios?: string[] }
     const criterios = (s.criterios ?? []).filter((d) => aplicables.includes(d)) // nunca normas inventadas
-    await registrarEvento(admin, {
-      user_id: userId, funcion: FUNCION, modelo: r.modelo, prompt_version: cfg.promptVersion, exito: true,
+    await finalizarEvento(admin, reserva.id, {
+      modelo: r.modelo, prompt_version: cfg.promptVersion, exito: true, codigo_error: null,
       latencia_ms: Date.now() - inicio, tokens_entrada: r.tokensEntrada, tokens_salida: r.tokensSalida,
     })
     return respuestaJson(req, {
@@ -98,9 +109,9 @@ Deno.serve(async (req) => {
     })
   } catch (e) {
     const err = e as ErrorGemini
-    await registrarEvento(admin, {
-      user_id: userId, funcion: FUNCION, modelo: cfg.geminiModelos[0], prompt_version: cfg.promptVersion,
-      exito: false, codigo_error: err.codigo ?? 'error', latencia_ms: Date.now() - inicio, detalle: { mensaje: err.message },
+    await finalizarEvento(admin, reserva.id, {
+      modelo: cfg.geminiModelos[0], prompt_version: cfg.promptVersion,
+      exito: false, codigo_error: err.codigo ?? 'error', latencia_ms: Date.now() - inicio, detalle: { mensaje: String(err.message).slice(0, 500) },
     })
     // La planeación nunca se bloquea: se devuelve una propuesta básica
     return respuestaJson(req, { ok: true, sugerencia: respaldo, meta: { modelo: null, ia: false, aviso: 'La IA no estuvo disponible; se propusieron valores básicos.' } })

@@ -223,10 +223,11 @@ pnpm probar          # todo lo siguiente, en orden
 | Comando | Qué verifica | Resultado |
 |---|---|---|
 | `pnpm verificar:prompt` | El prompt del sistema es el ANEXO A literal | ✓ 15 600 caracteres idénticos |
-| `pnpm probar:validacion` | V1–V6 con alucinaciones construidas a mano y casos reales | ✓ 41 comprobaciones |
+| `pnpm probar:validacion` | V1–V6, anonimización antes de la IA y coherencia de catálogos | ✓ 52 comprobaciones |
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
-| `pnpm probar:bd` | Migraciones, triggers, RLS entre dos usuarios, escalada a admin | ✓ 37 comprobaciones |
+| `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA | ✓ 65 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |
+| `pnpm probar:interfaz` | Extremo a extremo en Chromium: flujos, CSP, cuentas pendientes, admin, 360 px | ✓ 67 comprobaciones |
 
 ## Pendiente: contra la función desplegada
 

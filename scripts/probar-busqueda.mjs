@@ -2,14 +2,23 @@
 // Uso: pnpm probar:busqueda
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { crearBaseLocal, comoUsuario } from './lib/supabase-local.mjs'
+import { crearBaseLocal, comoUsuario, registrarUsuario } from './lib/supabase-local.mjs'
 import { DOCUMENTOS, trocearArchivo } from './lib/trocear-normas.mjs'
 
 const DIR_NORMAS = join(dirname(fileURLToPath(import.meta.url)), '..', 'normas')
 
-/** Base local con las migraciones aplicadas y las normas cargadas. */
+/**
+ * Base local con las migraciones aplicadas, las normas cargadas y un auditor APROBADO
+ * (la RLS solo deja leer las normas a cuentas aprobadas por un administrador).
+ */
 export async function baseConNormas() {
   const db = await crearBaseLocal({ silencioso: true })
+  const auditorId = await registrarUsuario(db, 'auditor@prueba.halla.ink', {
+    nombre_completo: 'Auditor de prueba', cedula: '1000000001', celular: '3000000001', cargo: 'Auditor',
+    equipo_auditor_nombre: 'Equipo de prueba', equipo_auditor_cargo: 'Profesional', alcance: 'PROCESOS',
+    proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
+  })
+  await db.query('update public.profiles set aprobado = true where id = $1', [auditorId])
   const filas = Object.keys(DOCUMENTOS).flatMap((a) => trocearArchivo(DIR_NORMAS, a).filas)
   for (const f of filas) {
     await db.query(
@@ -18,14 +27,13 @@ export async function baseConNormas() {
       [f.documento_codigo, f.documento_titulo, f.archivo, f.idioma, f.numeral, f.titulo, f.contenido, f.nivel, f.orden, f.parte],
     )
   }
-  return { db, total: filas.length }
+  return { db, total: filas.length, usuario: { id: auditorId, rol: 'authenticated' } }
 }
 
 // Ejecutado directamente (no importado)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { db, total } = await baseConNormas()
+  const { db, total, usuario } = await baseConNormas()
   console.log(`\n${total} fragmentos cargados en la base local\n`)
-  const usuario = { id: '00000000-0000-4000-8000-000000000001', rol: 'authenticated' }
   let fallos = 0
 
   const casos = [

@@ -2,7 +2,8 @@
 // Consolida los hallazgos en el informe ISO 19011. Las estadísticas se calculan en código; la IA solo
 // redacta resumen ejecutivo, conclusiones y recomendaciones, en UNA llamada (§9.5).
 import { preflight, respuestaError, respuestaJson } from '../_shared/cors.ts'
-import { clienteAdmin, config, leerJson, registrarEvento, RE_UUID, usoUltimas24h, usuarioDelToken } from '../_shared/supabase.ts'
+import { autenticar, clienteAdmin, config, finalizarEvento, leerCuerpo, MENSAJE_NO_APROBADO, RE_UUID, reservarUso } from '../_shared/supabase.ts'
+import { anonimizar } from '../_shared/anonimizar.ts'
 import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
@@ -20,10 +21,13 @@ Deno.serve(async (req) => {
   const cfg = config()
   const admin = clienteAdmin()
 
-  const userId = await usuarioDelToken(admin, req)
-  if (!userId) return respuestaError(req, 'Tu sesión no es válida o expiró. Vuelve a ingresar.', 401, 'no_autenticado')
+  const usuario = await autenticar(admin, req)
+  if (!usuario) return respuestaError(req, 'Tu sesión no es válida o expiró. Vuelve a ingresar.', 401, 'no_autenticado')
+  if (!usuario.aprobado) return respuestaError(req, MENSAJE_NO_APROBADO, 403, 'no_aprobado')
+  const userId = usuario.id
 
-  const cuerpo = await leerJson<{ auditoria_id?: string }>(req)
+  const { datos: cuerpo, error: errCuerpo } = await leerCuerpo<{ auditoria_id?: string }>(req, 2_000)
+  if (errCuerpo === 'grande') return respuestaError(req, 'La solicitud es demasiado grande.', 413, 'demasiado_grande')
   if (!cuerpo?.auditoria_id || !RE_UUID.test(cuerpo.auditoria_id)) return respuestaError(req, 'Falta el identificador de la auditoría.', 400, 'datos_invalidos')
 
   // 1. Propiedad de la auditoría
@@ -57,11 +61,21 @@ Deno.serve(async (req) => {
   const avisos: string[] = []
   let narrativa: Narrativa
   let modelo: string | null = null
+  // Cuota reservada antes de llamar a la IA; sin cupo, el informe sale con narrativa de plantilla
+  const reserva = await reservarUso(admin, userId, FUNCION, cfg)
+  // A la IA llegan los hallazgos anonimizados (pueden contener nombres o documentos de pacientes)
+  const paraIa = lista.map((h) => ({
+    ...h,
+    hallazgo_corregido: anonimizar(h.hallazgo_corregido).texto,
+    criterio_requisito: anonimizar(h.criterio_requisito).texto,
+    evidencia: anonimizar(h.evidencia).texto,
+  }))
+  const auditoriaIa = { ...auditoria, titulo: anonimizar(auditoria.titulo).texto, objetivo: auditoria.objetivo ? anonimizar(auditoria.objetivo).texto : null }
   try {
-    if ((await usoUltimas24h(admin, userId)) >= cfg.limiteDiario) throw new ErrorGemini('límite diario del usuario', 429, 'limite_usuario', 0)
+    if ('error' in reserva) throw new ErrorGemini('límite de uso de la IA', 429, reserva.error, 0)
     const r = await llamarGemini(
       { apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento, presupuestoMs: 110_000 },
-      { sistema: SISTEMA_INFORME, mensaje: construirMensajeInforme(auditoria, lista, estadisticas), esquema: ESQUEMA_INFORME, temperatura: 0.3 },
+      { sistema: SISTEMA_INFORME, mensaje: construirMensajeInforme(auditoriaIa, paraIa, estadisticas), esquema: ESQUEMA_INFORME, temperatura: 0.3 },
     )
     modelo = r.modelo
     const s = r.json as Partial<Narrativa>
@@ -76,18 +90,22 @@ Deno.serve(async (req) => {
     if (!narrativa.recomendaciones.length) narrativa.recomendaciones = respaldo.recomendaciones
     const cifras = cifrasNoRastreables(narrativa, auditoria, lista, estadisticas)
     if (cifras.length) avisos.push(`La narrativa menciona cifras que no están en los hallazgos ni en las estadísticas (${cifras.join(', ')}): revísala antes de firmar.`)
-    await registrarEvento(admin, {
-      user_id: userId, funcion: FUNCION, modelo, prompt_version: cfg.promptVersion, exito: true,
-      latencia_ms: Date.now() - inicio, tokens_entrada: r.tokensEntrada, tokens_salida: r.tokensSalida, detalle: { cifras_no_rastreables: cifras },
-    })
+    if (!('error' in reserva)) {
+      await finalizarEvento(admin, reserva.id, {
+        modelo, prompt_version: cfg.promptVersion, exito: true, codigo_error: null,
+        latencia_ms: Date.now() - inicio, tokens_entrada: r.tokensEntrada, tokens_salida: r.tokensSalida, detalle: { cifras_no_rastreables: cifras },
+      })
+    }
   } catch (e) {
     const err = e as ErrorGemini
     narrativa = narrativaRespaldo(auditoria, estadisticas)
     avisos.push('La IA no estuvo disponible: el resumen, las conclusiones y las recomendaciones se redactaron con una plantilla. Revísalos y ajústalos.')
-    await registrarEvento(admin, {
-      user_id: userId, funcion: FUNCION, modelo: cfg.geminiModelos[0], prompt_version: cfg.promptVersion,
-      exito: false, codigo_error: err.codigo ?? 'error', latencia_ms: Date.now() - inicio, detalle: { mensaje: err.message },
-    })
+    if (!('error' in reserva)) {
+      await finalizarEvento(admin, reserva.id, {
+        modelo: cfg.geminiModelos[0], prompt_version: cfg.promptVersion,
+        exito: false, codigo_error: err.codigo ?? 'error', latencia_ms: Date.now() - inicio, detalle: { mensaje: String(err.message).slice(0, 500) },
+      })
+    }
   }
   if (estadisticas.sin_confirmar) avisos.push(`El informe incluye ${estadisticas.sin_confirmar} hallazgo(s) sin confirmar.`)
 

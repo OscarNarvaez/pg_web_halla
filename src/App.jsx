@@ -19,6 +19,7 @@ const AuditoriaDetalle = lazy(() => import('./pages/AuditoriaDetalle'))
 const HallazgoNuevo = lazy(() => import('./pages/HallazgoNuevo'))
 const Informe = lazy(() => import('./pages/Informe'))
 const Normas = lazy(() => import('./pages/Normas'))
+const AdminAuditores = lazy(() => import('./pages/AdminAuditores'))
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="auditorias/:id/hallazgos/nuevo" element={<HallazgoNuevo />} />
               <Route path="auditorias/:id/informe" element={<Informe />} />
               <Route path="normas" element={<Normas />} />
+              <Route path="admin/auditores" element={<AdminAuditores />} />
               <Route path="*" element={<NoEncontrada />} />
             </Route>
           </Route>

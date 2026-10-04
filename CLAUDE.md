@@ -17,6 +17,16 @@ Reconocimiento y discrepancias con el prompt: `docs/RECONOCIMIENTO.md`.
 5. El prompt del sistema (`supabase/functions/_shared/prompt-sistema-experto.ts`) es el ANEXO A
    **literal**. No se resume ni se reescribe.
 
+## Seguridad (docs/SEGURIDAD.md)
+
+- Todo texto que vaya a Gemini pasa por `anonimizar()` (`_shared/anonimizar.ts`). La BD guarda el original.
+- Solo cuentas aprobadas (`profiles.aprobado`) acceden a datos: RLS con `usuario_activo()` y 403 en las
+  funciones. Nunca debilites esto para «simplificar» una prueba: aprueba al usuario de prueba.
+- Cambios de esquema y permisos: SIEMPRE en una migración nueva (0007…), nunca editando las ya aplicadas.
+- Nada de borrado físico para el cliente; los informes solo los escribe la Edge Function.
+- Cada ataque corregido vive como prueba en `scripts/probar-bd.mjs` o `scripts/probar-interfaz.mjs`.
+- La CSP se genera en `vite.config.js`: si agregas un origen externo, agrégalo ahí con justificación.
+
 ## Stack
 
 - Frontend: React 18 + Vite + **JavaScript (no TypeScript)** + Tailwind CSS **3.4** (`tailwind.config.js`).

@@ -13,25 +13,38 @@ export const supabase = supabaseSinConfigurar
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
     })
 
-/** Traduce los errores habituales de Supabase Auth y PostgREST a mensajes en español. */
+/**
+ * Traduce los errores de Supabase Auth y PostgREST a mensajes en español.
+ * Los errores no previstos NO se muestran tal cual (pueden revelar tablas, columnas o reglas internas):
+ * se registran en la consola y el usuario ve un mensaje genérico.
+ */
 export function mensajeError(error) {
   if (!error) return ''
   const texto = String(error.message ?? error)
-  const codigo = error.code ?? ''
+  const codigo = String(error.code ?? '')
   const mapa = [
-    [/user already registered|already been registered/i, 'Ese correo ya está registrado.'],
+    [/user already registered|already been registered/i, 'No se pudo completar el registro. Si ya tienes cuenta, ingresa o recupera tu contraseña.'],
     [/invalid login credentials/i, 'Correo o contraseña incorrectos.'],
     [/email not confirmed/i, 'Debes confirmar tu correo antes de ingresar. Revisa tu bandeja de entrada.'],
-    [/password should be at least/i, 'La contraseña debe tener al menos 8 caracteres.'],
-    [/rate limit|too many requests/i, 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'],
+    [/password should be at least|password is too short|weak.?password|password.*(characters|contain)/i, 'La contraseña no cumple la política: al menos 10 caracteres, con mayúscula, minúscula y número.'],
+    [/new password should be different/i, 'La contraseña nueva debe ser distinta de la anterior.'],
+    [/rate limit|too many requests|over_email_send_rate_limit/i, 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'],
     [/profiles_cedula_idx|cedula.*duplicate|duplicate.*cedula/i, 'Ya existe un auditor registrado con esa cédula.'],
     [/auditorias_codigo_usuario_idx/i, 'Ya tienes una auditoría con ese código.'],
-    [/jwt expired/i, 'Tu sesión expiró. Vuelve a ingresar.'],
-    [/failed to fetch|network/i, 'No hay conexión con el servidor. Revisa tu conexión a internet.'],
-    [/row-level security/i, 'No tienes permiso para realizar esta acción.'],
+    [/cedula_valida/i, 'La cédula debe tener entre 6 y 12 dígitos.'],
+    [/celular_valido/i, 'El celular debe tener 10 dígitos.'],
+    [/alcance_coherente|alcance_auditoria_coherente/i, 'Elige un proceso o un sistema, según el alcance.'],
+    [/fechas_coherentes/i, 'La fecha final no puede ser anterior a la inicial.'],
+    [/Ley 1581/i, 'Debes autorizar el tratamiento de tus datos personales.'],
+    [/no verificable/i, 'Una de las citas normativas no corresponde a un criterio cargado.'],
+    [/no se pueden modificar/i, 'La entrada original del auditor y la trazabilidad de la IA no se pueden modificar.'],
+    [/jwt expired|invalid jwt|session.*(expired|missing)/i, 'Tu sesión expiró. Vuelve a ingresar.'],
+    [/failed to fetch|network|load failed/i, 'No hay conexión con el servidor. Revisa tu conexión a internet.'],
+    [/row-level security|permission denied|42501/i, 'No tienes permiso para realizar esta acción.'],
   ]
   for (const [patron, mensaje] of mapa) if (patron.test(texto) || patron.test(codigo)) return mensaje
-  return texto
+  console.error('Error no previsto:', error)
+  return 'No se pudo completar la acción. Inténtalo de nuevo; si persiste, avísale al administrador.'
 }
 
 /**

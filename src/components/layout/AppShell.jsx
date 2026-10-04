@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react'
+import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, Menu, ShieldCheck, UserRound, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { cx } from '../../lib/cx'
 import { objetoAuditado } from '../../lib/catalogos'
@@ -14,9 +14,12 @@ const NAVEGACION = [
 ]
 
 function Navegacion({ alNavegar }) {
+  const { perfil } = useAuth()
+  // El enlace solo se muestra a administradores; la autorización real la hace la base de datos
+  const enlaces = perfil?.rol === 'admin' ? [...NAVEGACION, { a: '/app/admin/auditores', etiqueta: 'Auditores', icono: ShieldCheck }] : NAVEGACION
   return (
     <nav aria-label="Navegación principal" className="space-y-1">
-      {NAVEGACION.map(({ a, etiqueta, icono: Icono, exacto }) => (
+      {enlaces.map(({ a, etiqueta, icono: Icono, exacto }) => (
         <NavLink
           key={a}
           to={a}

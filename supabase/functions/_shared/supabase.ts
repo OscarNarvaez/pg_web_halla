@@ -13,29 +13,53 @@ export function config(): Config {
   return leerConfig((clave) => Deno.env.get(clave))
 }
 
-/** Devuelve el id del usuario a partir del JWT de la cabecera Authorization, o null si no es válido. */
-export async function usuarioDelToken(admin: SupabaseClient, req: Request): Promise<string | null> {
+export interface Usuario {
+  id: string
+  aprobado: boolean
+  rol: 'auditor' | 'admin'
+}
+
+/**
+ * Valida el JWT de la cabecera Authorization y lee el perfil. El id sale SIEMPRE del token, nunca del
+ * cuerpo. Devuelve null si el token no es válido; `aprobado` indica si un admin habilitó la cuenta.
+ */
+export async function autenticar(admin: SupabaseClient, req: Request): Promise<Usuario | null> {
   const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim()
-  if (!token) return null
+  if (!token || token.length > 4096) return null
   const { data, error } = await admin.auth.getUser(token)
   if (error || !data?.user) return null
-  return data.user.id
+  const { data: perfil } = await admin.from('profiles').select('aprobado, rol').eq('id', data.user.id).maybeSingle()
+  return { id: data.user.id, aprobado: Boolean(perfil?.aprobado), rol: perfil?.rol ?? 'auditor' }
 }
 
-/** Llamadas a la IA del usuario en las últimas 24 horas (para el límite diario). */
-export async function usoUltimas24h(admin: SupabaseClient, userId: string): Promise<number> {
-  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
-  const { count } = await admin
-    .from('ia_eventos')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('creado_en', desde)
-  return count ?? 0
+export const MENSAJE_NO_APROBADO = 'Tu cuenta está pendiente de aprobación por un administrador.'
+
+/**
+ * Reserva una llamada a la IA ANTES de hacerla, de forma atómica (bloqueo por usuario en la BD):
+ * peticiones en paralelo ya no evaden el límite diario ni el límite por minuto.
+ */
+export async function reservarUso(
+  admin: SupabaseClient, userId: string, funcion: string, cfg: Config,
+): Promise<{ id: number } | { error: 'limite_diario' | 'limite_minuto' | 'interno' }> {
+  const { data, error } = await admin.rpc('reservar_uso_ia', {
+    p_user: userId, p_funcion: funcion, p_limite_dia: cfg.limiteDiario, p_limite_minuto: cfg.limitePorMinuto,
+  })
+  if (error) {
+    if (/limite_diario/.test(error.message)) return { error: 'limite_diario' }
+    if (/limite_minuto/.test(error.message)) return { error: 'limite_minuto' }
+    console.error('reservar_uso_ia:', error.message)
+    return { error: 'interno' }
+  }
+  return { id: Number(data) }
 }
 
-export interface Evento {
-  user_id: string | null
-  funcion: string
+export function mensajeLimite(motivo: 'limite_diario' | 'limite_minuto' | 'interno', cfg: Config): string {
+  if (motivo === 'limite_minuto') return `Hiciste demasiados análisis seguidos (máximo ${cfg.limitePorMinuto} por minuto). Espera un momento.`
+  if (motivo === 'limite_diario') return `Alcanzaste el límite de ${cfg.limiteDiario} análisis con IA en 24 horas. Inténtalo más tarde.`
+  return 'No se pudo registrar el uso de la IA. Inténtalo de nuevo.'
+}
+
+export interface CierreEvento {
   modelo?: string | null
   prompt_version?: string | null
   exito: boolean
@@ -46,21 +70,26 @@ export interface Evento {
   tokens_salida?: number | null
 }
 
-/** Registra la llamada en ia_eventos. Nunca lanza: la bitácora no debe tumbar la respuesta. */
-export async function registrarEvento(admin: SupabaseClient, evento: Evento): Promise<void> {
+/** Completa el evento reservado. Nunca lanza: la bitácora no debe tumbar la respuesta. */
+export async function finalizarEvento(admin: SupabaseClient, id: number, cierre: CierreEvento): Promise<void> {
   try {
-    const { error } = await admin.from('ia_eventos').insert(evento)
+    const { error } = await admin.from('ia_eventos').update(cierre).eq('id', id)
     if (error) console.error('ia_eventos:', error.message)
   } catch (e) {
     console.error('ia_eventos:', (e as Error).message)
   }
 }
 
-export async function leerJson<T>(req: Request): Promise<T | null> {
+/** Lee el cuerpo JSON con un tope de tamaño (evita agotar memoria con cuerpos enormes). */
+export async function leerCuerpo<T>(req: Request, maxBytes = 32_000): Promise<{ datos: T | null; error?: 'grande' | 'invalido' }> {
+  const declarado = Number(req.headers.get('content-length') ?? 0)
+  if (declarado > maxBytes) return { datos: null, error: 'grande' }
+  const texto = await req.text()
+  if (new TextEncoder().encode(texto).length > maxBytes) return { datos: null, error: 'grande' }
   try {
-    return (await req.json()) as T
+    return { datos: JSON.parse(texto) as T }
   } catch {
-    return null
+    return { datos: null, error: 'invalido' }
   }
 }
 

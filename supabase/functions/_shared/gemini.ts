@@ -260,5 +260,6 @@ export function mensajeErrorGemini(e: ErrorGemini): { mensaje: string; estado: n
     return { mensaje: 'El servicio de IA está saturado o no responde. Inténtalo de nuevo en unos segundos.', estado: 503 }
   }
   if (e.estado === 404) return { mensaje: 'Ningún modelo de IA configurado está disponible. Avísale al administrador.', estado: 502 }
-  return { mensaje: `La IA no pudo procesar la solicitud: ${e.message}`, estado: 502 }
+  // No se reenvía el mensaje de Google al usuario: puede contener detalles internos
+  return { mensaje: 'La IA no pudo procesar la solicitud. Inténtalo de nuevo; si persiste, avísale al administrador.', estado: 502 }
 }

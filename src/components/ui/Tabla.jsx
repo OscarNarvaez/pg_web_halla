@@ -36,7 +36,7 @@ export const Tabla = forwardRef(function Tabla(
           {filas.map((fila) => (
             <tr key={claveFila(fila)} className="align-top hover:bg-tinta-50/60">
               {columnas.map((col) => (
-                <td key={col.clave} className={cx('px-4 py-3', col.className)}>
+                <td key={col.clave} className={cx('px-4 py-3 align-middle', col.className)}>
                   {celda(fila, col)}
                 </td>
               ))}

@@ -35,16 +35,35 @@ los pasos que requieren cuentas reales, en orden.
    supabase db push
    ```
 
-   Si `db push` fallara en `0003_criterios_normativos.sql` al crear la configuración `es_unaccent`
+   Aplica las **seis** migraciones (la `0006_seguridad.sql` agrega la aprobación de cuentas, el historial
+   de cambios y la cuota atómica de IA; ver `docs/SEGURIDAD.md`). Si `db push` fallara en `0003_criterios_normativos.sql` al crear la configuración `es_unaccent`
    (depende de la extensión `unaccent` en el esquema `extensions`), la alternativa está descrita en
    `docs/BASE_DE_DATOS.md`. En las pruebas locales (Postgres 18) la migración pasa sin cambios.
 
-3. **Autenticación** (Dashboard → Authentication):
+3. **Autenticación.** `supabase/config.toml` trae la configuración endurecida (contraseña mínima de 10 con
+   mayúscula, minúscula y número; confirmación de correo; reautenticación para cambiar la contraseña; 60 s
+   entre correos). Súbela al proyecto:
+
+   ```bash
+   supabase config diff    # muestra exactamente qué va a cambiar en el proyecto
+   supabase config push    # pide confirmación por cada cambio
+   ```
+
+   `config push` sube **todo** lo que declara `config.toml` (también la Site URL, que ya está en
+   `https://halla.ink`). Lee el `diff` antes de confirmar. Revisa después en el dashboard (Authentication)
+   que quedó aplicada, y completa:
    - *URL Configuration*: **Site URL** `https://halla.ink`; **Redirect URLs** `https://halla.ink/**` y
      `http://localhost:5173/**`.
-   - *Sign In / Providers → Email*: deja activa la **confirmación de correo**. La app lo maneja: muestra
-     «Revisa tu correo» y crea el perfil al primer ingreso si hiciera falta.
    - Opcional: traduce al español las plantillas de correo (*Emails*).
+
+4. **Primer administrador.** Nadie usa la plataforma hasta que un administrador aprueba su cuenta. Regístrate
+   en la app y luego, en el SQL Editor del dashboard:
+
+   ```sql
+   update public.profiles set rol = 'admin', aprobado = true where cedula = '<tu cédula>';
+   ```
+
+   Desde ese momento apruebas a los demás auditores en **Auditores** (menú lateral, solo visible para admins).
 
 ## 2. Cargar las normas
 
@@ -78,7 +97,8 @@ supabase secrets set \
   GEMINI_MAX_OUTPUT_TOKENS=4096 \
   GEMINI_NIVEL_RAZONAMIENTO=low \
   PROMPT_VERSION=1.0.0 \
-  LIMITE_IA_DIARIO_POR_USUARIO=40
+  LIMITE_IA_DIARIO_POR_USUARIO=40 \
+  LIMITE_IA_POR_MINUTO=5
 ```
 
 | Secreto | Valor | Por qué |
@@ -88,6 +108,7 @@ supabase secrets set \
 | `GEMINI_MAX_OUTPUT_TOKENS` | `4096` | Gemini 3.x razona por defecto y esos tokens cuentan; con 2 048 la respuesta podía cortarse |
 | `GEMINI_NIVEL_RAZONAMIENTO` | `low` | Misma calidad de clasificación con 1,7 s de latencia en vez de 6,2 s |
 | `LIMITE_IA_DIARIO_POR_USUARIO` | `40` sugerido | Ver «Cuota de la IA» |
+| `LIMITE_IA_POR_MINUTO` | `5` | Evita que un usuario agote la cuota compartida en segundos |
 
 `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase en las funciones; no hay que definirlos.
 Las funciones tienen `verify_jwt = true` (`supabase/config.toml`) y CORS restringido a `https://halla.ink`,
@@ -104,6 +125,11 @@ gemini-3.8-flash → gemini-flash-latest → gemini-3.7-flash → gemini-3.6-fla
 → gemini-3.5-flash-lite → gemini-3.1-flash-lite
 ```
 
+> **Datos de pacientes y nivel gratuito.** Los términos del nivel gratuito de Gemini permiten que Google use
+> y revise los textos enviados y piden expresamente no enviar datos personales. halla anonimiza el texto antes
+> de enviarlo (nombres, documentos, historias clínicas, teléfonos, correos), pero **antes de usar la
+> plataforma con hallazgos reales activa la facturación** (nivel pago). Detalle en `docs/SEGURIDAD.md` (S1).
+
 Son unas 140 solicitudes diarias gratis en total, **compartidas por todos los auditores**. Cada análisis
 consume 1 solicitud (2 si hace falta la reparación de estructura); el informe, 1. Cada hallazgo guarda en
 `modelo_ia` qué modelo respondió. Si el uso real supera esa cifra, **activa la facturación del proyecto
@@ -119,14 +145,9 @@ perdió», y el informe se genera igual con una narrativa de plantilla.
 SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<anon> SUPABASE_SERVICE_ROLE_KEY=<service_role> pnpm verificar-rls
 ```
 
-Crea dos usuarios de prueba, confirma que A no lee ni modifica lo de B y que nadie se asciende a admin,
-y los borra al terminar. Equivale a `pnpm probar:bd`, pero contra el proyecto real.
-
-Para nombrar un administrador (SQL Editor del dashboard):
-
-```sql
-update public.profiles set rol = 'admin' where cedula = '<cédula>';
-```
+Crea dos usuarios de prueba y confirma que una cuenta sin aprobar no accede a nada, que nadie se aprueba ni se
+asciende a admin solo, que A no lee ni modifica lo de B y que no se pueden falsificar citas, antedatar ni
+borrar registros. Los borra al terminar. Equivale a `pnpm probar:bd`, pero contra el proyecto real.
 
 ## 5. GitHub Pages
 
@@ -180,7 +201,9 @@ cambian.
 
 ## 7. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las cinco migraciones.
+- [ ] `supabase db push` aplicó las seis migraciones.
+- [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
+- [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
 - [ ] `pnpm verificar-rls` en verde.
 - [ ] Las funciones responden 401 sin sesión y 403 con una auditoría ajena.

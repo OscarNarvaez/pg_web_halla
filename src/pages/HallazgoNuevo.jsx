@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, ChevronDown, RotateCcw, Save, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, RotateCcw, Save, ShieldAlert, Sparkles, Trash2 } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo } from '../hooks/useHallazgos'
 import { useToast } from '../contexts/ToastContext'
@@ -13,6 +13,8 @@ import { TarjetaResultado } from '../components/hallazgos/TarjetaResultado'
 import { AreaTexto, Boton, EstadoError, EstadoVacio } from '../components/ui'
 
 const MINIMO = 25
+const MAXIMO = 6000
+const MAXIMO_NOTAS = 2000
 const EJEMPLO =
   'Ejemplo: Se revisaron 20 historias clínicas del servicio de Hospitalización y en 5 de ellas no se encontró registrada la valoración de enfermería al ingreso.'
 const CAMPOS_EDITABLES = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'severidad']
@@ -125,6 +127,13 @@ export default function HallazgoNuevo() {
         {/* Entrada */}
         <section aria-labelledby="titulo-entrada" className="space-y-5 rounded-lg border border-tinta-100 bg-white p-5 shadow-sm lg:sticky lg:top-6">
           <h2 id="titulo-entrada" className="sr-only">Entrada del auditor</h2>
+          <p className="flex gap-2 rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-xs text-obs-texto">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              <strong>No escribas datos de pacientes</strong> (nombres, documentos ni números de historia clínica). Describe el
+              hecho, no a la persona. Por seguridad, el sistema los retira antes de enviar el texto al servicio de IA.
+            </span>
+          </p>
           <AreaTexto
             etiqueta="Describe lo que observaste durante la auditoría"
             rows={10}
@@ -135,6 +144,7 @@ export default function HallazgoNuevo() {
             placeholder={EJEMPLO}
             longitud={texto.trim().length}
             minimo={MINIMO}
+            maxLength={MAXIMO}
             error={errorTexto}
             disabled={fase === 'analizando' || cerrada}
           />
@@ -153,6 +163,7 @@ export default function HallazgoNuevo() {
             rows={3}
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
+            maxLength={MAXIMO_NOTAS}
             disabled={fase === 'analizando' || cerrada}
             ayuda="Por ejemplo: a quién entrevistaste o qué documento consultaste."
           />
@@ -221,6 +232,7 @@ export default function HallazgoNuevo() {
               {meta && (
                 <p className="text-xs text-tinta-500">
                   Modelo {meta.modelo} · {meta.criterios_recuperados} criterios consultados · {(meta.latencia_ms / 1000).toFixed(1)} s
+                  {meta.datos_personales_retirados > 0 && ` · ${meta.datos_personales_retirados} dato${meta.datos_personales_retirados === 1 ? '' : 's'} personal${meta.datos_personales_retirados === 1 ? '' : 'es'} retirado${meta.datos_personales_retirados === 1 ? '' : 's'} antes de enviar a la IA`}
                   {editado && ' · editado por ti'}
                 </p>
               )}

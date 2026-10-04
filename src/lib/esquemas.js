@@ -31,13 +31,32 @@ export function validarAlcance(datos, ctx) {
   }
 }
 
+// Política de contraseñas: la misma que exige Supabase Auth en el servidor (supabase/config.toml)
+export const MINIMO_CLAVE = 10
+export const reglaClave = z
+  .string()
+  .min(MINIMO_CLAVE, `La contraseña debe tener al menos ${MINIMO_CLAVE} caracteres`)
+  .max(72, 'La contraseña no puede superar 72 caracteres')
+  .regex(/[a-z]/, 'La contraseña debe incluir al menos una letra minúscula')
+  .regex(/[A-Z]/, 'La contraseña debe incluir al menos una letra mayúscula')
+  .regex(/\d/, 'La contraseña debe incluir al menos un número')
+
+// Autorización de tratamiento de datos personales (Ley 1581 de 2012): obligatoria
+// (refine y no literal: así zod sigue evaluando las demás reglas y el usuario ve todos los errores juntos)
+export const campoAutorizacion = {
+  acepto_tratamiento_datos: z
+    .boolean()
+    .refine((v) => v === true, { message: 'Debes autorizar el tratamiento de tus datos personales para registrarte' }),
+}
+
 export const esquemaRegistro = z
   .object({
     email: z.string().trim().toLowerCase().email('Escribe un correo válido'),
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+    password: reglaClave,
     confirmacion: z.string(),
     ...camposAuditor,
     ...camposEquipoYAlcance,
+    ...campoAutorizacion,
   })
   .superRefine((d, ctx) => {
     if (d.password !== d.confirmacion) ctx.addIssue({ code: 'custom', path: ['confirmacion'], message: 'Las contraseñas no coinciden' })
@@ -45,6 +64,9 @@ export const esquemaRegistro = z
   })
 
 export const esquemaPerfil = z.object({ ...camposAuditor, ...camposEquipoYAlcance }).superRefine(validarAlcance)
+
+// Completar el perfil (fallback) también exige la autorización de datos
+export const esquemaCompletarPerfil = z.object({ ...camposAuditor, ...camposEquipoYAlcance, ...campoAutorizacion }).superRefine(validarAlcance)
 
 export const esquemaIngreso = z.object({
   email: z.string().trim().toLowerCase().email('Escribe un correo válido'),
@@ -85,8 +107,8 @@ export function aFilaAlcance(d) {
 /** Fortaleza de la contraseña de 0 a 4. */
 export function fuerzaClave(clave = '') {
   let puntos = 0
-  if (clave.length >= 8) puntos++
-  if (clave.length >= 12) puntos++
+  if (clave.length >= MINIMO_CLAVE) puntos++
+  if (clave.length >= 14) puntos++
   if (/[a-z]/.test(clave) && /[A-Z]/.test(clave)) puntos++
   if (/\d/.test(clave) && /[^A-Za-z0-9]/.test(clave)) puntos++
   return Math.min(puntos, 4)

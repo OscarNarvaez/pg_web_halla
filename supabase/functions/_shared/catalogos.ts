@@ -9,6 +9,18 @@ export const INSTITUCION = {
   ciudad: 'Pasto, Nariño',
 }
 
+// Para validar la entrada de las funciones (deben coincidir con los enum de PostgreSQL)
+export const PROCESOS = [
+  'Nutrición', 'Imágenes diagnósticas', 'Gestión hospitalaria universitaria', 'Control interno', 'Gestión cliente',
+  'Terapias', 'Hospital seguro', 'Gestión de calidad', 'Comercial y mercadeo', 'Gestión humana',
+  'Gestión de recursos físicos', 'Gestión de la información', 'Gestión gerencial', 'Gestión del ambiente físico',
+  'Gestión financiera', 'Hospitalización', 'Cirugía', 'Urgencias', 'Consulta externa',
+]
+export const SISTEMAS = [
+  'Sistema Ambiental', 'Sistema de Seguridad y Salud en el Trabajo', 'Sistema de calidad', 'SARLAFT Y SICOF',
+  'UACAI', 'Empresa familiar',
+]
+
 export const CLASIFICACIONES = ['FORTALEZA', 'NO_CONFORMIDAD', 'OBSERVACION', 'OPORTUNIDAD_DE_MEJORA'] as const
 export type Clasificacion = (typeof CLASIFICACIONES)[number]
 

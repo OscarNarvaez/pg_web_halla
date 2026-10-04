@@ -14,14 +14,18 @@ de guardarlo.
 
 Entre a **halla.ink → Crear cuenta**. Son tres pasos:
 
-1. **Cuenta:** correo y contraseña (mínimo 8 caracteres).
+1. **Cuenta:** correo y contraseña (mínimo 10 caracteres, con mayúscula, minúscula y número).
 2. **Datos del auditor:** nombre completo, cédula, celular y cargo. Puede escribir la cédula con puntos
    (1.085.123.456) y el celular con +57: el sistema los normaliza.
 3. **Equipo auditor y alcance:** el nombre y el cargo de la persona que lo acompaña (el equipo auditor
-   es siempre una persona adicional) y si usted audita **procesos** o **sistemas**, con cuál.
+   es siempre una persona adicional) y si usted audita **procesos** o **sistemas**, con cuál. Al final debe
+   **autorizar el tratamiento de sus datos personales** (Ley 1581 de 2012).
 
-Si le pide confirmar el correo, abra el enlace que le llega (revise también el correo no deseado) y luego
-ingrese. Estos datos aparecen en el informe, en la sección de equipo auditor y en las firmas; puede
+Abra el enlace de confirmación que le llega al correo (revise también el correo no deseado). Después, **un
+administrador debe aprobar su cuenta**: hasta entonces verá el aviso «Tu cuenta está pendiente de
+aprobación». Avísele al administrador de la plataforma.
+
+Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en el informe, en la sección de equipo auditor y en las firmas; puede
 cambiarlos en **Mi perfil**.
 
 ## 2. Crear una auditoría
@@ -42,6 +46,12 @@ Dentro de la auditoría: **Nuevo hallazgo**.
 
 Describa lo que observó como lo contaría a un colega. No se preocupe por la redacción técnica ni por la
 categoría: eso lo hace el sistema. Lo que sí importa es el **contenido**:
+
+> **No escriba datos de pacientes ni de funcionarios**: ni nombres, ni números de documento, ni de historia
+> clínica. Describa el hecho, no a la persona («en 5 historias clínicas…», no «la historia de María Pérez…»).
+> El texto se envía a un servicio de inteligencia artificial externo; aunque el sistema retira esos datos
+> antes de enviarlo, no puede detectarlos todos.
+
 
 - **Qué revisó:** historias clínicas, actas, registros, el área física…
 - **Cuántos:** «se revisaron 20 historias clínicas».
@@ -171,3 +181,11 @@ la clasificación fue ajustada por usted.
 **¿Puedo borrar un hallazgo?** Se descarta, no se borra: así queda la trazabilidad de todo lo analizado.
 
 **¿Quién ve mis auditorías?** Solo usted y los administradores de la plataforma.
+
+**¿Qué pasa si edito un hallazgo?** Se guarda un historial con la versión anterior, quién la cambió y cuándo.
+
+**Me salió «Tu cuenta está pendiente de aprobación».** Un administrador debe aprobarla. Cuando lo haga,
+pulse «Ya me aprobaron» o vuelva a ingresar.
+
+**¿Qué datos míos guarda halla y para qué?** Nombre, cédula, celular, cargo y correo, para identificarlo como
+auditor y firmar los informes. Puede pedir su actualización o supresión al administrador.

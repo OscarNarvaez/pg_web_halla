@@ -37,6 +37,7 @@ pnpm probar:interfaz   # extremo a extremo en Chromium con Supabase simulado
 | [`docs/RECONOCIMIENTO.md`](docs/RECONOCIMIENTO.md) | Punto de partida, prototipo y discrepancias con el prompt maestro |
 | [`docs/BASE_DE_DATOS.md`](docs/BASE_DE_DATOS.md) | Modelo de datos, RLS, búsqueda e ingesta de normas |
 | [`docs/PRUEBAS.md`](docs/PRUEBAS.md) | Los 7 casos obligatorios con las respuestas reales de la IA |
+| [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) | Auditoría de seguridad: hallazgos, correcciones y lo pendiente antes de producción |
 | [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md) | Supabase, secretos, GitHub Pages y DNS paso a paso |
 | [`docs/MANUAL_AUDITOR.md`](docs/MANUAL_AUDITOR.md) | Manual para los auditores |
 

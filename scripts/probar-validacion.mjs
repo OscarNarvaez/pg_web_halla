@@ -5,6 +5,9 @@ import {
 } from '../supabase/functions/_shared/validar-salida.ts'
 import { construirConsulta } from '../supabase/functions/_shared/recuperar-criterios.ts'
 import { MARCADOR_PENDIENTE } from '../supabase/functions/_shared/catalogos.ts'
+import { anonimizar } from '../supabase/functions/_shared/anonimizar.ts'
+import * as catalogosServidor from '../supabase/functions/_shared/catalogos.ts'
+import * as catalogosCliente from '../src/lib/catalogos.js'
 
 let fallos = 0
 const ok = (c, d, det = '') => {
@@ -110,6 +113,23 @@ console.log('\n▸ Consulta de recuperación')
 const consulta = construirConsulta('Se evidenció extintor vencido en el área de urgencias y no se encontró el registro', 'Urgencias')
 ok(consulta.includes(' or ') && consulta.includes('extintor') && consulta.includes('emergencias'), 'arma una consulta «or» y añade sinónimos (extintor → emergencias)', consulta)
 ok(!/\bor or\b|\bnot\b|\band\b/.test(consulta) && !/\bse\b|\bel\b/.test(consulta), 'sin stopwords ni operadores sueltos', consulta)
+
+console.log('\n▸ Anonimización antes de enviar a la IA (S1)')
+const anon = (t) => anonimizar(t).texto
+ok(anon('La paciente María José Pérez Gómez, HC 1234567, fue atendida.') === 'La paciente [nombre retirado], HC [número retirado], fue atendida.', 'retira el nombre del paciente y el número de historia clínica', anon('La paciente María José Pérez Gómez, HC 1234567, fue atendida.'))
+ok(anon('La Auxiliar Ana Gómez no registró.') === 'La Auxiliar [nombre retirado] no registró.', 'retira el nombre aunque el rol esté en mayúscula tras «La»')
+ok(anon('El Dr. Carlos Ruiz y la jefe de enfermería Laura Martínez Ñáñez') === 'El Dr. [nombre retirado] y la jefe de enfermería [nombre retirado]', 'retira nombres de personal con tratamiento o cargo')
+ok(anon('el niño Santiago de la Cruz esperó') === 'el niño [nombre retirado] esperó', 'retira apellidos compuestos con «de la»')
+ok(anon('al 300 123 4567, al (602) 731 2345 y a madre@gmail.com') === 'al [teléfono retirado], al [teléfono retirado] y a [correo retirado]', 'retira celulares, teléfonos fijos y correos')
+ok(anon('CC 1.085.123.456 y cédula de ciudadanía No. 52123456') === 'CC [número retirado] y cédula de ciudadanía No. [número retirado]', 'retira números de documento con y sin puntos')
+const legitimo = 'Se revisaron 20 historias clínicas del servicio de Urgencias del Hospital Infantil Los Ángeles; facturas por $1.500.000; NTC-ISO 9001:2015 numeral 9.3.3; Resolución 3100 de 2019; el auxiliar de Enfermería.'
+ok(anon(legitimo) === legitimo, 'no altera el contenido de auditoría: cifras, montos, normas, servicios y la institución', anon(legitimo))
+
+console.log('\n▸ Catálogos del cliente y del servidor')
+ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosCliente.PROCESOS), 'los 19 procesos coinciden entre el frontend y las Edge Functions')
+ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')
+ok(JSON.stringify(catalogosServidor.DOCUMENTOS_POR_ALCANCE) === JSON.stringify(catalogosCliente.DOCUMENTOS_POR_ALCANCE), 'el mapa de documentos por alcance coincide')
+ok(catalogosServidor.MARCADOR_PENDIENTE === catalogosCliente.MARCADOR_PENDIENTE, 'el marcador de requisito pendiente es idéntico')
 
 console.log(fallos ? `\n✗ ${fallos} prueba(s) fallaron\n` : '\n✓ Validación verificada\n')
 process.exit(fallos ? 1 : 0)

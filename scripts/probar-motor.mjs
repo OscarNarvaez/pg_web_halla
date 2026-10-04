@@ -39,8 +39,7 @@ const soloCasos = args.includes('--casos') ? args[args.indexOf('--casos') + 1].s
 const rutaMd = args.includes('--md') ? args[args.indexOf('--md') + 1] : null
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const { db } = await baseConNormas()
-const usuario = { id: '00000000-0000-4000-8000-000000000001', rol: 'authenticated' }
+const { db, usuario } = await baseConNormas()
 const buscar = async (consulta, documentos, limite) => {
   const { rows } = await comoUsuario(db, usuario, (tx) => tx.query('select * from public.buscar_criterios($1, $2, $3)', [consulta, documentos, limite]))
   return rows.map((r) => ({ ...r, puntaje: Number(r.puntaje) }))

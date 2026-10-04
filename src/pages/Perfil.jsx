@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { aFilaAlcance, esquemaPerfil } from '../lib/esquemas'
-import { formatearCedula } from '../lib/formato'
+import { fechaHora, formatearCedula } from '../lib/formato'
 import { Encabezado } from '../components/layout/Encabezado'
 import { CamposAlcance, CamposAuditor, CamposEquipo } from '../components/perfil/CamposPerfil'
 import { Badge, Boton, Tarjeta } from '../components/ui'
@@ -36,6 +36,8 @@ export default function Perfil() {
             <div><dt className="text-tinta-500">Correo</dt><dd className="font-medium text-tinta-900 break-all">{usuario?.email}</dd></div>
             <div><dt className="text-tinta-500">Cédula registrada</dt><dd className="font-medium text-tinta-900">{formatearCedula(perfil.cedula)}</dd></div>
             <div><dt className="text-tinta-500">Rol</dt><dd><Badge tono={perfil.rol === 'admin' ? 'marca' : 'neutro'}>{perfil.rol === 'admin' ? 'Administrador' : 'Auditor'}</Badge></dd></div>
+            <div><dt className="text-tinta-500">Cuenta aprobada</dt><dd className="text-tinta-900">{perfil.aprobado_en ? fechaHora(perfil.aprobado_en) : 'Sí'}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-tinta-500">Autorización de tratamiento de datos</dt><dd className="text-tinta-900">{perfil.acepto_tratamiento_datos_en ? `Otorgada el ${fechaHora(perfil.acepto_tratamiento_datos_en)} (Ley 1581 de 2012)` : 'No registrada'}</dd></div>
           </dl>
         </Tarjeta>
         <Tarjeta titulo="Datos del auditor"><CamposAuditor register={register} errors={errors} /></Tarjeta>

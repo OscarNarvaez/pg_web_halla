@@ -4,18 +4,19 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, MailCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { esquemaRegistro, fuerzaClave } from '../lib/esquemas'
+import { MINIMO_CLAVE, esquemaRegistro, fuerzaClave } from '../lib/esquemas'
 import { supabaseSinConfigurar } from '../lib/supabase'
 import { cx } from '../lib/cx'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
 import { AvisoConfiguracion } from '../components/layout/AvisoConfiguracion'
 import { CamposAlcance, CamposAuditor, CamposEquipo } from '../components/perfil/CamposPerfil'
+import { AutorizacionDatos } from '../components/perfil/AutorizacionDatos'
 import { Boton, Campo } from '../components/ui'
 
 const PASOS = [
   { titulo: 'Cuenta', campos: ['email', 'password', 'confirmacion'] },
   { titulo: 'Datos del auditor', campos: ['nombre_completo', 'cedula', 'celular', 'cargo'] },
-  { titulo: 'Equipo y alcance', campos: ['equipo_auditor_nombre', 'equipo_auditor_cargo', 'alcance', 'proceso', 'sistema'] },
+  { titulo: 'Equipo y alcance', campos: ['equipo_auditor_nombre', 'equipo_auditor_cargo', 'alcance', 'proceso', 'sistema', 'acepto_tratamiento_datos'] },
 ]
 
 const NIVELES = [
@@ -73,7 +74,7 @@ export default function Registro() {
   const { register, handleSubmit, trigger, control, setValue, getValues, setError: marcarError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(esquemaRegistro),
     mode: 'onTouched',
-    defaultValues: { alcance: undefined, proceso: '', sistema: '' },
+    defaultValues: { alcance: undefined, proceso: '', sistema: '', acepto_tratamiento_datos: false },
   })
 
   if (supabaseSinConfigurar) return <AvisoConfiguracion />
@@ -85,8 +86,9 @@ export default function Registro() {
         <div className="flex gap-3 text-sm text-tinta-700">
           <MailCheck className="size-6 shrink-0 text-halla-600" aria-hidden="true" />
           <p>
-            Enviamos un enlace de confirmación a <strong>{confirmarCorreo}</strong>. Ábrelo para activar tu cuenta y luego ingresa.
-            Si no lo ves, revisa la carpeta de correo no deseado.
+            Si <strong>{confirmarCorreo}</strong> no tenía una cuenta, le enviamos un enlace de confirmación. Ábrelo para
+            activar tu cuenta y luego ingresa; un administrador debe aprobarla antes de que puedas usar la plataforma.
+            Si no ves el correo, revisa la carpeta de correo no deseado.
           </p>
         </div>
         <Link to="/ingresar" className="enlace mt-6 inline-block text-sm">Ir a ingresar</Link>
@@ -140,7 +142,7 @@ export default function Registro() {
         {paso === 0 && (
           <>
             <Campo etiqueta="Correo electrónico" type="email" autoComplete="email" required error={errors.email?.message} {...register('email')} />
-            <Campo etiqueta="Contraseña" type="password" autoComplete="new-password" required ayuda="Mínimo 8 caracteres." error={errors.password?.message} {...register('password')} />
+            <Campo etiqueta="Contraseña" type="password" autoComplete="new-password" required ayuda={`Mínimo ${MINIMO_CLAVE} caracteres, con mayúscula, minúscula y número.`} error={errors.password?.message} {...register('password')} />
             <MedidorClave control={control} />
             <Campo etiqueta="Confirma la contraseña" type="password" autoComplete="new-password" required error={errors.confirmacion?.message} {...register('confirmacion')} />
           </>
@@ -150,6 +152,7 @@ export default function Registro() {
           <>
             <CamposEquipo register={register} errors={errors} />
             <CamposAlcance register={register} errors={errors} control={control} setValue={setValue} />
+            <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} />
           </>
         )}
 

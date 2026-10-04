@@ -43,6 +43,7 @@ async function crearUsuario(letra, cedula) {
       alcance: 'PROCESOS',
       proceso: 'Urgencias',
       sistema: '',
+      acepto_tratamiento_datos: 'true',
     },
   })
   if (error) throw new Error(`No se pudo crear el usuario ${letra}: ${error.message}`)
@@ -59,7 +60,22 @@ try {
   const B = await crearUsuario('b', `9${sello}02`)
 
   const { data: perfilA } = await A.cliente.from('profiles').select('*').eq('id', A.id).single()
-  ok(perfilA?.nombre_completo && perfilA?.rol === 'auditor', 'el trigger creó el perfil con rol auditor')
+  ok(perfilA?.nombre_completo && perfilA?.rol === 'auditor' && perfilA?.aprobado === false, 'el trigger creó el perfil como auditor SIN aprobar')
+  ok(Boolean(perfilA?.acepto_tratamiento_datos_en), 'quedó registrada la autorización de tratamiento de datos')
+
+  console.log('\n▸ Cuenta sin aprobar')
+  const { error: errAudPend } = await A.cliente.from('auditorias').insert({ user_id: A.id, codigo: `PEND-${sello}`, titulo: 'Intento', alcance: 'PROCESOS', proceso: 'Urgencias' })
+  ok(Boolean(errAudPend), 'una cuenta sin aprobar no crea auditorías')
+  const { data: critPend } = await A.cliente.from('criterios_normativos').select('id').limit(1)
+  ok(!critPend?.length, 'una cuenta sin aprobar no lee las normas')
+  const { error: errAuto } = await A.cliente.from('profiles').update({ aprobado: true }).eq('id', A.id)
+  const { data: sigue } = await admin.from('profiles').select('aprobado').eq('id', A.id).single()
+  ok(Boolean(errAuto) && sigue.aprobado === false, 'un usuario no puede aprobarse a sí mismo')
+  const { error: errRpc } = await A.cliente.rpc('aprobar_auditor', { p_id: A.id, p_aprobado: true })
+  ok(Boolean(errRpc), 'un usuario no puede usar la función de aprobación')
+
+  // Para el resto de las pruebas, se aprueban como lo haría un administrador
+  await admin.from('profiles').update({ aprobado: true }).in('id', [A.id, B.id])
 
   const { data: audB, error: errAud } = await B.cliente
     .from('auditorias')
@@ -110,6 +126,28 @@ try {
   ok(Boolean(errEntrada), 'ni el propio dueño sobrescribe la entrada original del auditor')
   const { error: errEv } = await A.cliente.from('ia_eventos').insert({ funcion: 'x', exito: true })
   ok(Boolean(errEv), 'un auditor no escribe en ia_eventos')
+
+  console.log('\n▸ Integridad')
+  const { data: propia } = await A.cliente.from('auditorias').insert({ user_id: A.id, codigo: `RLSA-${sello}`, titulo: 'Propia', alcance: 'PROCESOS', proceso: 'Urgencias' }).select().single()
+  const { error: errCita } = await A.cliente.from('hallazgos').insert({
+    auditoria_id: propia.id, user_id: A.id, entrada_auditor: 'x', clasificacion: 'FORTALEZA', justificacion: 'j',
+    hallazgo_corregido: 'h', criterio_requisito: 'c', evidencia: 'e',
+    criterios_citados: [{ criterio_id: '00000000-0000-4000-8000-000000000000', numeral: '99.9', documento: 'ISO 99999', verificado: true }],
+  })
+  ok(Boolean(errCita), 'no se pueden falsificar citas normativas «verificadas»')
+  const { data: hPropio } = await A.cliente.from('hallazgos').insert({
+    auditoria_id: propia.id, user_id: A.id, entrada_auditor: 'x', clasificacion: 'FORTALEZA', justificacion: 'j',
+    hallazgo_corregido: 'h', criterio_requisito: 'c', evidencia: 'e', creado_en: '2020-01-01T00:00:00Z',
+  }).select().single()
+  ok(hPropio && new Date(hPropio.creado_en).getFullYear() >= 2026, 'no se pueden antedatar registros')
+  const { error: errBorrar } = await A.cliente.from('hallazgos').delete().eq('id', hPropio.id)
+  const { data: existe } = await admin.from('hallazgos').select('id').eq('id', hPropio.id)
+  ok(existe?.length === 1, 'no se pueden borrar hallazgos, ni siquiera propios', errBorrar?.message ?? '')
+  const { error: errInfP } = await A.cliente.from('informes').insert({ auditoria_id: propia.id, user_id: A.id, resumen_ejecutivo: 'falso' })
+  ok(Boolean(errInfP), 'no se pueden falsificar informes (solo los genera el servidor)')
+  const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } })
+  const { data: anonCrit, error: errAnon } = await anon.from('criterios_normativos').select('id').limit(1)
+  ok(Boolean(errAnon) || !anonCrit?.length, 'un visitante anónimo no lee nada')
 
   console.log('\n▸ Criterios normativos')
   const { data: crit, error: errCrit } = await A.cliente.rpc('resumen_documentos')

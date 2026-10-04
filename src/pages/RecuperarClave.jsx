@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabaseSinConfigurar } from '../lib/supabase'
-import { fuerzaClave } from '../lib/esquemas'
+import { MINIMO_CLAVE, fuerzaClave, reglaClave } from '../lib/esquemas'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
 import { AvisoConfiguracion } from '../components/layout/AvisoConfiguracion'
 import { Boton, Campo } from '../components/ui'
@@ -19,7 +19,8 @@ export default function RecuperarClave() {
   if (supabaseSinConfigurar) return <AvisoConfiguracion />
 
   if (enRecuperacion) {
-    const errorLocal = clave && clave.length < 8 ? 'La contraseña debe tener al menos 8 caracteres' : confirmacion && clave !== confirmacion ? 'Las contraseñas no coinciden' : ''
+    const problemaClave = clave ? reglaClave.safeParse(clave).error?.issues[0]?.message ?? '' : ''
+    const errorLocal = problemaClave || (confirmacion && clave !== confirmacion ? 'Las contraseñas no coinciden' : '')
     return (
       <LayoutPublico titulo="Nueva contraseña" descripcion="Escribe la contraseña que usarás desde ahora.">
         <form
@@ -27,7 +28,7 @@ export default function RecuperarClave() {
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault()
-            if (clave.length < 8 || clave !== confirmacion) return
+            if (!reglaClave.safeParse(clave).success || clave !== confirmacion) return
             setEstado({ enviando: true, error: '' })
             const r = await cambiarClave(clave)
             if (r.error) setEstado({ enviando: false, error: r.error })
@@ -36,7 +37,7 @@ export default function RecuperarClave() {
         >
           {estado.error && <p role="alert" className="rounded-md border border-nc-borde bg-nc-bg px-3 py-2 text-sm text-nc-texto">{estado.error}</p>}
           <Campo etiqueta="Contraseña nueva" type="password" autoComplete="new-password" required value={clave} onChange={(e) => setClave(e.target.value)}
-            ayuda={clave ? `Seguridad: ${['muy débil', 'débil', 'aceptable', 'buena', 'fuerte'][fuerzaClave(clave)]}` : 'Mínimo 8 caracteres.'} />
+            ayuda={clave ? `Seguridad: ${['muy débil', 'débil', 'aceptable', 'buena', 'fuerte'][fuerzaClave(clave)]}` : `Mínimo ${MINIMO_CLAVE} caracteres, con mayúscula, minúscula y número.`} />
           <Campo etiqueta="Confirma la contraseña" type="password" autoComplete="new-password" required value={confirmacion}
             onChange={(e) => setConfirmacion(e.target.value)} error={errorLocal} />
           <Boton type="submit" cargando={estado.enviando} className="w-full">Guardar contraseña</Boton>

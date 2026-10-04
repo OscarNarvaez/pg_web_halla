@@ -48,7 +48,8 @@ const ok = (c, d, det = '') => {
 const perfil = {
   id: USUARIO, nombre_completo: 'Ana María Rodríguez Peña', cedula: '1085123456', celular: '3001234567', cargo: 'Auditora interna',
   equipo_auditor_nombre: 'Laura Gómez Ñáñez', equipo_auditor_cargo: 'Profesional de calidad', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
-  rol: 'auditor', creado_en: '2026-09-01T10:00:00Z', actualizado_en: '2026-09-01T10:00:00Z',
+  rol: 'auditor', aprobado: true, aprobado_en: '2026-09-02T10:00:00Z', acepto_tratamiento_datos_en: '2026-09-01T10:00:00Z',
+  creado_en: '2026-09-01T10:00:00Z', actualizado_en: '2026-09-01T10:00:00Z',
 }
 const ahora = new Date().toISOString()
 const db = {
@@ -249,6 +250,10 @@ console.log('\n▸ Páginas públicas')
 
   await p.goto(`${BASE}/registro`)
   await p.getByLabel('Correo electrónico').fill('ana@hila.test')
+  await p.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('corta123')
+  await p.getByLabel('Confirma la contraseña').fill('corta123')
+  await p.getByRole('button', { name: 'Continuar' }).click()
+  ok(await p.getByText('La contraseña debe tener al menos 10 caracteres').isVisible(), 'registro paso 1: exige la política de contraseñas')
   await p.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('Clave-Segura-2026')
   await p.getByLabel('Confirma la contraseña').fill('Otra-Clave-2026')
   await p.getByRole('button', { name: 'Continuar' }).click()
@@ -275,6 +280,7 @@ console.log('\n▸ Páginas públicas')
   ok((await p.getByRole('combobox', { name: 'Proceso', exact: true }).locator('option').count()) === 20, 'el selector de procesos ofrece los 19 procesos (+ opción vacía)')
   await p.getByRole('button', { name: 'Crear cuenta' }).click()
   ok(await p.getByText('Escribe el nombre de la persona del equipo auditor').isVisible() && await p.getByText('Elige el proceso que auditas').isVisible(), 'paso 3: exige equipo auditor y proceso')
+ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').isVisible(), 'paso 3: exige la autorización de tratamiento de datos (Ley 1581)')
   await p.screenshot({ path: `${CAPTURAS}02-registro-paso3.png`, fullPage: true })
   await ctx.close()
 }
@@ -284,7 +290,7 @@ console.log('\n▸ Aplicación (escritorio)')
 const ctx = await prepararContexto(navegador, { sesion: true })
 const p = await ctx.newPage()
 p.on('pageerror', (e) => errores.push(`app: ${e.message}`))
-p.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errores.push(`consola: ${m.text()}`))
+p.on('console', (m) => (m.type() === 'error' || /Content Security Policy/i.test(m.text())) && !/Failed to load resource/.test(m.text()) && errores.push(`consola: ${m.text()}`))
 
 await p.goto(`${BASE}/app`)
 await p.getByRole('heading', { name: /Hola, Ana/ }).waitFor()
@@ -409,6 +415,57 @@ await p.getByText('Propuesta de la IA').waitFor()
 ok((await p.getByLabel('Objetivo de la auditoría').inputValue()).includes('Cirugía'), 'la IA rellena el objetivo')
 await p.screenshot({ path: `${CAPTURAS}09-nueva-auditoria.png`, fullPage: true })
 await ctx.close()
+
+// ═══ 2b. Controles de acceso ═══
+console.log('\n▸ Controles de acceso')
+{
+  perfil.aprobado = false
+  const ctxP = await prepararContexto(navegador, { sesion: true })
+  const pp = await ctxP.newPage()
+  pp.on('console', (m) => /Content Security Policy/i.test(m.text()) && errores.push(`csp: ${m.text()}`))
+  await pp.goto(`${BASE}/app/auditorias/${A1}`)
+  await pp.getByRole('heading', { name: 'Tu cuenta está pendiente de aprobación' }).waitFor()
+  ok((await pp.getByRole('heading', { name: 'Auditoría interna al proceso de Urgencias' }).count()) === 0, 'una cuenta sin aprobar ve el aviso de pendiente y ningún dato')
+  await ctxP.close()
+  perfil.aprobado = true
+
+  perfil.rol = 'admin'
+  db.profiles.push({ ...perfil, id: '33333333-3333-4333-8333-333333333333', nombre_completo: 'Pedro Pendiente', cedula: '52111222', rol: 'auditor', aprobado: false, aprobado_en: null })
+  const ctxA = await prepararContexto(navegador, { sesion: true })
+  const pa = await ctxA.newPage()
+  await pa.route('https://demo.supabase.co/rest/v1/rpc/aprobar_auditor', async (r) => {
+    const { p_id, p_aprobado } = JSON.parse(r.request().postData())
+    const x = db.profiles.find((y) => y.id === p_id)
+    x.aprobado = p_aprobado
+    peticiones.push({ metodo: 'RPC', tabla: 'aprobar_auditor', cuerpo: { p_id, p_aprobado } })
+    await r.fulfill({ status: 204, body: '' })
+  })
+  await pa.goto(`${BASE}/app`)
+  await pa.getByRole('heading', { name: /Hola, Ana/ }).waitFor()
+  ok(await pa.getByRole('link', { name: 'Auditores' }).first().isVisible(), 'un admin ve el enlace «Auditores»')
+  await pa.goto(`${BASE}/app/admin/auditores`)
+  await pa.getByText('1 cuenta pendiente').waitFor()
+  await pa.getByRole('button', { name: 'Aprobar' }).click()
+  await pa.getByText('Cuenta de Pedro Pendiente aprobada').waitFor()
+  ok(peticiones.some((x) => x.tabla === 'aprobar_auditor' && x.cuerpo.p_aprobado === true), 'el admin aprueba cuentas con la función de la base de datos')
+  await pa.screenshot({ path: `${CAPTURAS}11-admin-auditores.png`, fullPage: true })
+  await ctxA.close()
+  perfil.rol = 'auditor'
+  db.profiles.splice(1)
+
+  const ctxN = await prepararContexto(navegador, { sesion: true })
+  const pn = await ctxN.newPage()
+  await pn.goto(`${BASE}/app`)
+  await pn.getByRole('heading', { name: /Hola, Ana/ }).waitFor()
+  ok((await pn.getByRole('link', { name: 'Auditores' }).count()) === 0, 'un auditor no ve el enlace de administración')
+  const meta = await pn.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')
+  ok(/script-src 'self'(;|$)/.test(meta) && /connect-src 'self' https:\/\/demo\.supabase\.co/.test(meta) && /object-src 'none'/.test(meta), 'la CSP solo permite scripts propios y conexiones al proyecto Supabase')
+  await pn.setContent(`<iframe src="${BASE}/" style="width:800px;height:400px"></iframe>`)
+  const marco = pn.frameLocator('iframe')
+  await marco.getByText('no se puede mostrar dentro de otro sitio').waitFor()
+  ok(true, 'dentro de un iframe la app se niega a mostrarse (clickjacking)')
+  await ctxN.close()
+}
 
 // ═══ 3. Móvil a 360 px ═══
 console.log('\n▸ Móvil (360 px)')
