@@ -20,7 +20,8 @@ const motor = JSON.parse(readFileSync(`${REPO}/scripts/fixtures/motor-casos.json
 
 // Compila con un Supabase ficticio (la red se intercepta en el navegador)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
-process.env.VITE_SUPABASE_URL = 'https://demo.supabase.co'
+// Con «\r\n» al final, como quedó la variable real en GitHub: el build debe normalizarla
+process.env.VITE_SUPABASE_URL = 'https://demo.supabase.co\r\n'
 process.env.VITE_SUPABASE_ANON_KEY = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ role: 'anon', exp: 9999999999 })}.firma`
 console.log('Compilando la app de prueba…')
 await build({ root: REPO, logLevel: 'error', build: { outDir: `${SALIDA}/dist`, emptyOutDir: true } })

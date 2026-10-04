@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Se limpian espacios, saltos de línea y la barra final: valores pegados en GitHub pueden traer «\r\n»
+const url = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim().replace(/\/+$/, '')
+const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
 
 /** true si faltan las variables de entorno de Supabase (la app muestra un aviso en lugar de romperse). */
 export const supabaseSinConfigurar = !url || !anonKey || url.includes('xxxxxxxx')

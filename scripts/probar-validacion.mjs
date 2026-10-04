@@ -8,6 +8,7 @@ import { MARCADOR_PENDIENTE } from '../supabase/functions/_shared/catalogos.ts'
 import { anonimizar } from '../supabase/functions/_shared/anonimizar.ts'
 import * as catalogosServidor from '../supabase/functions/_shared/catalogos.ts'
 import * as catalogosCliente from '../src/lib/catalogos.js'
+import { normalizarUrlSupabase, politicaCsp } from '../vite.csp.js'
 
 let fallos = 0
 const ok = (c, d, det = '') => {
@@ -130,6 +131,17 @@ ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosClient
 ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.DOCUMENTOS_POR_ALCANCE) === JSON.stringify(catalogosCliente.DOCUMENTOS_POR_ALCANCE), 'el mapa de documentos por alcance coincide')
 ok(catalogosServidor.MARCADOR_PENDIENTE === catalogosCliente.MARCADOR_PENDIENTE, 'el marcador de requisito pendiente es idéntico')
+
+console.log('\n▸ Content Security Policy')
+const REAL = 'https://obqkaegizxtbmdvcscdl.supabase.co'
+ok(normalizarUrlSupabase(`${REAL}\r\n`) === REAL, 'la URL con «\\r\\n» pegado desde GitHub se normaliza (el valor que rompió el registro)')
+ok(normalizarUrlSupabase(`  ${REAL}/ `) === REAL, 'quita espacios y la barra final')
+ok(normalizarUrlSupabase(undefined) === '' && normalizarUrlSupabase('') === '', 'sin variable no hay origen (la app muestra el aviso de configuración)')
+const lanza = (v) => { try { normalizarUrlSupabase(v); return false } catch { return true } }
+ok(lanza('http://obqkaegizxtbmdvcscdl.supabase.co') && lanza('obqkaegizxtbmdvcscdl') && lanza(`${REAL}/rest/v1`), 'una URL inválida hace fallar el build en vez de publicar un sitio roto')
+const csp = politicaCsp(normalizarUrlSupabase(`${REAL}\r\n`))
+ok(csp.includes(`connect-src 'self' ${REAL} wss://obqkaegizxtbmdvcscdl.supabase.co`), 'la CSP permite conectar con el proyecto Supabase', csp)
+ok(/script-src 'self';/.test(csp) && csp.includes("object-src 'none'"), 'la CSP solo permite scripts propios')
 
 console.log(fallos ? `\n✗ ${fallos} prueba(s) fallaron\n` : '\n✓ Validación verificada\n')
 process.exit(fallos ? 1 : 0)

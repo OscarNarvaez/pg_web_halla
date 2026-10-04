@@ -49,9 +49,17 @@ jobs:
           VITE_APP_URL: https://halla.ink
 
       - name: Verificar el artefacto
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
         run: |
           test -f dist/CNAME && grep -qx 'halla.ink' dist/CNAME
           test -f dist/404.html
+          # La CSP publicada debe permitir conectar con el proyecto Supabase (si no, nada funciona)
+          ORIGEN=$(printf '%s' "$VITE_SUPABASE_URL" | tr -d '\r\n ' | sed 's#/*$##')
+          if [ -n "$ORIGEN" ] && ! grep -o 'Content-Security-Policy[^>]*' dist/index.html | grep -qF "$ORIGEN"; then
+            echo "::error::La Content Security Policy de dist/index.html no incluye $ORIGEN"
+            exit 1
+          fi
           # La API key de Gemini jamás debe llegar al bundle (formatos AIza… y AQ.…)
           if grep -rqE 'AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z_-]{20,}' dist; then
             echo '::error::Se encontró una API key de Google en dist/'

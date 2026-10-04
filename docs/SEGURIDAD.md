@@ -138,6 +138,13 @@ iframe de otro sitio para engañar al usuario (*clickjacking*).
 **Verificación.** `pnpm probar:interfaz` falla ante cualquier violación de la CSP, incluida la exportación a
 PDF y Word, y comprueba el bloqueo en iframe.
 
+**Incidente posterior (4/10/2026).** La variable `VITE_SUPABASE_URL` de GitHub quedó con un `\r\n` al final
+(pegada desde el portapapeles). La primera versión de la CSP no reconoció el valor y publicó
+`connect-src 'self'` sin el proyecto Supabase, lo que bloqueó el registro. Corrección: `vite.csp.js`
+normaliza la URL, un valor inválido hace **fallar el build** en vez de publicar un sitio roto, y el CI
+verifica que la CSP publicada incluya el origen de Supabase. La prueba de interfaz compila con ese mismo
+valor sucio.
+
 ## S6 · Contraseñas débiles aceptadas por el servidor — Media
 
 **Problema.** El formulario exigía 8 caracteres, pero Supabase Auth aceptaba 6 (su valor por defecto):
