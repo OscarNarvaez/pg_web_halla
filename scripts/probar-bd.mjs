@@ -23,13 +23,14 @@ const perfil = (nombre, cedula, extra = {}) => ({
   celular: '3001234567',
   cargos: ['Auditor médico'],
   equipo_auditor: [{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }],
+  tipo_evaluador: 'AUDITORES_INTERNOS',
   alcance: 'PROCESOS',
   proceso: 'Urgencias',
   sistema: '',
   acepto_tratamiento_datos: 'true',
   ...extra,
 })
-const columnas = `(id, nombre_completo, cedula, celular, cargos, equipo_auditor, alcance, proceso`
+const columnas = `(id, nombre_completo, cedula, celular, cargos, equipo_auditor, tipo_evaluador, alcance, proceso`
 const EQUIPO = `'[{"nombre":"Otro Auditor","cargos":["Enfermera"]}]'`
 
 console.log('\n▸ Migraciones')
@@ -58,28 +59,28 @@ ok(sinPerfil.length === 0, 'una cédula inválida no hace fallar el registro: el
 
 const errCruzado = await falla(db.query(
   `insert into public.profiles ${columnas}, sistema, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias','Sistema de calidad', now())`, [C]))
+   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'AUDITORES_INTERNOS','PROCESOS','Urgencias','Sistema de calidad', now())`, [C]))
 ok(errCruzado?.includes('alcance_coherente'), 'el alcance obliga a elegir proceso O sistema, nunca ambos', errCruzado)
 const errCelular = await falla(db.query(
   `insert into public.profiles ${columnas}, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','300123','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias', now())`, [C]))
+   values ($1,'Carla Pérez','52123456','300123','{Auditor médico}',${EQUIPO},'AUDITORES_INTERNOS','PROCESOS','Urgencias', now())`, [C]))
 ok(errCelular?.includes('celular_valido'), 'el celular debe tener 10 dígitos', errCelular)
 
 console.log('\n▸ Fallback de perfil desde el cliente')
 const errOtroId = await falla(comoUsuario(db, como(C), (tx) => tx.query(
   `insert into public.profiles ${columnas}, acepto_tratamiento_datos_en)
-   values ($1,'Intruso','52000000','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias', now())`, [B])))
+   values ($1,'Intruso','52000000','3001234567','{Auditor médico}',${EQUIPO},'AUDITORES_INTERNOS','PROCESOS','Urgencias', now())`, [B])))
 ok(Boolean(errOtroId), 'un usuario no puede crear el perfil de otro')
 const errEscalada = await falla(comoUsuario(db, como(C), (tx) => tx.query(
   `insert into public.profiles ${columnas}, rol, aprobado, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias','admin', true, '2001-01-01')`, [C])))
+   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'AUDITORES_INTERNOS','PROCESOS','Urgencias','admin', true, '2001-01-01')`, [C])))
 const { rows: [carla] } = await db.query('select rol, aprobado, extract(year from acepto_tratamiento_datos_en) anio from public.profiles where id = $1', [C])
 ok(errEscalada === null && carla.rol === 'auditor' && carla.aprobado === false,
   'crearse el perfil como admin y ya aprobado: el servidor lo deja como auditor sin aprobar', errEscalada ?? JSON.stringify(carla))
 ok(Number(carla.anio) >= 2026, 'la fecha de autorización la fija el servidor (no se puede antedatar)', JSON.stringify(carla))
 const D = await registrarUsuario(db, 'd@hila.test', perfil('Dario', '99'))
 const errSinDatos = await falla(comoUsuario(db, como(D), (tx) => tx.query(
-  `insert into public.profiles ${columnas}) values ($1,'Dario Díaz','52123457','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias')`, [D])))
+  `insert into public.profiles ${columnas}) values ($1,'Dario Díaz','52123457','3001234567','{Auditor médico}',${EQUIPO},'AUDITORES_INTERNOS','PROCESOS','Urgencias')`, [D])))
 ok(errSinDatos?.includes('Ley 1581'), 'el perfil exige la autorización de tratamiento de datos', errSinDatos)
 
 console.log('\n▸ Cuenta sin aprobar (registro abierto)')
@@ -139,6 +140,17 @@ errCargo = await actualizarPerfilA(`equipo_auditor = '[{"nombre":"Laura Gómez",
 ok(errCargo?.includes('al menos un cargo'), 'cada integrante del equipo tiene al menos un cargo', errCargo)
 errCargo = await actualizarPerfilA(`equipo_auditor = '[{"nombre":"Lu","cargos":["Auxiliar"]}]'`)
 ok(errCargo?.includes('nombre de 3 a 120'), 'cada integrante del equipo tiene nombre', errCargo)
+const G = await registrarUsuario(db, 'g@hila.test', perfil('Gloria Sin Grupo', '1085222111', { tipo_evaluador: '' }))
+const { rows: sinPerfilG } = await db.query('select 1 from public.profiles where id = $1', [G])
+ok(sinPerfilG.length === 0, 'el registro exige elegir Auditores Internos o Auditores Externos (evaluador, 0010)')
+const H = await registrarUsuario(db, 'h@hila.test', perfil('Hugo Externo', '1085333222', { tipo_evaluador: 'AUDITORES_EXTERNOS' }))
+const { rows: [perfilH] } = await db.query('select tipo_evaluador from public.profiles where id = $1', [H])
+ok(perfilH?.tipo_evaluador === 'AUDITORES_EXTERNOS', 'un auditor externo queda registrado como tal', JSON.stringify(perfilH))
+const errEvaluador = await actualizarPerfilA(`tipo_evaluador = null`)
+ok(errEvaluador?.includes('Auditores Internos o a los Auditores Externos'), 'no se puede dejar el perfil sin evaluador', errEvaluador)
+const errEvaluadorOk = await actualizarPerfilA(`tipo_evaluador = 'AUDITORES_EXTERNOS'`)
+ok(errEvaluadorOk === null, 'el auditor puede cambiar su grupo de evaluador', errEvaluadorOk)
+await actualizarPerfilA(`tipo_evaluador = 'AUDITORES_INTERNOS'`)
 const { rows: columnasViejas } = await db.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name in ('cargo', 'equipo_auditor_nombre', 'equipo_auditor_cargo')`)
 ok(columnasViejas.length === 0, 'ya no existen el cargo escrito a mano ni el equipo de una sola persona')
 
@@ -155,6 +167,12 @@ const { rows: [audA] } = await comoUsuario(db, como(A), (tx) => tx.query(
   `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso, creado_en) values ($1,'AI-2026-001','Auditoría de urgencias','PROCESOS','Urgencias','2020-01-01') returning id, creado_en`, [A]))
 ok(Boolean(audA?.id), 'el auditor aprobado crea su auditoría')
 ok(new Date(audA.creado_en).getFullYear() >= 2026, 'la fecha de creación la fija el servidor (no se puede antedatar)')
+const fijarFechasReales = (inicio, fin) => falla(comoUsuario(db, como(A), (tx) => tx.query(
+  `update public.auditorias set fecha_inicio_real = $2, fecha_fin_real = $3 where id = $1`, [audA.id, inicio, fin])))
+const errFechasReales = await fijarFechasReales('2026-10-10', '2026-10-01')
+ok(errFechasReales?.includes('fechas_reales_coherentes'), 'la terminación real no puede ser anterior al inicio real (0010)', errFechasReales)
+const errFechasRealesOk = await fijarFechasReales('2026-10-01', '2026-10-03')
+ok(errFechasRealesOk === null, 'el auditor registra las fechas reales de su auditoría', errFechasRealesOk)
 const errAudAjena = await falla(comoUsuario(db, como(B), (tx) => tx.query(
   `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso) values ($1,'AI-2026-002','Falsa','PROCESOS','Urgencias')`, [A])))
 ok(Boolean(errAudAjena), 'B no puede crear auditorías a nombre de A')
@@ -352,13 +370,14 @@ console.log('\n▸ Perfiles existentes al aplicar la 0009 (cargo escrito a mano 
   const coincide = await registrarUsuario(vieja, 'v1@hila.test', meta('Vera Vieja', '1085000001', '  auditor MEDICO ', 'Laura Gómez', 'enfermeria'))
   const libre = await registrarUsuario(vieja, 'v2@hila.test', meta('Victor Viejo', '1085000002', 'Auditor interno', 'Pedro Pérez', 'Profesional de calidad'))
   await aplicarMigraciones(vieja, { desde: '0009', silencioso: true })
-  const { rows } = await vieja.query('select id, cargos, equipo_auditor from public.profiles')
+  const { rows } = await vieja.query('select id, cargos, equipo_auditor, tipo_evaluador from public.profiles')
   const v1 = rows.find((r) => r.id === coincide)
   const v2 = rows.find((r) => r.id === libre)
   ok(JSON.stringify(v1?.cargos) === '["Auditor médico"]' && v1?.equipo_auditor[0]?.nombre === 'Laura Gómez' && JSON.stringify(v1?.equipo_auditor[0]?.cargos) === '["Enfermería"]',
     'un cargo escrito que coincide con la lista (sin importar mayúsculas ni tildes) se conserva', JSON.stringify(v1))
   ok(JSON.stringify(v2?.cargos) === '[]' && v2?.equipo_auditor[0]?.nombre === 'Pedro Pérez' && JSON.stringify(v2?.equipo_auditor[0]?.cargos) === '[]',
     'si no coincide, el perfil queda sin cargos (la app pide completarlo) y conserva el nombre del compañero', JSON.stringify(v2))
+  ok(rows.every((r) => !('tipo_evaluador' in r) || r.tipo_evaluador === null), 'los perfiles anteriores quedan sin evaluador (la app pide completarlo)')
   const errAprobarViejo = await falla(vieja.query('update public.profiles set aprobado = true where id = $1', [libre]))
   ok(errAprobarViejo === null, 'un perfil anterior sin cargos se puede seguir aprobando', errAprobarViejo)
   await vieja.close()

@@ -15,7 +15,7 @@ export async function baseConNormas() {
   const db = await crearBaseLocal({ silencioso: true })
   const auditorId = await registrarUsuario(db, 'auditor@prueba.halla.ink', {
     nombre_completo: 'Auditor de prueba', cedula: '1000000001', celular: '3000000001', cargos: ['Auditor médico'],
-    equipo_auditor: [{ nombre: 'Equipo de prueba', cargos: ['Auxiliar'] }], alcance: 'PROCESOS',
+    equipo_auditor: [{ nombre: 'Equipo de prueba', cargos: ['Auxiliar'] }], tipo_evaluador: 'AUDITORES_INTERNOS', alcance: 'PROCESOS',
     proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
   })
   await db.query('update public.profiles set aprobado = true where id = $1', [auditorId])

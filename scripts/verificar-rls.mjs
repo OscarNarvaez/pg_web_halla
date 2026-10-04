@@ -39,6 +39,7 @@ async function crearUsuario(letra, cedula) {
       celular: '3001234567',
       cargos: ['Auditor médico'],
       equipo_auditor: [{ nombre: 'Acompañante de prueba', cargos: ['Auxiliar'] }],
+      tipo_evaluador: 'AUDITORES_INTERNOS',
       alcance: 'PROCESOS',
       proceso: 'Urgencias',
       sistema: '',
