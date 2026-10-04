@@ -77,6 +77,17 @@ export async function invocarFuncion(nombre, cuerpo) {
   const { data, error } = await supabase.functions.invoke(nombre, { body: cuerpo })
   if (!error) return { data, error: null }
 
+  // La petición ni siquiera llegó (CORS o red). Las funciones solo aceptan el origen https://halla.ink:
+  // si el sitio se abrió por http:// (HTTPS aún no activo), el navegador bloquea la respuesta.
+  if (error.name === 'FunctionsFetchError') {
+    const { protocol, hostname } = window.location
+    const local = hostname === 'localhost' || hostname === '127.0.0.1'
+    if (protocol === 'http:' && !local) {
+      return { data: null, error: { mensaje: 'Por seguridad, la IA solo funciona con conexión cifrada (https://). Abre la plataforma con https:// o, si aún no está disponible, avísale al administrador.' } }
+    }
+    return { data: null, error: { mensaje: 'No se pudo contactar el servicio de IA. Revisa tu conexión a internet e inténtalo de nuevo.' } }
+  }
+
   // FunctionsHttpError trae la respuesta original en error.context
   let estado
   let mensaje = 'No se pudo completar la solicitud. Inténtalo de nuevo.'
