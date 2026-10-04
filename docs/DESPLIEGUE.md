@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las siete migraciones (la 0007 trae riesgo, controles y la matriz).
+- [ ] `supabase db push` aplicó las ocho migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -309,7 +309,7 @@ como un error 400 o 404 de Supabase, y la app avisa «La base de datos de la pla
 **Actualización del asistente de 7 pasos, riesgo y matriz (4/10/2026):**
 
 ```bash
-supabase db push                                                      # 0007_riesgo_controles_matriz.sql
+supabase db push                                                      # 0007 y 0008
 supabase secrets set GEMINI_MAX_OUTPUT_TOKENS=8192 PROMPT_VERSION=1.1.0
 supabase functions deploy clasificar-hallazgo generar-informe
 git push origin main

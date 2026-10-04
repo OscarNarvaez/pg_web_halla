@@ -4,9 +4,9 @@ import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Send, Shi
 import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { useToast } from '../contexts/ToastContext'
-import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
+import { invocarFuncion } from '../lib/supabase'
 import { CLASIFICACIONES, objetoAuditado } from '../lib/catalogos'
-import { conteoPorCasilla, umbralesDe } from '../lib/riesgo'
+import { conteoPorCasilla } from '../lib/riesgo'
 import { cx } from '../lib/cx'
 import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
@@ -42,7 +42,7 @@ export default function HallazgoNuevo() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { notificar } = useToast()
-  const { datos: auditoria, setDatos: setAuditoria, cargando, error: errorAuditoria, recargar } = useAuditoria(id)
+  const { datos: auditoria, cargando, error: errorAuditoria, recargar } = useAuditoria(id)
   const { datos: deLaAuditoria } = useHallazgos(id)
 
   const [paso, setPaso] = useState(1)
@@ -76,7 +76,6 @@ export default function HallazgoNuevo() {
   const errorTexto = tocado && largo < MINIMO
     ? `Describe la situación con al menos ${MINIMO} caracteres.`
     : largo > MAXIMO ? `El texto supera los ${MAXIMO.toLocaleString('es-CO')} caracteres: recórtalo o divídelo en varios hallazgos.` : ''
-  const umbrales = umbralesDe(auditoria)
   const h = hallazgos[indice]
 
   const analizar = async () => {
@@ -172,14 +171,6 @@ export default function HallazgoNuevo() {
     if (reanalizar) return analizar()
     setFase('inicio')
     notificar('Resultado descartado. Tu texto sigue aquí por si quieres reescribirlo.', 'info')
-  }
-
-  const guardarUmbrales = async (nuevos) => {
-    const { data, error: err } = await supabase.from('auditorias').update({ umbrales_riesgo: nuevos }).eq('id', id).select().single()
-    if (err) return mensajeError(err)
-    setAuditoria(data)
-    notificar('Escala de niveles actualizada para toda la auditoría', 'exito')
-    return ''
   }
 
   const pasoActual = PASOS[paso - 1]
@@ -348,15 +339,13 @@ export default function HallazgoNuevo() {
                 key={h.id}
                 hallazgo={h}
                 alCambiar={cambiar}
-                umbrales={umbrales}
                 conteo={conteo}
                 propuesta={propuestas[indice]}
-                alGuardarUmbrales={guardarUmbrales}
                 deshabilitado={guardando}
               />
             )}
             {paso === 6 && <PasoControles key={h.id} hallazgo={h} alCambiar={cambiar} deshabilitado={guardando} />}
-            {paso === 7 && <PasoEnviar hallazgos={hallazgos} umbrales={umbrales} alCorregir={corregir} />}
+            {paso === 7 && <PasoEnviar hallazgos={hallazgos} alCorregir={corregir} />}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-tinta-100 p-5">

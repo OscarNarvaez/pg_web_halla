@@ -73,7 +73,7 @@ const db = {
     id: A1, user_id: USUARIO, codigo: 'AI-2026-001', titulo: 'Auditoría interna al proceso de Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
     objetivo: 'Evaluar el cumplimiento de los requisitos aplicables al proceso de Urgencias del Hospital Infantil Los Ángeles.',
     criterios: ['NTC-ISO 9001:2015', 'PR13-GQ', 'ISO 19011'], area_auditada: 'Servicio de Urgencias', auditado_nombre: 'Jorge Muñoz', auditado_cargo: 'Coordinador de Urgencias',
-    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', estado: 'en_curso', umbrales_riesgo: { bajo: 4, moderado: 9, alto: 16 },
+    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', estado: 'en_curso',
     creado_en: '2026-10-01T08:00:00Z', actualizado_en: ahora,
   }],
   hallazgos: [],
@@ -466,6 +466,9 @@ await p.getByRole('button', { name: 'Siguiente: riesgo' }).click()
 await p.getByRole('heading', { name: '5. Riesgo' }).waitFor()
 ok(await p.getByText('Alto (12)').first().isVisible(), 'paso 5: la IA propone P3 × I4 y la aplicación calcula el nivel (Alto, 12)')
 ok(await p.getByText('Mapa de calor 5 × 5').isVisible() && (await p.locator('figure table td').count()) === 25 + 1, 'mapa de calor 5 × 5 con su escala')
+const escalaFija = async () => (await p.getByText(/Escala de niveles/).count()) === 0 && (await p.locator('input[type="number"]').count()) === 0
+  && /Bajo 1–4 .*Moderado 5–9 .*Alto 10–16 .*Extremo 17–25/.test((await p.getByRole('list', { name: 'Niveles de riesgo' }).innerText()).replace(/\s+/g, ' '))
+ok(await escalaFija(), 'la escala de niveles es fija (Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25) y no se puede editar')
 await p.getByRole('button', { name: /^Probabilidad 4 \(Probable\) × impacto 4/ }).click()
 await p.getByText('Alto (16)').first().waitFor()
 const grupoP = p.getByRole('group', { name: /^Probabilidad \(1 a 5/ })
@@ -500,6 +503,7 @@ await p.getByRole('heading', { name: 'Matriz consolidada' }).waitFor()
 const filasMatriz = p.locator('table').filter({ has: p.locator('caption', { hasText: 'Matriz consolidada de hallazgos' }) }).locator('tbody tr')
 await filasMatriz.nth(4).waitFor()
 ok((await filasMatriz.count()) === 5, 'la matriz lista los 5 hallazgos vigentes')
+ok(await escalaFija(), 'en la matriz tampoco se puede editar la escala de niveles')
 ok((await p.locator('thead th').allTextContents()).join('|') === 'ID|Clasificación|Norma y numeral|Evidencia|Riesgo|Hallazgo|Evaluación|Controles|Estado', 'columnas: ID, clasificación, norma y numeral, evidencia, riesgo, hallazgo, evaluación, controles y estado')
 await p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()
 const aviso1 = p.getByRole('dialog', { name: 'La matriz aún no se ha validado' })

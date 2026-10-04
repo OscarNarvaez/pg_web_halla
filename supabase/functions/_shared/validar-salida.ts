@@ -448,7 +448,7 @@ export function escala15(valor: unknown): number | null {
 
 /**
  * Valida el riesgo y los controles propuestos. La FORTALEZA no lleva ni lo uno ni lo otro. El nivel del
- * riesgo NO lo decide la IA: lo calcula la aplicación con probabilidad × impacto y los umbrales.
+ * riesgo NO lo decide la IA: lo calcula la aplicación con probabilidad × impacto y la escala fija.
  */
 export function validarRiesgoYControles(h: HallazgoIA, entrada: string, entregados: Criterio[], verificadas: CitaVerificada[]) {
   const avisos: string[] = []

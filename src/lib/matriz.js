@@ -25,7 +25,7 @@ export function textoControles(h) {
 }
 
 /** Filas de la matriz en el mismo orden y con los mismos textos que la pantalla. */
-export function filasMatriz(hallazgos, umbrales) {
+export function filasMatriz(hallazgos) {
   return hallazgos.map((h) => [
     idHallazgo(h),
     CLASIFICACIONES[h.clasificacion].etiqueta,
@@ -33,7 +33,7 @@ export function filasMatriz(hallazgos, umbrales) {
     h.evidencia,
     textoRiesgo(h),
     h.hallazgo_corregido,
-    h.clasificacion === 'FORTALEZA' ? 'No aplica' : describirEvaluacion(h, umbrales),
+    h.clasificacion === 'FORTALEZA' ? 'No aplica' : describirEvaluacion(h),
     textoControles(h),
     ESTADOS_HALLAZGO[h.estado],
   ])

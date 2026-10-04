@@ -240,7 +240,7 @@ export const TIPOS_CONTROL = ['PREVENTIVO', 'CORRECTIVO']
 
 export const ETIQUETAS_CONTROL = { PREVENTIVO: 'Preventivo', CORRECTIVO: 'Correctivo' }
 
-/** Valores de referencia editables por auditoría (columna auditorias.umbrales_riesgo). */
+/** Escala FIJA de niveles (puntaje máximo de Bajo, Moderado y Alto; por encima, Extremo). No es editable: decisión del dueño. */
 export const UMBRALES_RIESGO = { bajo: 4, moderado: 9, alto: 16 }
 
 // Zonas del PR13_GQ y la acción a tomar en cada una. La nota del PR13 («no puede haber aceptación de riesgos

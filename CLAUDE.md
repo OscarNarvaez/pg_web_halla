@@ -63,7 +63,7 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
 - `scripts/fixtures/motor-casos.json`: salidas reales del motor, usadas por la prueba de interfaz. Si cambia el
   mensaje o el esquema de salida, regenéralo con `pnpm probar:motor -- --md scripts/fixtures/motor-casos.json`.
 - `src/components/hallazgos/asistente/`: los pasos del asistente; `TarjetaResultado` los reúne para el modal.
-- `src/components/riesgo/`: mapa de calor, selector de escala, nivel y umbrales. `src/lib/matriz.js`: textos de la
+- `src/components/riesgo/`: mapa de calor, selector de escala y nivel. `src/lib/matriz.js`: textos de la
   matriz (pantalla y Excel); `src/lib/exportar-matriz.js` se importa bajo demanda.
 
 ## Decisiones tomadas (no re-litigar sin el dueño)
@@ -77,7 +77,8 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   exige riesgo completo y un control adoptado (`faltantesParaValidar` en `src/lib/riesgo.js`). Editar un
   validado lo devuelve a pendiente en el servidor (trigger `proteger_hallazgo`).
 - Riesgo: la IA propone probabilidad e impacto (1 a 5, escalas del PR13 en `catalogos`); el NIVEL lo calcula el
-  código con `auditorias.umbrales_riesgo` (por defecto 4/9/16). La metodología va en el mensaje de usuario
+  código con la escala FIJA `UMBRALES_RIESGO` (Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25). La escala
+  de niveles NO es editable (decisión del dueño): no agregues campos ni columnas para cambiarla. La metodología va en el mensaje de usuario
   (`bloqueRiesgo()` en `motor.ts`), nunca en el prompt del sistema. Colores de zona en `COLORES_ZONA`,
   validados con el skill dataviz para deuteranopía.
 - Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).

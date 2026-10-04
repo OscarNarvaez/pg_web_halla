@@ -19,7 +19,7 @@ function Seccion({ titulo, children }) {
  * controles), editables en el sitio. Se usa al ver un hallazgo guardado desde el detalle o la matriz.
  * La clasificación la decidió la IA; el auditor solo puede corregirla después, de forma explícita.
  */
-export function TarjetaResultado({ hallazgo, alCambiar, umbrales, conteo, deshabilitado = false }) {
+export function TarjetaResultado({ hallazgo, alCambiar, conteo, deshabilitado = false }) {
   const tono = CLASIFICACIONES[hallazgo.clasificacion]?.tono
   return (
     <article
@@ -29,7 +29,7 @@ export function TarjetaResultado({ hallazgo, alCambiar, umbrales, conteo, deshab
       <Seccion titulo="Clasificación"><PasoClasificacion hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
       <Seccion titulo="Redacción"><PasoRedaccion hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
       <Seccion titulo="Norma, numeral y requisito"><PasoRequisito hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
-      <Seccion titulo="Riesgo"><PasoRiesgo hallazgo={hallazgo} alCambiar={alCambiar} umbrales={umbrales} conteo={conteo} deshabilitado={deshabilitado} /></Seccion>
+      <Seccion titulo="Riesgo"><PasoRiesgo hallazgo={hallazgo} alCambiar={alCambiar} conteo={conteo} deshabilitado={deshabilitado} /></Seccion>
       <Seccion titulo="Controles"><PasoControles hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
     </article>
   )

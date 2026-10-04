@@ -142,9 +142,8 @@ El **mapa de calor 5 × 5** muestra en cada casilla el puntaje y el nivel; el c�
 hallazgos de la auditoría están en esa casilla, y el borde grueso marca el hallazgo actual. Puede hacer clic
 en una casilla para elegir la probabilidad y el impacto a la vez.
 
-Los cortes entre niveles (por defecto: Bajo hasta 4, Moderado hasta 9, Alto hasta 16) son valores de
-referencia: si la matriz de riesgos del hospital usa otros, cámbielos en **Escala de niveles de la
-auditoría**. Aplican a toda la auditoría.
+La escala de niveles es **fija** y no se puede editar: **Bajo** de 1 a 4, **Moderado** de 5 a 9, **Alto** de
+10 a 16 y **Extremo** de 17 a 25. Es la misma para todas las auditorías.
 
 Una **fortaleza** no lleva riesgo ni controles.
 
@@ -234,7 +233,7 @@ Para corregir un hallazgo, haga clic en su ID (H-01…): se abre con todos sus p
 - Si alguno tiene **Se sugiere hacer cambios**, tampoco se descarga: el aviso muestra cuáles y sus notas.
 
 El archivo se llama `Matriz_<código>_<AAAAMMDD>.xlsx` e incluye las mismas columnas, el color del nivel de
-riesgo y la escala de niveles usada.
+riesgo y la escala de niveles.
 
 ## 7. Generar el informe
 

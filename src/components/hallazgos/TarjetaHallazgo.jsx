@@ -18,10 +18,10 @@ function Accion({ icono: Icono, children, ...resto }) {
 }
 
 /** Fila de la lista de hallazgos de una auditoría. */
-export function TarjetaHallazgo({ hallazgo: h, umbrales, alVer, alValidar, alDescartar, alRestaurar, alDuplicar }) {
+export function TarjetaHallazgo({ hallazgo: h, alVer, alValidar, alDescartar, alRestaurar, alDuplicar }) {
   const tono = CLASIFICACIONES[h.clasificacion]?.tono
   const descartado = h.estado === 'descartado'
-  const riesgo = evaluarRiesgo(h, umbrales)
+  const riesgo = evaluarRiesgo(h)
   return (
     <article
       className={cx('rounded-lg border border-tinta-100 bg-white p-4 shadow-sm sm:p-5', descartado && 'opacity-60')}

@@ -8,7 +8,7 @@ import { BadgeClasificacion } from '../BadgeClasificacion'
  * Paso 7: resumen de lo que se envía a la matriz consolidada. Los hallazgos llegan como «Pendiente»: el
  * auditor los valida en la matriz, y solo con todos validados se puede descargar.
  */
-export function PasoEnviar({ hallazgos, umbrales, alCorregir }) {
+export function PasoEnviar({ hallazgos, alCorregir }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-tinta-700">
@@ -17,7 +17,7 @@ export function PasoEnviar({ hallazgos, umbrales, alCorregir }) {
       </p>
       <ul className="space-y-3">
         {hallazgos.map((h, i) => {
-          const e = evaluarRiesgo(h, umbrales)
+          const e = evaluarRiesgo(h)
           const faltan = faltantesParaValidar(h)
           return (
             <li key={h.id ?? i} className="rounded-lg border border-tinta-100 bg-white p-4">

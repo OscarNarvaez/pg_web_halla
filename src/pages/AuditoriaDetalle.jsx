@@ -7,7 +7,7 @@ import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo, duplicarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { CLASIFICACIONES, ESTADOS_AUDITORIA, ESTADOS_HALLAZGO, ORDEN_INFORME, TONOS, objetoAuditado } from '../lib/catalogos'
 import { fechaLarga } from '../lib/formato'
-import { conteoPorCasilla, faltantesParaValidar, umbralesDe } from '../lib/riesgo'
+import { conteoPorCasilla, faltantesParaValidar } from '../lib/riesgo'
 import { mensajeError, supabase } from '../lib/supabase'
 import { cx } from '../lib/cx'
 import { Encabezado } from '../components/layout/Encabezado'
@@ -53,7 +53,6 @@ export default function AuditoriaDetalle() {
   if (!auditoria.datos) return <EstadoVacio titulo="Auditoría no encontrada" descripcion="No existe o no tienes acceso a ella." accion={<BotonEnlace a="/app/auditorias" variante="secundario">Ver mis auditorías</BotonEnlace>} />
   const a = auditoria.datos
   const cerrada = a.estado === 'cerrada'
-  const umbrales = umbralesDe(a)
 
   const reemplazar = (nuevo) => {
     setHallazgos((lista) => lista.map((h) => (h.id === nuevo.id ? nuevo : h)))
@@ -191,7 +190,6 @@ export default function AuditoriaDetalle() {
             <TarjetaHallazgo
               key={h.id}
               hallazgo={h}
-              umbrales={umbrales}
               alVer={setAbierto}
               alValidar={validar}
               alDescartar={(x) => actualizar(x, { estado: 'descartado' }, 'Hallazgo descartado')}
@@ -208,7 +206,6 @@ export default function AuditoriaDetalle() {
         alCambiar={editar}
         alValidar={validar}
         guardando={guardando}
-        umbrales={umbrales}
         conteo={conteoMapa}
       />
     </>

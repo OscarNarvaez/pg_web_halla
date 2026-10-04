@@ -13,7 +13,7 @@ Lo único que no interviene es la capa HTTP de Supabase (JWT, RLS y persistencia
 - Cascada de modelos: `gemini-3.8-flash` → `gemini-flash-latest` → `gemini-3.7-flash` → `gemini-3.6-flash` → `gemini-3.5-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`
 - Contexto: alcance `PROCESOS`, auditoría `AI-2026-001`, fecha `2026-10-03`.
 - El modelo principal respondió con 503 (alta demanda) en varios casos y `gemini-flash-latest` agotó su cuota diaria en el caso 6, así que respondieron los de respaldo. Cada caso indica cuál.
-- Los niveles de riesgo usan los umbrales por defecto (Bajo ≤ 4, Moderado ≤ 9, Alto ≤ 16).
+- Los niveles de riesgo usan la escala fija (Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25).
 
 ## Resumen
 
@@ -46,7 +46,7 @@ Lo único que no interviene es la capa HTTP de Supabase (JWT, RLS y persistencia
 - **Evidencia:** Ausencia del registro de la valoración de enfermería en 5 de 20 historias clínicas revisadas durante la auditoría.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 4.4.2 — Sistema de gestión de la calidad y sus procesos
 - **Riesgo (V7):** Posibilidad de fallas en la continuidad del cuidado o eventos adversos debido a la ausencia del registro de la valoración de enfermería en la historia clínica, lo que podría ocasionar un deterioro de severidad moderada en el estado de salud del paciente.
-  - Dimensión: Calidad en la atención y seguridad del paciente · probabilidad 3 (Posible) × impacto 3 (Moderado) = 9, nivel **Moderado** con los umbrales por defecto
+  - Dimensión: Calidad en la atención y seguridad del paciente · probabilidad 3 (Posible) × impacto 3 (Moderado) = 9, nivel **Moderado**
   - Justificación: Se estima una probabilidad posible (3) dado que la omisión se detectó en el 25% de la muestra evaluada (5 de 20 casos). El impacto se valora como moderado (3) puesto que la falta de información clínica clave puede derivar en decisiones de cuidado inadecuadas que afecten transitoriamente la salud del paciente hospitalizado.
 - **Control preventivo propuesto:** La Coordinación de Enfermería debe realizar auditorías mensuales de adherencia al diligenciamiento completo y oportuno de la valoración de enfermería en historias clínicas. *(con criterio verificado)*
 - **Control correctivo propuesto:** El personal de enfermería responsable de los 5 casos identificados debe revisar y registrar de manera extemporánea o complementaria la valoración del estado de los pacientes, dejando constancia de la trazabilidad y justificación en el sistema clínico. *(con criterio verificado)*
@@ -98,7 +98,7 @@ Verificaciones:
 - **Evidencia:** Registros del proceso completamente diligenciados que presentan algunas firmas con baja legibilidad.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 7.5.3 — Control de la información documentada
 - **Riesgo (V7):** Posibilidad de pérdida de trazabilidad en la atención clínica debido a la baja legibilidad en las firmas de los registros, lo que podría dificultar la identificación inequívoca del profesional tratante ante requerimientos asistenciales o legales.
-  - Dimensión: Prestación del servicio · probabilidad 3 (Posible) × impacto 2 (Menor) = 6, nivel **Moderado** con los umbrales por defecto
+  - Dimensión: Prestación del servicio · probabilidad 3 (Posible) × impacto 2 (Menor) = 6, nivel **Moderado**
   - Justificación: Se estima una probabilidad posible (3) al evidenciarse en varios registros evaluados durante la auditoría. El impacto se califica como menor (2), dado que los registros se encuentran completos y la afectación generaría eventuales reprocesos de validación interna sin suspender ni comprometer directamente la prestación del servicio.
 - **Control preventivo propuesto:** La coordinación de Consulta externa debe socializar con el equipo de salud la directriz sobre el registro claro de firmas acompañado de sello, código o posfirma legible en los formatos asistenciales. *(con criterio verificado)*
 - **Control preventivo propuesto:** El líder del proceso de Consulta externa debe realizar auditorías mensuales de adherencia al diligenciamiento y preservación de la legibilidad de la información documentada. *(con criterio verificado)*
@@ -126,7 +126,7 @@ Verificaciones:
 - **Evidencia:** El registro de asistencia se realiza de manera conforme y controlada a través de formato físico.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 7.5.3 — Control de la información documentada
 - **Riesgo (V7):** Posibilidad de reprocesos o demoras en la consolidación de datos debido al diligenciamiento exclusivamente manual en papel, lo que podría generar demoras en los análisis y reportes del proceso.
-  - Dimensión: Prestación del servicio · probabilidad 2 (Improbable) × impacto 1 (Insignificante) = 2, nivel **Bajo** con los umbrales por defecto
+  - Dimensión: Prestación del servicio · probabilidad 2 (Improbable) × impacto 1 (Insignificante) = 2, nivel **Bajo**
   - Justificación: Dado que el registro se efectúa correctamente, demoras sustanciales son poco frecuentes (improbable), y la persistencia del medio físico no compromete la atención ni afecta la prestación del servicio asistencial (insignificante).
 - **Control preventivo propuesto:** Evaluar e implementar un mecanismo digitalizado para la captura y consolidación de la asistencia en las actividades de Gestión humana por parte de la coordinación del área. *(con criterio verificado)*
 
@@ -153,7 +153,7 @@ Verificaciones:
 - **Evidencia:** Ausencia de registro de decisiones y acciones relacionadas con las oportunidades de mejora dentro de las salidas de la revisión por la dirección.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 9.3.3 — Salidas de la revisión por la dirección
 - **Riesgo (V7):** Posibilidad de estancamiento o pérdida de eficacia del sistema de gestión de la calidad debido a la omisión de decisiones y acciones estratégicas sobre las oportunidades de mejora en la revisión por la dirección, lo que podría generar reprocesos e ineficiencias en la gestión institucional.
-  - Dimensión: Prestación del servicio · probabilidad 2 (Improbable) × impacto 2 (Menor) = 4, nivel **Bajo** con los umbrales por defecto
+  - Dimensión: Prestación del servicio · probabilidad 2 (Improbable) × impacto 2 (Menor) = 4, nivel **Bajo**
   - Justificación: La revisión por la dirección se ejecuta habitualmente de manera anual o periódica, haciendo que el evento sea poco frecuente (Improbable = 2). La falta de definición de estas decisiones puede ocasionar reprocesos en la gestión gerencial sin suspender la prestación directa de servicios de salud (Menor = 2).
 - **Control correctivo propuesto:** La Gerencia y el área de Gestión de Calidad deben actualizar el acta o informe de la revisión por la dirección incorporando formalmente las decisiones y acciones tomadas frente a las oportunidades de mejora identificadas. *(con criterio verificado)*
 - **Control preventivo propuesto:** El área de Gestión de Calidad debe implementar una lista de verificación previa al cierre de cada revisión por la dirección que valide la inclusión de todas las salidas obligatorias del estándar. *(con criterio verificado)*
@@ -182,7 +182,7 @@ Verificaciones:
 - **Evidencia:** Durante la auditoría se constató que el parqueadero destinado para visitantes cuenta con una capacidad reducida y alcanza su ocupación máxima los días viernes.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 7.1.3 — Infraestructura
 - **Riesgo (V7):** Posibilidad de inconformidad o congestión vehicular en el acceso debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar la percepción de satisfacción y la imagen institucional.
-  - Dimensión: Reputacional (imagen) · probabilidad 4 (Probable) × impacto 1 (Insignificante) = 4, nivel **Bajo** con los umbrales por defecto
+  - Dimensión: Reputacional (imagen) · probabilidad 4 (Probable) × impacto 1 (Insignificante) = 4, nivel **Bajo**
   - Justificación: La saturación se presenta de forma recurrente semanalmente (probable), pero su impacto en la imagen hospitalaria es mínimo e insignificante al tratarse de un servicio complementario.
 - **Control preventivo propuesto:** El área de Gestión de recursos físicos realizará un estudio de capacidad y rotación vehicular para implementar planes de contingencia o convenios de parqueo en días de alta demanda. *(con criterio verificado)*
 
@@ -213,7 +213,7 @@ Verificaciones:
 - **Evidencia:** Extintor ubicado en el área de urgencias con fecha de vencimiento expirada.
 - **Citas verificadas (V1):** NTC-ISO 9001:2015 8.5.1 — Control de la producción y de la provisión del servicio
 - **Riesgo (V7):** Posibilidad de inoperatividad de los equipos de extinción de incendios debido a la falta de mantenimiento y recarga oportuna del extintor, lo que podría comprometer la seguridad de los pacientes y colaboradores ante una emergencia de conato de incendio.
-  - Dimensión: Calidad en la atención y seguridad del paciente · probabilidad 3 (Posible) × impacto 4 (Mayor) = 12, nivel **Alto** con los umbrales por defecto
+  - Dimensión: Calidad en la atención y seguridad del paciente · probabilidad 3 (Posible) × impacto 4 (Mayor) = 12, nivel **Alto**
   - Justificación: El vencimiento del extintor en un área crítica como urgencias genera un riesgo directo sobre la seguridad de pacientes y personal ante un evento de fuego; la probabilidad es posible por falta de seguimiento en las fechas de recarga.
 - **Control correctivo propuesto:** Realizar la recarga y sustitución inmediata del extintor vencido en el área de urgencias. *(con criterio verificado)*
 - **Control preventivo propuesto:** Establecer un programa periódico de inspección y cronograma de mantenimiento de extintores y equipos de emergencia a cargo del área de SST. *(con criterio verificado)*

@@ -263,10 +263,9 @@ const insertarConPdf = (archivo) => falla(comoUsuario(db, servicio, async (tx) =
 const pdfOk = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'b'.repeat(64) })
 const pdfMalo = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'no-es-un-hash' })
 ok(pdfOk === 'insertado' && pdfMalo?.includes('evidencia_archivo_valida'), 'el PDF de evidencia solo guarda nombre, páginas y una huella SHA-256 válida', `${pdfOk} | ${pdfMalo}`)
-const errUmbrales = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 9, "moderado": 4, "alto": 16}' where id = $1`, [audA.id]))
-ok(errUmbrales?.includes('umbrales_riesgo_validos'), 'los umbrales de riesgo deben ir en orden (bajo < moderado < alto)', errUmbrales)
-const errUmbralesOk = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 3, "moderado": 8, "alto": 15}' where id = $1`, [audA.id]))
-ok(errUmbralesOk === null, 'el auditor ajusta los umbrales de su auditoría', errUmbralesOk)
+const { rows: columnaUmbrales } = await db.query(`select 1 from information_schema.columns where table_schema = 'public' and table_name = 'auditorias' and column_name = 'umbrales_riesgo'`)
+const errUmbrales = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 1, "moderado": 2, "alto": 3}' where id = $1`, [audA.id]))
+ok(columnaUmbrales.length === 0 && Boolean(errUmbrales), 'la escala de niveles de riesgo es fija: ninguna auditoría guarda ni edita umbrales (0008)', errUmbrales)
 
 console.log('\n▸ Normas, ia_eventos y cuota de IA')
 const { rows: crit } = await comoUsuario(db, como(A), (tx) => tx.query('select id from public.criterios_normativos'))

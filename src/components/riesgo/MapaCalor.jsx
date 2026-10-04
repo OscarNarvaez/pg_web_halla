@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { ESCALA_PROBABILIDAD, NIVELES_IMPACTO, ZONAS_RIESGO } from '../../lib/catalogos'
-import { COLORES_ZONA, ORDEN_ZONAS, zonaDe } from '../../lib/riesgo'
+import { COLORES_ZONA, ORDEN_ZONAS, RANGOS_ZONA, zonaDe } from '../../lib/riesgo'
 import { cx } from '../../lib/cx'
 
 const VALORES = [1, 2, 3, 4, 5]
@@ -9,7 +9,6 @@ const VALORES = [1, 2, 3, 4, 5]
  * Mapa de calor 5 × 5 del PR13_GQ (probabilidad × impacto). Es una tabla real: se lee con lector de pantalla y
  * cada casilla dice su puntaje y su nivel en texto, así que el color nunca es la única señal.
  * @param {object} props
- * @param {{ bajo: number, moderado: number, alto: number }} props.umbrales
  * @param {Record<string, number>} [props.conteo] Hallazgos por casilla ('p-i' → n).
  * @param {{ probabilidad: number, impacto: number } | null} [props.actual] Casilla del hallazgo que se edita.
  * @param {(probabilidad: number, impacto: number) => void} [props.alElegir] Si se pasa, cada casilla es un botón.
@@ -17,14 +16,8 @@ const VALORES = [1, 2, 3, 4, 5]
  * @param {boolean} [props.deshabilitado]
  * @param {boolean} [props.compacto] Para columnas angostas: cada casilla muestra la inicial del nivel (la leyenda la explica).
  */
-export function MapaCalor({ umbrales, conteo = {}, actual = null, alElegir, titulo = 'Mapa de calor 5 × 5', deshabilitado = false, compacto = false }) {
+export function MapaCalor({ conteo = {}, actual = null, alElegir, titulo = 'Mapa de calor 5 × 5', deshabilitado = false, compacto = false }) {
   const idTitulo = useId()
-  const rangos = {
-    BAJA: `1–${umbrales.bajo}`,
-    MODERADA: `${umbrales.bajo + 1}–${umbrales.moderado}`,
-    ALTA: `${umbrales.moderado + 1}–${umbrales.alto}`,
-    EXTREMA: `${umbrales.alto + 1}–25`,
-  }
 
   return (
     <figure aria-labelledby={idTitulo}>
@@ -46,7 +39,7 @@ export function MapaCalor({ umbrales, conteo = {}, actual = null, alElegir, titu
                 </th>
                 {VALORES.map((probabilidad) => {
                   const puntaje = probabilidad * impacto
-                  const zona = zonaDe(puntaje, umbrales)
+                  const zona = zonaDe(puntaje)
                   const color = COLORES_ZONA[zona]
                   const n = conteo[`${probabilidad}-${impacto}`] ?? 0
                   const esActual = actual?.probabilidad === probabilidad && actual?.impacto === impacto
@@ -114,7 +107,7 @@ export function MapaCalor({ umbrales, conteo = {}, actual = null, alElegir, titu
           <li key={z} className="inline-flex items-center gap-1.5 text-xs text-tinta-700">
             <span aria-hidden="true" className="size-3.5 rounded-sm border" style={{ backgroundColor: COLORES_ZONA[z].fondo, borderColor: COLORES_ZONA[z].borde }} />
             <span className="font-semibold">{compacto && `${ZONAS_RIESGO[z].etiqueta.charAt(0)} · `}{ZONAS_RIESGO[z].etiqueta}</span>
-            <span className="tabular-nums text-tinta-500">{rangos[z]}</span>
+            <span className="tabular-nums text-tinta-500">{RANGOS_ZONA[z]}</span>
           </li>
         ))}
       </ul>

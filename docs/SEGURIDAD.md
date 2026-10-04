@@ -215,7 +215,8 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
 - **Validación honesta.** Editar un hallazgo validado lo devuelve a pendiente en el servidor (no depende del
   cliente), así la matriz descargada siempre corresponde a lo que se validó. *Prueba:* `probar-bd`.
 - **El nivel de riesgo no lo decide la IA.** La IA propone probabilidad e impacto (validados de 1 a 5, V7);
-  el nivel lo calcula el código con umbrales que el auditor controla.
+  el nivel lo calcula el código con una escala fija que nadie edita (Bajo 1–4, Moderado 5–9, Alto 10–16,
+  Extremo 17–25).
 - **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
   endpoint de exportación nuevo que proteger.
 

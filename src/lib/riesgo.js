@@ -1,5 +1,5 @@
 // Evaluación del riesgo según el PR13_GQ: riesgo inherente = probabilidad × impacto, ubicado en una zona.
-// El nivel lo calcula siempre el código (nunca la IA) con los umbrales de la auditoría.
+// El nivel lo calcula siempre el código (nunca la IA) con la escala fija UMBRALES_RIESGO.
 import { ESCALA_PROBABILIDAD, NIVELES_IMPACTO, UMBRALES_RIESGO, ZONAS_RIESGO } from './catalogos'
 
 export const ORDEN_ZONAS = ['BAJA', 'MODERADA', 'ALTA', 'EXTREMA']
@@ -14,19 +14,20 @@ export const COLORES_ZONA = {
   EXTREMA: { fondo: '#bb2424', borde: '#8a1515', texto: '#ffffff' },
 }
 
-/** Umbrales válidos de una auditoría, o los de referencia (4/9/16). */
-export function umbralesDe(auditoria) {
-  const u = auditoria?.umbrales_riesgo
-  const valido = u && [u.bajo, u.moderado, u.alto].every(Number.isInteger) && u.bajo >= 1 && u.bajo < u.moderado && u.moderado < u.alto && u.alto <= 24
-  return valido ? { bajo: u.bajo, moderado: u.moderado, alto: u.alto } : { ...UMBRALES_RIESGO }
+/** Rango de puntajes de cada zona según la escala fija: Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25. */
+export const RANGOS_ZONA = {
+  BAJA: `1–${UMBRALES_RIESGO.bajo}`,
+  MODERADA: `${UMBRALES_RIESGO.bajo + 1}–${UMBRALES_RIESGO.moderado}`,
+  ALTA: `${UMBRALES_RIESGO.moderado + 1}–${UMBRALES_RIESGO.alto}`,
+  EXTREMA: `${UMBRALES_RIESGO.alto + 1}–25`,
 }
 
 /** Zona del PR13 para un puntaje de 1 a 25. */
-export function zonaDe(puntaje, umbrales = UMBRALES_RIESGO) {
+export function zonaDe(puntaje) {
   if (!puntaje) return null
-  if (puntaje <= umbrales.bajo) return 'BAJA'
-  if (puntaje <= umbrales.moderado) return 'MODERADA'
-  if (puntaje <= umbrales.alto) return 'ALTA'
+  if (puntaje <= UMBRALES_RIESGO.bajo) return 'BAJA'
+  if (puntaje <= UMBRALES_RIESGO.moderado) return 'MODERADA'
+  if (puntaje <= UMBRALES_RIESGO.alto) return 'ALTA'
   return 'EXTREMA'
 }
 
@@ -43,18 +44,18 @@ export function tratamientoPara(zona, clasificacion) {
 }
 
 /** Puntaje, zona, etiqueta y tratamiento de un hallazgo, o null si falta la probabilidad o el impacto. */
-export function evaluarRiesgo(h, umbrales) {
+export function evaluarRiesgo(h) {
   const p = h?.riesgo_probabilidad
   const i = h?.riesgo_impacto
   if (!p || !i) return null
   const puntaje = p * i
-  const zona = zonaDe(puntaje, umbrales)
+  const zona = zonaDe(puntaje)
   return { probabilidad: p, impacto: i, puntaje, zona, etiqueta: ZONAS_RIESGO[zona].etiqueta, tratamiento: tratamientoPara(zona, h.clasificacion) }
 }
 
 /** «P4 (Probable) × I3 (Moderado) = 12 · Alto». */
-export function describirEvaluacion(h, umbrales) {
-  const e = evaluarRiesgo(h, umbrales)
+export function describirEvaluacion(h) {
+  const e = evaluarRiesgo(h)
   if (!e) return ''
   return `P${e.probabilidad} (${ESCALA_PROBABILIDAD[e.probabilidad - 1].categoria}) × I${e.impacto} (${NIVELES_IMPACTO[e.impacto - 1]}) = ${e.puntaje} · ${e.etiqueta}`
 }

@@ -1,8 +1,8 @@
 import { COLORES_ZONA, evaluarRiesgo } from '../../lib/riesgo'
 
-/** Nivel del riesgo calculado por la aplicación (probabilidad × impacto con los umbrales), con su tratamiento. */
-export function NivelRiesgo({ hallazgo, umbrales }) {
-  const e = evaluarRiesgo(hallazgo, umbrales)
+/** Nivel del riesgo calculado por la aplicación (probabilidad × impacto con la escala fija), con su tratamiento. */
+export function NivelRiesgo({ hallazgo }) {
+  const e = evaluarRiesgo(hallazgo)
   const color = e ? COLORES_ZONA[e.zona] : null
   return (
     <div className="space-y-2" aria-live="polite">

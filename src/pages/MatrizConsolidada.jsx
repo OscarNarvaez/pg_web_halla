@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { AlertTriangle, ChevronDown, Eye, FilePlus2, FileSpreadsheet } from 'lucide-react'
+import { AlertTriangle, Eye, FilePlus2, FileSpreadsheet } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { useToast } from '../contexts/ToastContext'
 import { ESTADOS_MATRIZ, estadoMatriz, objetoAuditado } from '../lib/catalogos'
-import { COLORES_ZONA, controlesAdoptados, conteoPorCasilla, evaluarRiesgo, faltantesParaValidar, requiereRiesgo, umbralesDe } from '../lib/riesgo'
+import { COLORES_ZONA, controlesAdoptados, conteoPorCasilla, evaluarRiesgo, faltantesParaValidar, requiereRiesgo } from '../lib/riesgo'
 import { COLUMNAS_MATRIZ, idHallazgo, normaYNumeral, textoRiesgo } from '../lib/matriz'
-import { mensajeError, supabase } from '../lib/supabase'
 import { extracto } from '../lib/formato'
 import { cx } from '../lib/cx'
 import { Encabezado } from '../components/layout/Encabezado'
@@ -15,7 +14,6 @@ import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { BadgeClasificacion } from '../components/hallazgos/BadgeClasificacion'
 import { ModalHallazgo } from '../components/hallazgos/ModalHallazgo'
 import { MapaCalor } from '../components/riesgo/MapaCalor'
-import { UmbralesRiesgo } from '../components/riesgo/UmbralesRiesgo'
 import { AreaTexto, Boton, BotonEnlace, EstadoError, EstadoVacio, Modal, Skeleton } from '../components/ui'
 
 const TONO_ESTADO = {
@@ -24,9 +22,9 @@ const TONO_ESTADO = {
   cambios_sugeridos: 'border-obs-borde bg-obs-bg text-obs-texto',
 }
 
-function Evaluacion({ h, umbrales }) {
+function Evaluacion({ h }) {
   if (!requiereRiesgo(h)) return <span className="text-tinta-500">No aplica</span>
-  const e = evaluarRiesgo(h, umbrales)
+  const e = evaluarRiesgo(h)
   if (!e) return <span className="italic text-obs-texto">Sin evaluar</span>
   const c = COLORES_ZONA[e.zona]
   return (
@@ -87,7 +85,6 @@ export default function MatrizConsolidada() {
   if (auditoria.error) return <EstadoError mensaje={auditoria.error} alReintentar={auditoria.recargar} />
   if (!auditoria.datos) return <EstadoVacio titulo="Auditoría no encontrada" descripcion="No existe o no tienes acceso a ella." />
   const a = auditoria.datos
-  const umbrales = umbralesDe(a)
   const cuantos = (estado) => vigentes.filter((h) => estadoMatriz(h.estado) === estado).length
   const validados = cuantos('confirmado')
 
@@ -132,7 +129,7 @@ export default function MatrizConsolidada() {
     if (pendientes.length || cambios.length) return setBloqueo({ pendientes, cambios })
     setDescargando(true)
     try {
-      await (await import('../lib/exportar-matriz')).exportarMatriz({ auditoria: a, hallazgos: vigentes, umbrales })
+      await (await import('../lib/exportar-matriz')).exportarMatriz({ auditoria: a, hallazgos: vigentes })
       notificar('Matriz descargada', 'exito')
     } catch (e) {
       console.error(e)
@@ -140,14 +137,6 @@ export default function MatrizConsolidada() {
     } finally {
       setDescargando(false)
     }
-  }
-
-  const guardarUmbrales = async (nuevos) => {
-    const { data, error: err } = await supabase.from('auditorias').update({ umbrales_riesgo: nuevos }).eq('id', id).select().single()
-    if (err) return mensajeError(err)
-    auditoria.setDatos(data)
-    notificar('Escala de niveles actualizada', 'exito')
-    return ''
   }
 
   return (
@@ -194,16 +183,9 @@ export default function MatrizConsolidada() {
                   ? 'Todos los hallazgos están validados: ya puedes descargar la matriz.'
                   : `${validados} de ${vigentes.length} hallazgos validados. La descarga se habilita cuando todos estén en «Validado».`}
               </p>
-              <details className="group rounded-lg border border-tinta-100 bg-white px-4 py-3">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-tinta-700">
-                  Escala de niveles de riesgo
-                  <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-                </summary>
-                <div className="mt-3"><UmbralesRiesgo umbrales={umbrales} alGuardar={guardarUmbrales} deshabilitado={guardando} /></div>
-              </details>
             </div>
             <div className="rounded-lg border border-tinta-100 bg-white p-4 shadow-sm">
-              <MapaCalor umbrales={umbrales} conteo={conteo} titulo="Mapa de calor de la auditoría" compacto />
+              <MapaCalor conteo={conteo} titulo="Mapa de calor de la auditoría" compacto />
             </div>
           </div>
 
@@ -232,7 +214,7 @@ export default function MatrizConsolidada() {
                     <td className="px-3 py-3 text-xs text-tinta-700">{extracto(h.evidencia, 200)}</td>
                     <td className="whitespace-pre-line px-3 py-3 text-xs text-tinta-700">{extracto(textoRiesgo(h), 220) || <span className="italic text-obs-texto">Sin identificar</span>}</td>
                     <td className="px-3 py-3 font-serif text-[13px] leading-relaxed text-tinta-900">{extracto(h.hallazgo_corregido, 280)}</td>
-                    <td className="px-3 py-3"><Evaluacion h={h} umbrales={umbrales} /></td>
+                    <td className="px-3 py-3"><Evaluacion h={h} /></td>
                     <td className="px-3 py-3 text-xs text-tinta-700"><Controles h={h} /></td>
                     <td className="sticky right-0 w-48 bg-white px-3 py-3 shadow-[-1px_0_0_#e6eaee]">
                       <SelectorEstado h={h} alCambiar={cambiarEstado} deshabilitado={guardando} />
@@ -251,7 +233,7 @@ export default function MatrizConsolidada() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-sm font-semibold text-tinta-500">{idHallazgo(h)}</span>
                   <BadgeClasificacion clasificacion={h.clasificacion} />
-                  <Evaluacion h={h} umbrales={umbrales} />
+                  <Evaluacion h={h} />
                 </div>
                 <p className="mt-2 font-serif text-[15px] leading-relaxed text-tinta-900">{extracto(h.hallazgo_corregido, 220)}</p>
                 <dl className="mt-3 space-y-2 text-xs text-tinta-700">
@@ -273,7 +255,7 @@ export default function MatrizConsolidada() {
         </>
       )}
 
-      <ModalHallazgo hallazgo={abierto} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} umbrales={umbrales} conteo={conteo} />
+      <ModalHallazgo hallazgo={abierto} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} conteo={conteo} />
 
       <Modal
         abierto={Boolean(bloqueo)}

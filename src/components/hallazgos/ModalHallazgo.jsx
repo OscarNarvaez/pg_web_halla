@@ -6,7 +6,7 @@ import { Boton } from '../ui/Boton'
 import { TarjetaResultado } from './TarjetaResultado'
 
 /** Ver y editar un hallazgo guardado. Cada cambio se guarda al aplicarlo. */
-export function ModalHallazgo({ hallazgo, alCerrar, alCambiar, alValidar, guardando, umbrales, conteo }) {
+export function ModalHallazgo({ hallazgo, alCerrar, alCambiar, alValidar, guardando, conteo }) {
   if (!hallazgo) return <Modal abierto={false} alCerrar={alCerrar} titulo="" />
   const faltan = faltantesParaValidar(hallazgo)
   return (
@@ -36,7 +36,7 @@ export function ModalHallazgo({ hallazgo, alCerrar, alCambiar, alValidar, guarda
         {faltan.length > 0 && hallazgo.estado !== 'descartado' && (
           <p className="rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">Para validarlo falta {faltan.join(', ')}.</p>
         )}
-        <TarjetaResultado hallazgo={hallazgo} alCambiar={alCambiar} umbrales={umbrales} conteo={conteo} deshabilitado={guardando || hallazgo.estado === 'descartado'} />
+        <TarjetaResultado hallazgo={hallazgo} alCambiar={alCambiar} conteo={conteo} deshabilitado={guardando || hallazgo.estado === 'descartado'} />
         <section className="rounded-lg bg-tinta-50 p-4 text-sm">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-tinta-500">Texto original del auditor</h3>
           <p className="mt-2 whitespace-pre-wrap text-tinta-700">{hallazgo.entrada_auditor}</p>

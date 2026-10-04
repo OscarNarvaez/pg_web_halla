@@ -173,7 +173,7 @@ Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder re
 > ISO 19011 y `pgvector`.
 
 - **Riesgo por hallazgo (etapa 5):** probabilidad e impacto de 1 a 5 según el PR13-GQ, riesgo
-  inherente = P × I, niveles Bajo/Moderado/Alto/Extremo con umbrales editables (por defecto 4/9/16),
+  inherente = P × I, niveles Bajo/Moderado/Alto/Extremo (en el prototipo los umbrales eran editables; implementado con la escala fija 4/9/16),
   mapa de calor 5 × 5 con el conteo de hallazgos por casilla. Requiere columnas `probabilidad`,
   `impacto` y `riesgo_descripcion` en `hallazgos`.
 - **Controles recomendados (etapa 6):** frases de los documentos con verbos de control y controles

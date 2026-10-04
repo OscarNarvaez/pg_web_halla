@@ -10,7 +10,8 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0004_informes_y_logs.sql` | `informes` versionados e `ia_eventos` |
 | `0005_rls.sql` | Políticas RLS, `es_admin()` y el bloqueo de cambio de rol |
 | `0006_seguridad.sql` | Aprobación de cuentas, autorización de datos (Ley 1581), citas validadas, marcas de tiempo del servidor, sin borrado físico, historial de hallazgos, cuota de IA atómica y mínimo privilegio (ver `docs/SEGURIDAD.md`) |
-| `0007_riesgo_controles_matriz.sql` | Estado `cambios_sugeridos`, riesgo del PR13_GQ (dimensión, probabilidad, impacto), controles validados, huella del PDF de evidencia, umbrales de riesgo por auditoría y la regla «editar un validado lo devuelve a pendiente» |
+| `0007_riesgo_controles_matriz.sql` | Estado `cambios_sugeridos`, riesgo del PR13_GQ (dimensión, probabilidad, impacto), controles validados, huella del PDF de evidencia, umbrales de riesgo por auditoría (retirados en la 0008) y la regla «editar un validado lo devuelve a pendiente» |
+| `0008_escala_riesgo_fija.sql` | Retira `auditorias.umbrales_riesgo`: la escala de niveles de riesgo es fija y no editable (decisión del dueño) |
 
 ## Modelo
 
@@ -47,7 +48,6 @@ erDiagram
     date fecha_inicio
     date fecha_fin
     estado_auditoria estado
-    jsonb umbrales_riesgo "bajo, moderado, alto (0007)"
   }
   HALLAZGOS {
     uuid id PK
@@ -116,7 +116,8 @@ erDiagram
   `editado_por_usuario = true`, lo haga o no el cliente.
 - **Riesgo (0007):** `riesgo_probabilidad` y `riesgo_impacto` entre 1 y 5; `riesgo_dimension` es una de las
   seis dimensiones del PR13_GQ (las mismas claves que `DIMENSIONES_IMPACTO` en los catálogos). El nivel no se
-  guarda: lo calcula la aplicación con `auditorias.umbrales_riesgo` (enteros, bajo < moderado < alto ≤ 24).
+  guarda: lo calcula la aplicación con la escala fija `UMBRALES_RIESGO` (Bajo 1–4, Moderado 5–9, Alto 10–16,
+  Extremo 17–25). La 0008 retiró `auditorias.umbrales_riesgo`: la escala no se edita por auditoría.
 - **Controles (0007):** el trigger `validar_controles` admite como máximo 10, exige descripción de 5 a 600
   caracteres, tipo `PREVENTIVO|CORRECTIVO` y origen `ia|auditor`, verifica que `criterio_id` exista y le
   agrega el documento y el numeral de la base de datos. Al editar, un control `ia` solo puede cambiar

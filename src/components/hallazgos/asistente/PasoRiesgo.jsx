@@ -1,5 +1,4 @@
 import { useId } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { DIMENSIONES_IMPACTO, ESCALA_PROBABILIDAD, FUENTE_RIESGO, NIVELES_IMPACTO } from '../../../lib/catalogos'
 import { requiereRiesgo } from '../../../lib/riesgo'
 import { CampoEditable } from '../CampoEditable'
@@ -8,22 +7,19 @@ import { AVISOS_DEL_PASO } from './pasos'
 import { MapaCalor } from '../../riesgo/MapaCalor'
 import { NivelRiesgo } from '../../riesgo/NivelRiesgo'
 import { SelectorEscala } from '../../riesgo/SelectorEscala'
-import { UmbralesRiesgo } from '../../riesgo/UmbralesRiesgo'
 
 const OPCIONES_PROBABILIDAD = ESCALA_PROBABILIDAD.map((p) => ({ valor: p.valor, etiqueta: p.categoria, descripcion: p.descripcion }))
 
 /**
  * Paso 5: identificación, evaluación y mapa de calor del riesgo según el PR13_GQ. La IA propone; el auditor
- * confirma o ajusta. El nivel lo calcula la aplicación (probabilidad × impacto con los umbrales).
+ * confirma o ajusta. El nivel lo calcula la aplicación (probabilidad × impacto con la escala fija, no editable).
  * @param {object} props
  * @param {object} props.hallazgo
  * @param {(cambios: object) => void} props.alCambiar
- * @param {{ bajo: number, moderado: number, alto: number }} props.umbrales
  * @param {Record<string, number>} [props.conteo] Hallazgos de la auditoría por casilla.
  * @param {object} [props.propuesta] Riesgo original de la IA, para señalar sus valores.
- * @param {(u: object) => Promise<string>} [props.alGuardarUmbrales] Si se pasa, la escala se puede editar.
  */
-export function PasoRiesgo({ hallazgo, alCambiar, umbrales, conteo = {}, propuesta, alGuardarUmbrales, deshabilitado = false }) {
+export function PasoRiesgo({ hallazgo, alCambiar, conteo = {}, propuesta, deshabilitado = false }) {
   const idDimension = useId()
   if (!requiereRiesgo(hallazgo)) {
     return (
@@ -95,25 +91,13 @@ export function PasoRiesgo({ hallazgo, alCambiar, umbrales, conteo = {}, propues
           />
         </div>
         <div className="space-y-5">
-          <NivelRiesgo hallazgo={hallazgo} umbrales={umbrales} />
+          <NivelRiesgo hallazgo={hallazgo} />
           <MapaCalor
-            umbrales={umbrales}
             conteo={conteo}
             actual={actual}
             deshabilitado={deshabilitado}
             alElegir={(p, i) => alCambiar({ riesgo_probabilidad: p, riesgo_impacto: i })}
           />
-          {alGuardarUmbrales && (
-            <details className="group rounded-md border border-tinta-100 px-3 py-2">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-tinta-700">
-                Escala de niveles de la auditoría
-                <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="mt-3">
-                <UmbralesRiesgo umbrales={umbrales} alGuardar={alGuardarUmbrales} deshabilitado={deshabilitado} />
-              </div>
-            </details>
-          )}
         </div>
       </div>
       <p className="text-xs text-tinta-500">Fuente de las escalas: {FUENTE_RIESGO}. Puedes elegir la casilla directamente en el mapa.</p>
