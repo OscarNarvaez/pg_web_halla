@@ -5,7 +5,7 @@ import { supabaseSinConfigurar } from '../lib/supabase'
 import { MINIMO_CLAVE, fuerzaClave, reglaClave } from '../lib/esquemas'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
 import { AvisoConfiguracion } from '../components/layout/AvisoConfiguracion'
-import { Boton, Campo } from '../components/ui'
+import { Boton, Campo, CampoClave } from '../components/ui'
 
 /** Pide el enlace de recuperación y, al volver desde el correo (PASSWORD_RECOVERY), fija la contraseña nueva. */
 export default function RecuperarClave() {
@@ -36,9 +36,9 @@ export default function RecuperarClave() {
           }}
         >
           {estado.error && <p role="alert" className="rounded-md border border-nc-borde bg-nc-bg px-3 py-2 text-sm text-nc-texto">{estado.error}</p>}
-          <Campo etiqueta="Contraseña nueva" type="password" autoComplete="new-password" required value={clave} onChange={(e) => setClave(e.target.value)}
+          <CampoClave etiqueta="Contraseña nueva" autoComplete="new-password" required value={clave} onChange={(e) => setClave(e.target.value)}
             ayuda={clave ? `Seguridad: ${['muy débil', 'débil', 'aceptable', 'buena', 'fuerte'][fuerzaClave(clave)]}` : `Mínimo ${MINIMO_CLAVE} caracteres, con mayúscula, minúscula y número.`} />
-          <Campo etiqueta="Confirma la contraseña" type="password" autoComplete="new-password" required value={confirmacion}
+          <CampoClave etiqueta="Confirma la contraseña" autoComplete="new-password" required value={confirmacion}
             onChange={(e) => setConfirmacion(e.target.value)} error={errorLocal} />
           <Boton type="submit" cargando={estado.enviando} className="w-full">Guardar contraseña</Boton>
         </form>

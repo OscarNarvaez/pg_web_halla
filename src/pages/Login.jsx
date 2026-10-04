@@ -6,8 +6,9 @@ import { MINUTOS_INACTIVIDAD, useAuth } from '../contexts/AuthContext'
 import { esquemaIngreso } from '../lib/esquemas'
 import { supabaseSinConfigurar } from '../lib/supabase'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
+import { ReenviarConfirmacion } from '../components/auth/ReenviarConfirmacion'
 import { AvisoConfiguracion } from '../components/layout/AvisoConfiguracion'
-import { Boton, Campo } from '../components/ui'
+import { Boton, Campo, CampoClave } from '../components/ui'
 
 export default function Login() {
   const { ingresar, sesion, cargando, cerradaPorInactividad } = useAuth()
@@ -17,7 +18,7 @@ export default function Login() {
   const solicitado = location.state?.from?.pathname
   const destino = typeof solicitado === 'string' && /^\/app(\/[\w-]+)*\/?$/.test(solicitado) ? solicitado : '/app'
   const [error, setError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(esquemaIngreso) })
+  const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(esquemaIngreso) })
 
   if (supabaseSinConfigurar) return <AvisoConfiguracion />
   if (!cargando && sesion) return <Navigate to={destino} replace />
@@ -38,8 +39,9 @@ export default function Login() {
           </p>
         )}
         {error && <p role="alert" className="rounded-md border border-nc-borde bg-nc-bg px-3 py-2 text-sm text-nc-texto">{error}</p>}
+        {/confirmar tu correo/i.test(error) && <ReenviarConfirmacion email={getValues('email')} />}
         <Campo etiqueta="Correo electrónico" type="email" autoComplete="email" required error={errors.email?.message} {...register('email')} />
-        <Campo etiqueta="Contraseña" type="password" autoComplete="current-password" required error={errors.password?.message} {...register('password')} />
+        <CampoClave etiqueta="Contraseña" autoComplete="current-password" required error={errors.password?.message} {...register('password')} />
         <Boton type="submit" cargando={isSubmitting} className="w-full">Ingresar</Boton>
       </form>
       <div className="mt-6 flex flex-wrap justify-between gap-2 text-sm">

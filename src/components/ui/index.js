@@ -1,5 +1,6 @@
 export { Boton, BotonEnlace } from './Boton'
 export { Campo, EnvolturaCampo, claseControl } from './Campo'
+export { CampoClave } from './CampoClave'
 export { AreaTexto } from './AreaTexto'
 export { Select } from './Select'
 export { Checkbox } from './Checkbox'

@@ -199,7 +199,10 @@ password_requirements = "lower_upper_letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# halla: NO se declara a propósito. El SMTP propio (Resend) se configura en el dashboard y este límite
+# se sube allí (Authentication → Rate Limits). Si se declarara aquí, `supabase config push` lo
+# devolvería a 2 por hora. Ver docs/DESPLIEGUE.md, «Correo de confirmación».
+# email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.

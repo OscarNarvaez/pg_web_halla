@@ -283,6 +283,51 @@ console.log('\n▸ Páginas públicas')
   ok(await p.getByText('Escribe el nombre de la persona del equipo auditor').isVisible() && await p.getByText('Elige el proceso que auditas').isVisible(), 'paso 3: exige equipo auditor y proceso')
 ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').isVisible(), 'paso 3: exige la autorización de tratamiento de datos (Ley 1581)')
   await p.screenshot({ path: `${CAPTURAS}02-registro-paso3.png`, fullPage: true })
+
+  // Registro completo → «Revisa tu correo» con reenvío (Supabase Auth simulado)
+  const authPeticiones = []
+  await ctx.route('https://demo.supabase.co/auth/v1/**', async (r) => {
+    const ruta = new URL(r.request().url()).pathname.replace('/auth/v1/', '')
+    authPeticiones.push({ ruta, cuerpo: r.request().postData() ? JSON.parse(r.request().postData()) : null })
+    if (ruta === 'signup') {
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: crypto.randomUUID(), email: 'nueva@hila.test', identities: [{ id: 'i1' }], user_metadata: {} }) })
+    }
+    if (ruta === 'token') {
+      return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' }) })
+    }
+    return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+  })
+  await p.getByLabel('Nombre del equipo auditor').fill('Laura Gómez')
+  await p.getByLabel('Cargo del equipo auditor').fill('Profesional de calidad')
+  await p.getByRole('combobox', { name: 'Proceso', exact: true }).selectOption('Urgencias')
+  await p.getByLabel(/Autorizo el tratamiento/).check()
+  await p.getByRole('button', { name: 'Crear cuenta' }).click()
+  await p.getByRole('heading', { name: 'Revisa tu correo' }).waitFor()
+  const signup = authPeticiones.find((x) => x.ruta === 'signup')
+  ok(signup?.cuerpo?.data?.acepto_tratamiento_datos === 'true' && signup?.cuerpo?.data?.cedula === '1085123456', 'el registro envía la autorización de datos y la cédula normalizada')
+  await p.getByRole('button', { name: 'Reenviar correo de confirmación' }).click()
+  await p.getByText(/enviamos un nuevo correo/).waitFor()
+  ok(authPeticiones.some((x) => x.ruta === 'resend' && x.cuerpo?.type === 'signup'), 'el botón reenvía el correo de confirmación')
+  ok(await p.getByRole('button', { name: /Reenviar correo \(\d+ s\)/ }).isDisabled(), 'después de reenviar hay una espera antes de poder repetir')
+
+  // Ingreso: mostrar contraseña y cuenta sin confirmar
+  await p.goto(`${BASE}/ingresar`)
+  const clave = p.getByRole('textbox', { name: 'Contraseña', exact: true })
+  await clave.fill('Clave-Segura-2026')
+  ok((await clave.getAttribute('type')) === 'password', 'la contraseña empieza oculta')
+  await p.getByRole('button', { name: 'Mostrar contraseña' }).click()
+  ok((await clave.getAttribute('type')) === 'text' && (await p.getByRole('button', { name: 'Ocultar contraseña' }).getAttribute('aria-pressed')) === 'true', 'el botón «Mostrar contraseña» la muestra')
+  await p.getByRole('button', { name: 'Ocultar contraseña' }).click()
+  ok((await clave.getAttribute('type')) === 'password', 'y la vuelve a ocultar')
+  await p.getByLabel('Correo electrónico').fill('nueva@hila.test')
+  await p.getByRole('button', { name: 'Ingresar' }).click()
+  await p.getByText('Debes confirmar tu correo antes de ingresar').waitFor()
+  ok(await p.getByRole('button', { name: 'Reenviar correo de confirmación' }).isVisible(), 'si la cuenta no está confirmada, se ofrece reenviar el correo')
+  await p.screenshot({ path: `${CAPTURAS}02b-ingreso-sin-confirmar.png`, fullPage: true })
+
+  await p.goto(`${BASE}/registro`)
+  await p.getByRole('textbox', { name: 'Contraseña', exact: true }).waitFor()
+  ok((await p.getByRole('button', { name: 'Mostrar contraseña' }).count()) === 2, 'el registro tiene «Mostrar contraseña» en ambos campos')
   await ctx.close()
 }
 

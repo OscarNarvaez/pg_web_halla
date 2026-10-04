@@ -54,7 +54,7 @@ los pasos que requieren cuentas reales, en orden.
    que quedó aplicada, y completa:
    - *URL Configuration*: **Site URL** `https://halla.ink`; **Redirect URLs** `https://halla.ink/**` y
      `http://localhost:5173/**`.
-   - Opcional: traduce al español las plantillas de correo (*Emails*).
+   - El envío de correos requiere un SMTP propio: sección 7.
 
 4. **Primer administrador.** Nadie usa la plataforma hasta que un administrador aprueba su cuenta. Regístrate
    en la app y luego, en el SQL Editor del dashboard:
@@ -182,6 +182,83 @@ y agrega:
 
 Para comprobar la propagación: `dig halla.ink +short` debe devolver las cuatro IP de GitHub.
 
+## 7. Correo de confirmación (SMTP propio) — obligatorio
+
+**Sin este paso los auditores no reciben el correo de confirmación ni el de recuperación de contraseña.**
+El servicio de correo que Supabase trae por defecto solo entrega a los miembros del equipo del proyecto
+en Supabase y como máximo 2 correos por hora:
+
+> «Unless you configure a custom SMTP server for your project, Supabase Auth will refuse to deliver
+> messages to addresses that are not part of the project's team.»
+> (supabase.com/docs/guides/auth/auth-smtp, consultado el 4/10/2026)
+
+Se recomienda **Resend**, que está en la lista oficial de Supabase y permite enviar desde `@halla.ink`. Su
+plan gratuito da 3 000 correos al mes y 100 por día, de sobra para las confirmaciones del hospital.
+
+### 7.1 Verificar el dominio en Resend
+
+1. Crea la cuenta en [resend.com](https://resend.com) → **Domains → Add Domain** → `halla.ink`.
+2. Resend te muestra 3 o 4 registros DNS (DKIM, SPF y opcionalmente DMARC). Cópialos en Namecheap
+   (*Domain List → Manage → Advanced DNS*):
+   - En **Host** escribe solo la parte que va antes de `halla.ink` (por ejemplo `resend._domainkey`, `send`
+     o `_dmarc`). Namecheap agrega el dominio solo.
+   - Para el registro **MX**, primero baja a la sección **Mail Settings** del mismo Advanced DNS y elige
+     **Custom MX**; luego agrega el MX con host `send`, el valor que indica Resend y prioridad `10`.
+   - No toques los 4 registros A ni el CNAME `www` de GitHub Pages.
+3. En Resend pulsa **Verify DNS Records**. Puede tardar desde minutos hasta unas horas.
+4. **API Keys → Create API Key**, con permiso *Sending access* restringido al dominio `halla.ink`. Cópiala:
+   solo se muestra una vez. Es un secreto: no la pegues en el repositorio ni en el chat.
+
+### 7.2 Conectar Resend con Supabase
+
+Dashboard de Supabase → **Authentication → Emails → SMTP Settings → Enable custom SMTP**:
+
+| Campo | Valor |
+|---|---|
+| Sender email | `no-reply@halla.ink` |
+| Sender name | `halla` |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | la API key de Resend |
+
+Después, en **Authentication → Rate Limits**, sube *Rate limit for sending emails* a unos **30 por hora**.
+(Este límite no se declara en `supabase/config.toml` justamente para que `config push` no lo devuelva a 2.)
+
+### 7.3 Plantillas en español (recomendado)
+
+**Authentication → Emails → Templates → Confirm signup**:
+
+- Asunto: `Confirma tu cuenta en halla`
+- Cuerpo:
+
+  ```html
+  <h2>Confirma tu cuenta de auditor</h2>
+  <p>Recibimos una solicitud para crear una cuenta en halla, la plataforma de auditoría interna del
+  Hospital Infantil Los Ángeles.</p>
+  <p><a href="{{ .ConfirmationURL }}">Confirmar mi correo</a></p>
+  <p>Después de confirmar, un administrador debe aprobar tu cuenta.</p>
+  <p>Si no fuiste tú, ignora este mensaje.</p>
+  ```
+
+Haz lo mismo con **Reset password** (asunto `Recupera tu contraseña de halla`; enlace `{{ .ConfirmationURL }}`).
+
+### 7.4 Probar
+
+Regístrate con un correo nuevo. Debe llegar en menos de un minuto; la primera vez revisa la carpeta de correo
+no deseado. Si no llega, en Resend → **Emails** verás si salió y por qué falló. La app tiene el botón
+**Reenviar correo de confirmación** en la pantalla «Revisa tu correo» y al intentar ingresar sin confirmar.
+
+### Cuentas registradas antes de configurar el SMTP
+
+Si alguien se registró antes de este paso, su correo nunca salió. Con el SMTP listo, que use **Reenviar
+correo de confirmación** desde la pantalla de ingreso. Para tu propia cuenta de administrador también puedes
+confirmarla directamente en el SQL Editor:
+
+```sql
+update auth.users set email_confirmed_at = now() where email = '<tu correo>' and email_confirmed_at is null;
+```
+
 ## Alternativa: hosting de Namecheap (cPanel)
 
 El build es el mismo. Ejecuta `pnpm build` con las variables `VITE_*` en `.env.local`, sube el contenido
@@ -199,7 +276,7 @@ RewriteRule . /index.html [L]
 Así las rutas profundas (`/app/auditorias/<id>`) cargan la SPA en vez de dar 404. Supabase y Gemini no
 cambian.
 
-## 7. Cierre: lo que queda por verificar con el proyecto real
+## 8. Cierre: lo que queda por verificar con el proyecto real
 
 - [ ] `supabase db push` aplicó las seis migraciones.
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
@@ -207,6 +284,7 @@ cambian.
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
 - [ ] `pnpm verificar-rls` en verde.
 - [ ] Las funciones responden 401 sin sesión y 403 con una auditoría ajena.
+- [ ] SMTP propio (Resend) configurado: el correo de confirmación llega a una cuenta que no es del equipo de Supabase.
 - [ ] Registro completo desde `https://halla.ink/registro` y perfil con los 8 campos en `profiles`.
 - [ ] Los siete casos de `docs/PRUEBAS.md` capturados en la app desplegada, con sus respuestas pegadas.
 - [ ] Ciclo completo: auditoría → 4 hallazgos (uno por categoría) → informe → PDF y Word.

@@ -156,6 +156,15 @@ export function AuthProvider({ children }) {
     return error ? { error: mensajeError(error) } : {}
   }, [])
 
+  const reenviarConfirmacion = useCallback(async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/ingresar` },
+    })
+    return error ? { error: mensajeError(error) } : {}
+  }, [])
+
   const salir = useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
@@ -189,10 +198,10 @@ export function AuthProvider({ children }) {
   const valor = useMemo(
     () => ({
       sesion, usuario: sesion?.user ?? null, perfil, cargando, errorPerfil, enRecuperacion, cerradaPorInactividad,
-      registrar, ingresar, salir, solicitarRecuperacion, cambiarClave, guardarPerfil,
+      registrar, ingresar, reenviarConfirmacion, salir, solicitarRecuperacion, cambiarClave, guardarPerfil,
       recargarPerfil: () => cargarPerfil(sesion?.user),
     }),
-    [sesion, perfil, cargando, errorPerfil, enRecuperacion, cerradaPorInactividad, registrar, ingresar, salir, solicitarRecuperacion, cambiarClave, guardarPerfil, cargarPerfil],
+    [sesion, perfil, cargando, errorPerfil, enRecuperacion, cerradaPorInactividad, registrar, ingresar, reenviarConfirmacion, salir, solicitarRecuperacion, cambiarClave, guardarPerfil, cargarPerfil],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>

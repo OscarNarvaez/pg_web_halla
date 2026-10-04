@@ -11,7 +11,8 @@ import { LayoutPublico } from '../components/layout/LayoutPublico'
 import { AvisoConfiguracion } from '../components/layout/AvisoConfiguracion'
 import { CamposAlcance, CamposAuditor, CamposEquipo } from '../components/perfil/CamposPerfil'
 import { AutorizacionDatos } from '../components/perfil/AutorizacionDatos'
-import { Boton, Campo } from '../components/ui'
+import { ReenviarConfirmacion } from '../components/auth/ReenviarConfirmacion'
+import { Boton, Campo, CampoClave } from '../components/ui'
 
 const PASOS = [
   { titulo: 'Cuenta', campos: ['email', 'password', 'confirmacion'] },
@@ -91,6 +92,7 @@ export default function Registro() {
             Si no ves el correo, revisa la carpeta de correo no deseado.
           </p>
         </div>
+        <ReenviarConfirmacion email={confirmarCorreo} className="mt-6" />
         <Link to="/ingresar" className="enlace mt-6 inline-block text-sm">Ir a ingresar</Link>
       </LayoutPublico>
     )
@@ -142,9 +144,9 @@ export default function Registro() {
         {paso === 0 && (
           <>
             <Campo etiqueta="Correo electrónico" type="email" autoComplete="email" required error={errors.email?.message} {...register('email')} />
-            <Campo etiqueta="Contraseña" type="password" autoComplete="new-password" required ayuda={`Mínimo ${MINIMO_CLAVE} caracteres, con mayúscula, minúscula y número.`} error={errors.password?.message} {...register('password')} />
+            <CampoClave etiqueta="Contraseña" autoComplete="new-password" required ayuda={`Mínimo ${MINIMO_CLAVE} caracteres, con mayúscula, minúscula y número.`} error={errors.password?.message} {...register('password')} />
             <MedidorClave control={control} />
-            <Campo etiqueta="Confirma la contraseña" type="password" autoComplete="new-password" required error={errors.confirmacion?.message} {...register('confirmacion')} />
+            <CampoClave etiqueta="Confirma la contraseña" autoComplete="new-password" required error={errors.confirmacion?.message} {...register('confirmacion')} />
           </>
         )}
         {paso === 1 && <CamposAuditor register={register} errors={errors} />}
