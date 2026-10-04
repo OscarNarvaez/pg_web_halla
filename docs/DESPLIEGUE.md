@@ -291,6 +291,19 @@ cambian.
 - [ ] `https://halla.ink/app/auditorias/<id>` carga al refrescar.
 - [ ] Clave de Gemini rotada y cargada con `supabase secrets set`.
 
+## Actualizaciones: primero la base de datos, después el frontend
+
+Cuando un cambio trae una migración nueva en `supabase/migrations/`, el orden importa:
+
+```bash
+supabase db push                                   # 1. la base de datos primero
+supabase functions deploy clasificar-hallazgo completar-auditoria generar-informe   # 2. si cambiaron
+git push origin main                               # 3. el frontend al final
+```
+
+Si se publica el frontend antes de la migración, la app pide columnas o funciones que aún no existen. Se ve
+como un error 400 o 404 de Supabase, y la app avisa «La base de datos de la plataforma no está actualizada».
+
 ## Desarrollo local
 
 ```bash

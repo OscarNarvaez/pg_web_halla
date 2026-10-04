@@ -23,6 +23,7 @@ Reconocimiento y discrepancias con el prompt: `docs/RECONOCIMIENTO.md`.
 - Solo cuentas aprobadas (`profiles.aprobado`) acceden a datos: RLS con `usuario_activo()` y 403 en las
   funciones. Nunca debilites esto para «simplificar» una prueba: aprueba al usuario de prueba.
 - Cambios de esquema y permisos: SIEMPRE en una migración nueva (0007…), nunca editando las ya aplicadas.
+  Al desplegar: `supabase db push` ANTES del `git push` del frontend (si no, la app pide columnas que no existen).
 - Nada de borrado físico para el cliente; los informes solo los escribe la Edge Function.
 - Cada ataque corregido vive como prueba en `scripts/probar-bd.mjs` o `scripts/probar-interfaz.mjs`.
 - La CSP se genera en `vite.config.js`: si agregas un origen externo, agrégalo ahí con justificación.

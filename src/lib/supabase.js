@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Se limpian espacios, saltos de línea y la barra final: valores pegados en GitHub pueden traer «\r\n»
-const url = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim().replace(/\/+$/, '')
-const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
+const url = String(import.meta.env?.VITE_SUPABASE_URL ?? '').trim().replace(/\/+$/, '')
+const anonKey = String(import.meta.env?.VITE_SUPABASE_ANON_KEY ?? '').trim()
 
 /** true si faltan las variables de entorno de Supabase (la app muestra un aviso en lugar de romperse). */
 export const supabaseSinConfigurar = !url || !anonKey || url.includes('xxxxxxxx')
@@ -45,10 +45,27 @@ export function mensajeError(error) {
     [/jwt expired|invalid jwt|session.*(expired|missing)/i, 'Tu sesión expiró. Vuelve a ingresar.'],
     [/failed to fetch|network|load failed/i, 'No hay conexión con el servidor. Revisa tu conexión a internet.'],
     [/row-level security|permission denied|42501/i, 'No tienes permiso para realizar esta acción.'],
+    // Columna, función o tabla inexistente: el esquema de la BD está desactualizado (falta `supabase db push`)
+    [/^(42703|42883|42P01|PGRST20[2-5])$|does not exist|could not find the (function|table|.* column)/i,
+      'La base de datos de la plataforma no está actualizada. Avísale al administrador (debe aplicar las migraciones pendientes).'],
   ]
-  for (const [patron, mensaje] of mapa) if (patron.test(texto) || patron.test(codigo)) return mensaje
-  console.error('Error no previsto:', error)
+  for (const [patron, mensaje] of mapa) {
+    if (patron.test(texto) || patron.test(codigo)) {
+      if (patron.source.includes('42703')) console.error('Esquema desactualizado:', describirError(error))
+      return mensaje
+    }
+  }
+  console.error('Error no previsto:', describirError(error))
   return 'No se pudo completar la acción. Inténtalo de nuevo; si persiste, avísale al administrador.'
+}
+
+/** Texto plano con código, mensaje, detalle y pista, para que el error se lea en la consola (no «Object»). */
+export function describirError(error) {
+  if (!error || typeof error !== 'object') return String(error)
+  return ['code', 'error_code', 'status', 'message', 'details', 'hint']
+    .filter((c) => error[c] !== undefined && error[c] !== null && error[c] !== '')
+    .map((c) => `${c}: ${error[c]}`)
+    .join(' · ')
 }
 
 /**

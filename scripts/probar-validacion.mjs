@@ -9,6 +9,7 @@ import { anonimizar } from '../supabase/functions/_shared/anonimizar.ts'
 import * as catalogosServidor from '../supabase/functions/_shared/catalogos.ts'
 import * as catalogosCliente from '../src/lib/catalogos.js'
 import { normalizarUrlSupabase, politicaCsp } from '../vite.csp.js'
+import { mensajeError, describirError } from '../src/lib/supabase.js'
 
 let fallos = 0
 const ok = (c, d, det = '') => {
@@ -142,6 +143,17 @@ ok(lanza('http://obqkaegizxtbmdvcscdl.supabase.co') && lanza('obqkaegizxtbmdvcsc
 const csp = politicaCsp(normalizarUrlSupabase(`${REAL}\r\n`))
 ok(csp.includes(`connect-src 'self' ${REAL} wss://obqkaegizxtbmdvcscdl.supabase.co`), 'la CSP permite conectar con el proyecto Supabase', csp)
 ok(/script-src 'self';/.test(csp) && csp.includes("object-src 'none'"), 'la CSP solo permite scripts propios')
+
+console.log('\n▸ Mensajes de error al usuario')
+const silenciar = console.error
+console.error = () => {}
+const esquemaViejo = { code: 'PGRST204', message: "Could not find the 'acepto_tratamiento_datos_en' column of 'profiles' in the schema cache" }
+ok(/no está actualizada/.test(mensajeError(esquemaViejo)), 'una columna inexistente (falta una migración) se explica como base de datos desactualizada')
+ok(/no está actualizada/.test(mensajeError({ code: '42703', message: 'column profiles.aprobado does not exist' })), 'también con el código de Postgres 42703')
+ok(/registro de cuentas está desactivado/.test(mensajeError({ code: 'email_provider_disabled', message: 'Email signups are disabled' })), 'registro desactivado en Supabase')
+ok(/^No se pudo completar la acción/.test(mensajeError({ code: 'XX000', message: 'detalle interno de la tabla secreta' })), 'un error desconocido no se muestra tal cual al usuario')
+console.error = silenciar
+ok(describirError(esquemaViejo) === "code: PGRST204 · message: Could not find the 'acepto_tratamiento_datos_en' column of 'profiles' in the schema cache", 'la consola recibe el error en texto legible, no «Object»')
 
 console.log(fallos ? `\n✗ ${fallos} prueba(s) fallaron\n` : '\n✓ Validación verificada\n')
 process.exit(fallos ? 1 : 0)
