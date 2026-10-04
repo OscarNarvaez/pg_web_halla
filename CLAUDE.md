@@ -60,12 +60,26 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   usa extensiones `.ts` explícitas en los imports. Lo específico de Deno va en `supabase.ts` e `index.ts`.
 - `scripts/lib/trocear-normas.mjs`: troceador de las normas (lo usan la ingesta y las pruebas).
 - `scripts/lib/supabase-local.mjs`: Postgres en WASM con roles y `auth.*` de Supabase para probar sin Docker.
-- `scripts/fixtures/motor-casos.json`: salidas reales del motor, usadas por la prueba de interfaz.
+- `scripts/fixtures/motor-casos.json`: salidas reales del motor, usadas por la prueba de interfaz. Si cambia el
+  mensaje o el esquema de salida, regenéralo con `pnpm probar:motor -- --md scripts/fixtures/motor-casos.json`.
+- `src/components/hallazgos/asistente/`: los pasos del asistente; `TarjetaResultado` los reúne para el modal.
+- `src/components/riesgo/`: mapa de calor, selector de escala, nivel y umbrales. `src/lib/matriz.js`: textos de la
+  matriz (pantalla y Excel); `src/lib/exportar-matriz.js` se importa bajo demanda.
 
 ## Decisiones tomadas (no re-litigar sin el dueño)
 
-- Alcance V1 = solo el prompt maestro. Riesgo PR13, controles, lista de verificación, matriz CSV y
-  conclusión ISO 19011 del prototipo son Fase 8 (descritas en `docs/RECONOCIMIENTO.md`).
+- Alcance: el prompt maestro **más** (decisión del dueño, 4/10/2026) el asistente de 7 pasos, el PDF de evidencia,
+  el riesgo PR13, los controles y la matriz consolidada. Siguen en Fase 8: lista de verificación y conclusión
+  integrada ISO 19011 (`docs/RECONOCIMIENTO.md`).
+- PDF de evidencia: se lee en el navegador (`src/lib/pdf-evidencia.js`) y NUNCA se sube; solo viajan su texto
+  y su huella `{nombre, paginas, sha256}`.
+- Matriz: «Validado» = estado `confirmado`. Se descarga (Excel) solo con TODOS los vigentes validados; validar
+  exige riesgo completo y un control adoptado (`faltantesParaValidar` en `src/lib/riesgo.js`). Editar un
+  validado lo devuelve a pendiente en el servidor (trigger `proteger_hallazgo`).
+- Riesgo: la IA propone probabilidad e impacto (1 a 5, escalas del PR13 en `catalogos`); el NIVEL lo calcula el
+  código con `auditorias.umbrales_riesgo` (por defecto 4/9/16). La metodología va en el mensaje de usuario
+  (`bloqueRiesgo()` en `motor.ts`), nunca en el prompt del sistema. Colores de zona en `COLORES_ZONA`,
+  validados con el skill dataviz para deuteranopía.
 - Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`) y `logo-hila.png` en el PDF
   y el Word (jsPDF y docx no leen WebP). Siempre sobre fondo blanco: su texto perimetral es oscuro.

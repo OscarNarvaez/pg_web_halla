@@ -164,7 +164,13 @@ bajo para modelos Flash.
 
 ## Fase 8 opcional
 
-Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder retomarlas:
+Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder retomarlas.
+
+> **Actualización del 4/10/2026:** el dueño pidió el flujo guiado de 7 pasos. Quedaron **implementados** el
+> riesgo por hallazgo, los controles y la matriz consolidada (en Excel, con validación por hallazgo en vez de
+> CSV), además de la carga de un PDF de evidencia. Ver la migración `0007`, `docs/MANUAL_AUDITOR.md` §3 y §6,
+> y `docs/SEGURIDAD.md` (ampliación). Siguen pendientes la lista de verificación, la conclusión integrada
+> ISO 19011 y `pgvector`.
 
 - **Riesgo por hallazgo (etapa 5):** probabilidad e impacto de 1 a 5 según el PR13-GQ, riesgo
   inherente = P × I, niveles Bajo/Moderado/Alto/Extremo con umbrales editables (por defecto 4/9/16),

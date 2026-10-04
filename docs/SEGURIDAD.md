@@ -199,6 +199,26 @@ restricciones y mensajes de Google): el usuario ve un mensaje genérico y el det
 
 ---
 
+## Ampliación: PDF de evidencia, riesgo, controles y matriz (4/10/2026)
+
+Al ampliar el alcance (asistente de 7 pasos, riesgo del PR13_GQ, controles y matriz consolidada) se
+diseñaron estos controles desde el inicio, con su prueba de regresión:
+
+- **El PDF de evidencia no sale del navegador.** Se lee con pdf.js en el equipo del auditor; al servidor solo
+  llega el texto que el auditor revisó (que pasa por `anonimizar()` como cualquier entrada, S1) y la huella
+  `{nombre, paginas, sha256}`. No hay almacenamiento de archivos que proteger. La huella es inmutable y su
+  formato lo valida un check de la base de datos. pdf.js se configura con `isEvalSupported: false`: la CSP no
+  permite `eval` y no se relajó. *Pruebas:* `probar-bd` (huella inmutable y formato) y `probar-interfaz`
+  (ninguna petición lleva el PDF; viaja solo la huella).
+- **Controles íntegros.** El trigger `validar_controles` verifica que un control que cita un criterio apunte
+  a uno real y que el auditor no haga pasar un control propio por uno de la IA. *Prueba:* `probar-bd`.
+- **Validación honesta.** Editar un hallazgo validado lo devuelve a pendiente en el servidor (no depende del
+  cliente), así la matriz descargada siempre corresponde a lo que se validó. *Prueba:* `probar-bd`.
+- **El nivel de riesgo no lo decide la IA.** La IA propone probabilidad e impacto (validados de 1 a 5, V7);
+  el nivel lo calcula el código con umbrales que el auditor controla.
+- **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
+  endpoint de exportación nuevo que proteger.
+
 ## Controles que se verificaron y estaban bien
 
 - La API key de Gemini nunca llega al navegador: el CI busca los formatos `AIza…` y `AQ.…` en `dist/`, y la
@@ -239,9 +259,10 @@ Ordenadas por importancia. Ninguna se puede hacer desde el código.
 ## Cómo repetir la auditoría
 
 ```bash
-pnpm probar            # sin red: 52 de validación y anonimización, 14 de cascada,
-                       # 65 de base de datos (RLS, aprobación, ataques de integridad, cuota) y 8 de búsqueda
-pnpm probar:interfaz   # 67 de extremo a extremo, incluidas CSP, cuentas pendientes, admin e iframe
+pnpm probar            # sin red: 74 de validación (V1–V7) y anonimización, 14 de cascada,
+                       # 81 de base de datos (RLS, aprobación, ataques de integridad, cuota, riesgo y
+                       # controles) y 8 de búsqueda
+pnpm probar:interfaz   # 101 de extremo a extremo, incluidas CSP, PDF, matriz, cuentas pendientes, admin e iframe
 pnpm verificar-rls     # contra el proyecto Supabase real
 pnpm audit             # vulnerabilidades conocidas en dependencias
 ```

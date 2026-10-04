@@ -94,9 +94,9 @@ O uno por uno:
 supabase secrets set \
   GEMINI_API_KEY=<key> \
   GEMINI_MODEL=gemini-3.8-flash \
-  GEMINI_MAX_OUTPUT_TOKENS=4096 \
+  GEMINI_MAX_OUTPUT_TOKENS=8192 \
   GEMINI_NIVEL_RAZONAMIENTO=low \
-  PROMPT_VERSION=1.0.0 \
+  PROMPT_VERSION=1.1.0 \
   LIMITE_IA_DIARIO_POR_USUARIO=40 \
   LIMITE_IA_POR_MINUTO=5
 ```
@@ -105,7 +105,8 @@ supabase secrets set \
 |---|---|---|
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Verificado el 3/10/2026. `gemini-2.5-flash` (el del prompt maestro) devuelve 404 a cuentas nuevas |
 | `GEMINI_MODELOS_RESPALDO` | *(sin definir)* | Si no se define, se usa la cascada por defecto (abajo). Para desactivarla, defínelo igual al modelo principal: `GEMINI_MODELOS_RESPALDO=gemini-3.8-flash` |
-| `GEMINI_MAX_OUTPUT_TOKENS` | `4096` | Gemini 3.x razona por defecto y esos tokens cuentan; con 2 048 la respuesta podía cortarse |
+| `GEMINI_MAX_OUTPUT_TOKENS` | `8192` | Gemini 3.x razona por defecto y esos tokens cuentan; además cada hallazgo trae riesgo y controles (unos 400 tokens más). Con 2 048 la respuesta podía cortarse |
+| `PROMPT_VERSION` | `1.1.0` | Queda guardada en cada hallazgo. 1.1.0 agrega la metodología de riesgo del PR13_GQ al mensaje (el prompt del sistema sigue siendo el ANEXO A literal) |
 | `GEMINI_NIVEL_RAZONAMIENTO` | `low` | Misma calidad de clasificación con 1,7 s de latencia en vez de 6,2 s |
 | `LIMITE_IA_DIARIO_POR_USUARIO` | `40` sugerido | Ver «Cuota de la IA» |
 | `LIMITE_IA_POR_MINUTO` | `5` | Evita que un usuario agote la cuota compartida en segundos |
@@ -278,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las seis migraciones.
+- [ ] `supabase db push` aplicó las siete migraciones (la 0007 trae riesgo, controles y la matriz).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -287,7 +288,8 @@ cambian.
 - [ ] SMTP propio (Resend) configurado: el correo de confirmación llega a una cuenta que no es del equipo de Supabase.
 - [ ] Registro completo desde `https://halla.ink/registro` y perfil con los 8 campos en `profiles`.
 - [ ] Los siete casos de `docs/PRUEBAS.md` capturados en la app desplegada, con sus respuestas pegadas.
-- [ ] Ciclo completo: auditoría → 4 hallazgos (uno por categoría) → informe → PDF y Word.
+- [ ] Ciclo completo: auditoría → 4 hallazgos (uno por categoría) por el asistente de 7 pasos, uno de ellos
+      desde un PDF → matriz validada y descargada en Excel → informe → PDF y Word.
 - [ ] `https://halla.ink/app/auditorias/<id>` carga al refrescar.
 - [ ] Clave de Gemini rotada y cargada con `supabase secrets set`.
 
@@ -303,6 +305,18 @@ git push origin main                               # 3. el frontend al final
 
 Si se publica el frontend antes de la migración, la app pide columnas o funciones que aún no existen. Se ve
 como un error 400 o 404 de Supabase, y la app avisa «La base de datos de la plataforma no está actualizada».
+
+**Actualización del asistente de 7 pasos, riesgo y matriz (4/10/2026):**
+
+```bash
+supabase db push                                                      # 0007_riesgo_controles_matriz.sql
+supabase secrets set GEMINI_MAX_OUTPUT_TOKENS=8192 PROMPT_VERSION=1.1.0
+supabase functions deploy clasificar-hallazgo generar-informe
+git push origin main
+```
+
+La función `clasificar-hallazgo` nueva escribe columnas que crea la 0007: desplegarla antes de la migración
+hace fallar el guardado de los hallazgos.
 
 ## Desarrollo local
 

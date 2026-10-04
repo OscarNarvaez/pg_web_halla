@@ -3,7 +3,8 @@
 halla es la herramienta del Hospital Infantil Los Ángeles para registrar los hallazgos de auditoría
 interna. Usted describe con sus palabras lo que observó; el sistema decide si es una **no conformidad**,
 una **observación**, una **oportunidad de mejora** o una **fortaleza**, lo redacta con lenguaje técnico
-de auditoría y busca el requisito aplicable en las normas cargadas. Al final, genera el informe.
+de auditoría, busca el requisito aplicable en las normas cargadas, evalúa el riesgo con el PR13_GQ y propone
+controles. Todo llega a una matriz consolidada que usted valida y descarga en Excel, y al final se genera el informe.
 
 **El juicio profesional sigue siendo suyo.** Todo lo que propone la IA se puede revisar y corregir antes
 de guardarlo.
@@ -38,11 +39,22 @@ en un informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
   ajuste lo que haga falta antes de guardar.
 
-## 3. Registrar un hallazgo
+## 3. Registrar un hallazgo: el asistente de 7 pasos
 
-Dentro de la auditoría: **Nuevo hallazgo**.
+Dentro de la auditoría: **Nuevo hallazgo**. La plataforma lo guía paso a paso; arriba verá los 7 pasos y
+puede volver a cualquiera de ellos. Lo que cambie se guarda al pasar de un paso a otro.
 
-### Cómo escribirlo
+| Paso | Qué hace usted | Qué hace la IA |
+|---|---|---|
+| 1. Evidencia | Escribe lo que encontró o carga un PDF | — |
+| 2. Requisito | Revisa la norma, el numeral y el requisito | Los busca en las normas cargadas |
+| 3. Clasificación | Revisa la categoría y su justificación | Decide la categoría |
+| 4. Redacción | Revisa el hallazgo redactado | Lo reescribe con la fórmula de la categoría |
+| 5. Riesgo | Confirma o ajusta el riesgo | Lo identifica y lo evalúa con el PR13_GQ |
+| 6. Controles | Adopta controles o escribe los suyos | Propone controles |
+| 7. Matriz | Envía todo a la matriz consolidada | — |
+
+### Paso 1 · Evidencia
 
 Describa lo que observó como lo contaría a un colega. No se preocupe por la redacción técnica ni por la
 categoría: eso lo hace el sistema. Lo que sí importa es el **contenido**:
@@ -51,7 +63,6 @@ categoría: eso lo hace el sistema. Lo que sí importa es el **contenido**:
 > clínica. Describa el hecho, no a la persona («en 5 historias clínicas…», no «la historia de María Pérez…»).
 > El texto se envía a un servicio de inteligencia artificial externo; aunque el sistema retira esos datos
 > antes de enviarlo, no puede detectarlos todos.
-
 
 - **Qué revisó:** historias clínicas, actas, registros, el área física…
 - **Cuántos:** «se revisaron 20 historias clínicas».
@@ -67,12 +78,16 @@ Ejemplo pobre (le falta evidencia):
 
 > Las historias están mal.
 
-Si en un mismo texto describe dos situaciones de distinto tipo (por ejemplo, un extintor vencido y un
-personal que domina muy bien un protocolo), el sistema las separa en dos hallazgos.
+**Si registró los hallazgos en un PDF**, use **Cargar un PDF de evidencia** (hasta 20 MB y 100 páginas):
 
-### Analizar
+- Si el PDF tiene texto, el sistema lo extrae y lo pone en el cuadro de evidencia. Revíselo y borre lo que no
+  sea evidencia (encabezados, firmas, datos personales).
+- Si el PDF es **escaneado** (una imagen), no tiene texto que extraer: describa su contenido en el cuadro.
+- Si el texto pasa de 6 000 caracteres, elija qué páginas importar y analice el resto como otro hallazgo.
+- **El PDF no sale de su computador**: se lee en el navegador. En el hallazgo solo quedan el nombre del
+  archivo, el número de páginas y una huella digital (SHA-256) que permite comprobar después cuál archivo fue.
 
-Pulse **Analizar con IA**. Tarda normalmente entre 3 y 8 segundos. **Usted no elige la categoría**: la
+Pulse **Analizar con IA**. Tarda normalmente entre 5 y 20 segundos. **Usted no elige la categoría**: la
 determina el sistema con este orden de preguntas:
 
 1. ¿Hay un requisito obligatorio que no se cumple, con evidencia? → **No conformidad**
@@ -80,41 +95,91 @@ determina el sistema con este orden de preguntas:
 3. ¿Hay una práctica positiva destacada con beneficio demostrable? → **Fortaleza**
 4. ¿Se cumple, pero podría hacerse mejor? → **Oportunidad de mejora**
 
-### Leer el resultado
+Si en un mismo texto describe dos situaciones de distinto tipo (por ejemplo, un extintor vencido y un
+personal que domina muy bien un protocolo), el sistema las separa en dos hallazgos. En los pasos 2 a 6
+verá los botones **Situación 1** y **Situación 2** para revisar cada una.
 
-Cada hallazgo muestra:
+### Paso 2 · Norma, numeral y requisito
 
-| Campo | Qué es |
-|---|---|
-| **Clasificación** | La categoría, con su color. |
-| **Hallazgo corregido** | La redacción técnica, con la fórmula obligatoria de la categoría (ver §4). |
-| **Justificación** | Por qué se eligió esa categoría. |
-| **Criterio / requisito** | La norma y el numeral aplicables. Las etiquetas debajo («NTC-ISO 9001:2015 · 9.3.3») abren el texto completo del numeral. |
-| **Evidencia** | Los hechos que sustentan la clasificación. |
-| **Severidad** | Alta, media o baja, sugerida por la IA. |
+Por cada requisito que sustenta el hallazgo verá la **norma** (por ejemplo, NTC-ISO 9001:2015), el
+**numeral** (9.3.3) y el **texto del requisito** tal como está en el documento cargado. La IA solo puede
+citar numerales que existan en esos documentos.
 
-Haga clic sobre cualquier texto para corregirlo. Si su criterio profesional no coincide con la categoría,
-use **Corregir clasificación**: quedará registrado que usted la cambió.
+Si no hay un requisito verificable, el criterio dice literalmente *[Requisito específico pendiente de
+identificación/validación]*. Si usted conoce el requisito (un procedimiento institucional, una
+resolución), escríbalo en **Criterio / requisito**.
+
+### Paso 3 · Clasificación
+
+La categoría que decidió la IA, la justificación y la severidad sugerida. Si su criterio profesional no
+coincide, use **Corregir clasificación**: quedará registrado que usted la cambió.
+
+### Paso 4 · Redacción
+
+El hallazgo reescrito con la fórmula obligatoria de su categoría (ver §4) y la evidencia. Haga clic sobre
+cualquier texto para corregirlo. Su texto original **siempre se conserva** tal como lo escribió («Ver texto
+original del auditor») y no se puede modificar: es la evidencia de lo que usted reportó.
+
+### Paso 5 · Riesgo
+
+La IA identifica el riesgo y lo evalúa con las escalas del procedimiento **PR13_GQ Gestión de riesgos**:
+
+- **Riesgo identificado:** «Posibilidad de <evento> debido a <causa>, lo que podría <consecuencia>».
+- **Dimensión de impacto:** calidad en la atención y seguridad del paciente, prestación del servicio,
+  legal, financiero, reputacional o ambiental.
+- **Probabilidad (1 a 5):** Raro, Improbable, Posible, Probable, Casi seguro. Debajo de cada valor verá su
+  descripción del PR13. La IA solo conoce lo que usted escribió: si sabe con qué frecuencia ha ocurrido,
+  ajuste la probabilidad.
+- **Impacto (1 a 5):** Insignificante, Menor, Moderado, Mayor, Catastrófico, con la descripción de la
+  dimensión elegida.
+
+El **nivel de riesgo** no lo decide la IA: lo calcula el sistema. Riesgo inherente = probabilidad ×
+impacto, y el puntaje se ubica en Bajo, Moderado, Alto o Extremo. Junto al nivel verá el tratamiento que
+indica el PR13. Una no conformidad nunca se «asume»: el PR13 no admite aceptar riesgos que conlleven un
+incumplimiento normativo.
+
+El **mapa de calor 5 × 5** muestra en cada casilla el puntaje y el nivel; el círculo oscuro dice cuántos
+hallazgos de la auditoría están en esa casilla, y el borde grueso marca el hallazgo actual. Puede hacer clic
+en una casilla para elegir la probabilidad y el impacto a la vez.
+
+Los cortes entre niveles (por defecto: Bajo hasta 4, Moderado hasta 9, Alto hasta 16) son valores de
+referencia: si la matriz de riesgos del hospital usa otros, cámbielos en **Escala de niveles de la
+auditoría**. Aplican a toda la auditoría.
+
+Una **fortaleza** no lleva riesgo ni controles.
+
+### Paso 6 · Controles
+
+La IA propone de uno a tres controles (preventivos o correctivos). **Marque los que desea adoptar**: los de
+la IA no se reescriben; si quiere otro, agréguelo como control propio con **Agregar control**. Sus controles
+se pueden editar y eliminar.
+
+### Paso 7 · Enviar a la matriz
+
+Un resumen de cada hallazgo con su requisito, su nivel de riesgo y los controles adoptados. Si a alguno le
+falta algo para poder validarlo después (el riesgo o un control adoptado), se lo indica con un enlace para
+completarlo. **Enviar a la matriz consolidada** guarda todo y lo lleva a la matriz, donde el hallazgo queda
+como **Pendiente**.
 
 ### Los avisos
 
 | Aviso | Qué hacer |
 |---|---|
-| **Requisito pendiente** (etiqueta gris) | No hay en las normas cargadas un requisito que sustente el hallazgo. El criterio dice literalmente *[Requisito específico pendiente de identificación/validación]*. Si usted conoce el requisito (un procedimiento institucional, una resolución), escríbalo en el campo. |
+| **Requisito pendiente** | No hay en las normas cargadas un requisito que sustente el hallazgo. Si usted lo conoce, escríbalo en el campo. |
 | **Se marcaron fechas o cifras…** | La IA escribió un dato que usted no dio. Se reemplazó por *[fecha por confirmar]* o *[cantidad por confirmar]*: complételo o bórrelo. |
 | **Se retiraron referencias normativas…** | La IA citó algo que no está en las normas cargadas y se quitó. Revise que el criterio quede bien. |
 | **Revisa la redacción** | La redacción no sigue del todo la fórmula de la categoría. Corríjala a mano. |
+| **Completa el riesgo** | La IA no propuso una probabilidad, un impacto o una dimensión válidos. Elíjalos en el paso 5. |
+| **La IA no propuso controles** | Agregue al menos uno propio en el paso 6. |
 
 El sistema **nunca inventa** numerales, normas, fechas ni cifras: si no puede verificarlos, lo dice.
 
-### Guardar, reanalizar o descartar
+### Reanalizar o descartar
 
-- **Guardar hallazgo:** queda **confirmado** con sus correcciones.
+En el paso 1, después del análisis:
+
 - **Reanalizar:** descarta este resultado y vuelve a analizar el mismo texto.
 - **Descartar:** descarta el resultado; su texto sigue en la caja por si quiere reescribirlo.
-
-Su texto original **siempre se conserva** tal como lo escribió («Ver texto original del auditor») y no se
-puede modificar: es la evidencia de lo que usted reportó.
 
 ## 4. Las cuatro fórmulas de redacción
 
@@ -131,22 +196,50 @@ pendiente para que usted lo complete.
 ## 5. Gestionar los hallazgos de una auditoría
 
 En el detalle de la auditoría verá los contadores por categoría (haga clic en uno para filtrar), un
-buscador y la lista de hallazgos. Cada uno tiene un número (H-01, H-02…) y un estado:
+buscador y la lista de hallazgos. Cada uno tiene un número (H-01, H-02…), su nivel de riesgo y un estado:
 
 | Estado | Significa |
 |---|---|
-| **Generado** | La IA lo produjo y usted aún no lo revisó. |
-| **Editado** | Usted lo modificó, pero no lo ha confirmado. |
-| **Confirmado** | Usted lo revisó y lo aprobó. |
-| **Descartado** | No se incluye en el informe. Se puede restaurar. |
+| **Pendiente** | La IA lo produjo y usted aún no lo valida. Si usted lo modificó, dice «Pendiente (editado)». |
+| **Validado** | Usted lo revisó y lo aprobó. |
+| **Se sugiere hacer cambios** | Hay que corregirlo antes de validarlo; puede llevar una nota con los cambios sugeridos. |
+| **Descartado** | No se incluye en la matriz ni en el informe. Se puede restaurar. |
 
-Acciones: **Ver y editar**, **Confirmar**, **Duplicar** (útil para dos situaciones parecidas) y
+Acciones: **Ver y editar**, **Validar**, **Duplicar** (útil para dos situaciones parecidas) y
 **Descartar**. Cuando termine, puede **Cerrar la auditoría** para que no admita hallazgos nuevos.
 
-## 6. Generar el informe
+Para validar un hallazgo (que no sea fortaleza) debe tener el riesgo completo (descripción, dimensión,
+probabilidad e impacto) y al menos un control adoptado. **Si edita un hallazgo ya validado, vuelve a
+Pendiente**: la validación corresponde a lo que usted revisó, no a una versión posterior.
 
-Con al menos un hallazgo confirmado, pulse **Generar informe**. El informe incluye todos los hallazgos
-no descartados (si alguno está sin confirmar, se le avisa) y tiene once secciones: identificación,
+## 6. La matriz consolidada
+
+**Matriz consolidada** (en el detalle de la auditoría, o al terminar el paso 7) reúne todos los hallazgos
+vigentes en una tabla con estas columnas: **ID, Clasificación, Norma y numeral, Evidencia, Riesgo,
+Hallazgo, Evaluación, Controles y Estado**. Arriba verá cuántos hay en cada estado y el mapa de calor de
+toda la auditoría.
+
+En la columna **Estado** elija para cada hallazgo:
+
+- **Pendiente:** aún sin revisar.
+- **Validado:** revisado y aprobado.
+- **Se sugiere hacer cambios:** se abre un cuadro para anotar qué cambiar (opcional).
+
+Para corregir un hallazgo, haga clic en su ID (H-01…): se abre con todos sus pasos editables.
+
+**Descargar matriz (Excel)** solo funciona cuando **todos** los hallazgos están en **Validado**:
+
+- Si alguno está **Pendiente**, aparece el aviso «La matriz aún no se ha validado» con la lista de los que
+  faltan.
+- Si alguno tiene **Se sugiere hacer cambios**, tampoco se descarga: el aviso muestra cuáles y sus notas.
+
+El archivo se llama `Matriz_<código>_<AAAAMMDD>.xlsx` e incluye las mismas columnas, el color del nivel de
+riesgo y la escala de niveles usada.
+
+## 7. Generar el informe
+
+Con al menos un hallazgo validado, pulse **Generar informe**. El informe incluye todos los hallazgos
+no descartados (si alguno está sin validar, se le avisa) y tiene once secciones: identificación,
 objetivo, alcance, criterios, equipo auditor, metodología, resumen de resultados, hallazgos en detalle
 (no conformidades, observaciones, oportunidades de mejora y fortalezas, en ese orden), conclusiones,
 recomendaciones y firmas.
@@ -157,7 +250,7 @@ recomendaciones y firmas.
 - Si cambia los hallazgos, genere una **nueva versión**: las anteriores se conservan.
 - Descárguelo en **PDF** o en **Word** (para editarlo), o imprímalo directamente.
 
-## 7. Consultar las normas
+## 8. Consultar las normas
 
 **Normas** permite buscar en los documentos que el sistema puede citar: NTC-ISO 9001:2015, ISO 45001:2018,
 NTC-ISO 14001:2015, ISO 19011 y el procedimiento PR13-GQ de gestión de riesgos. Si un numeral no aparece
@@ -166,7 +259,7 @@ ahí, el sistema no lo usa.
 Use las palabras de la norma: «información documentada» encuentra más que «registros». La ISO 19011 está
 en inglés, así que se encuentra con términos en inglés («audit findings»).
 
-## 8. Preguntas frecuentes
+## 9. Preguntas frecuentes
 
 **El análisis dice que se agotó la cuota de la IA.** El servicio gratuito tiene un número limitado de
 análisis por día para todo el hospital. Su texto no se pierde: inténtelo más tarde o avise al
@@ -183,6 +276,10 @@ la clasificación fue ajustada por usted.
 **¿Quién ve mis auditorías?** Solo usted y los administradores de la plataforma.
 
 **¿Qué pasa si edito un hallazgo?** Se guarda un historial con la versión anterior, quién la cambió y cuándo.
+Si estaba validado, vuelve a Pendiente.
+
+**¿El PDF que cargo queda guardado en la plataforma?** No. Se lee en su navegador y solo se usa su texto.
+El hallazgo guarda el nombre del archivo, sus páginas y su huella digital, para comprobar después cuál fue.
 
 **Me salió «Tu cuenta está pendiente de aprobación».** Un administrador debe aprobarla. Cuando lo haga,
 pulse «Ya me aprobaron» o vuelva a ingresar.

@@ -10,6 +10,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0004_informes_y_logs.sql` | `informes` versionados e `ia_eventos` |
 | `0005_rls.sql` | Políticas RLS, `es_admin()` y el bloqueo de cambio de rol |
 | `0006_seguridad.sql` | Aprobación de cuentas, autorización de datos (Ley 1581), citas validadas, marcas de tiempo del servidor, sin borrado físico, historial de hallazgos, cuota de IA atómica y mínimo privilegio (ver `docs/SEGURIDAD.md`) |
+| `0007_riesgo_controles_matriz.sql` | Estado `cambios_sugeridos`, riesgo del PR13_GQ (dimensión, probabilidad, impacto), controles validados, huella del PDF de evidencia, umbrales de riesgo por auditoría y la regla «editar un validado lo devuelve a pendiente» |
 
 ## Modelo
 
@@ -46,6 +47,7 @@ erDiagram
     date fecha_inicio
     date fecha_fin
     estado_auditoria estado
+    jsonb umbrales_riesgo "bajo, moderado, alto (0007)"
   }
   HALLAZGOS {
     uuid id PK
@@ -58,12 +60,20 @@ erDiagram
     text criterio_requisito
     text evidencia
     text severidad "alta | media | baja"
-    estado_hallazgo estado
+    estado_hallazgo estado "generado | editado | confirmado | cambios_sugeridos | descartado"
     bool editado_por_usuario
     text modelo_ia "inmutable"
     jsonb respuesta_cruda "inmutable"
     jsonb criterios_citados
     text_array avisos
+    text riesgo_descripcion "0007"
+    text riesgo_dimension "6 dimensiones del PR13"
+    smallint riesgo_probabilidad "1 a 5"
+    smallint riesgo_impacto "1 a 5"
+    text riesgo_justificacion
+    jsonb controles "validados por trigger"
+    jsonb evidencia_archivo "huella del PDF, inmutable"
+    text nota_validacion "cambios sugeridos"
   }
   CRITERIOS_NORMATIVOS {
     uuid id PK
@@ -102,7 +112,20 @@ erDiagram
 - **Trazabilidad inmutable:** `entrada_auditor`, `respuesta_cruda`, `modelo_ia`, `prompt_version`,
   `consecutivo`, `auditoria_id` y `user_id` no se pueden cambiar con `UPDATE`, ni siquiera el dueño.
 - **Marca de edición automática:** cambiar `clasificacion`, `justificacion`, `hallazgo_corregido`,
-  `criterio_requisito`, `evidencia` o `severidad` pone `editado_por_usuario = true`, lo haga o no el cliente.
+  `criterio_requisito`, `evidencia`, `severidad`, los campos de riesgo o los controles pone
+  `editado_por_usuario = true`, lo haga o no el cliente.
+- **Riesgo (0007):** `riesgo_probabilidad` y `riesgo_impacto` entre 1 y 5; `riesgo_dimension` es una de las
+  seis dimensiones del PR13_GQ (las mismas claves que `DIMENSIONES_IMPACTO` en los catálogos). El nivel no se
+  guarda: lo calcula la aplicación con `auditorias.umbrales_riesgo` (enteros, bajo < moderado < alto ≤ 24).
+- **Controles (0007):** el trigger `validar_controles` admite como máximo 10, exige descripción de 5 a 600
+  caracteres, tipo `PREVENTIVO|CORRECTIVO` y origen `ia|auditor`, verifica que `criterio_id` exista y le
+  agrega el documento y el numeral de la base de datos. Al editar, un control `ia` solo puede cambiar
+  `adoptado`: el auditor no puede hacer pasar un control propio por uno de la IA (la service role sí escribe
+  controles `ia`).
+- **Validación de la matriz (0007):** `confirmado` es «Validado». Si cambia el contenido de un hallazgo
+  validado (redacción, riesgo o controles), `proteger_hallazgo` lo devuelve a `editado` (Pendiente).
+- **PDF de evidencia (0007):** `evidencia_archivo` solo guarda `{nombre, paginas, sha256}` (check
+  `evidencia_archivo_valida`) y es inmutable: el archivo nunca llega al servidor.
 - **Procedencia de IA:** desde el cliente solo se pueden insertar hallazgos sin `modelo_ia`,
   `prompt_version` ni `respuesta_cruda` (acción «duplicar»). Los generados por la IA los inserta la
   Edge Function con la service role.
