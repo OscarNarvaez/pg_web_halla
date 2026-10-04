@@ -17,6 +17,7 @@ export default function CompletarPerfil() {
     resolver: zodResolver(esquemaCompletarPerfil),
     defaultValues: {
       nombre_completo: meta.nombre_completo ?? '', cedula: meta.cedula ?? '', celular: meta.celular ?? '',
+      tipo_evaluador: meta.tipo_evaluador || undefined,
       cargos: Array.isArray(meta.cargos) ? meta.cargos : [],
       equipo_auditor: Array.isArray(meta.equipo_auditor) && meta.equipo_auditor.length ? meta.equipo_auditor : [integranteVacio()],
       alcance: meta.alcance || undefined, proceso: meta.proceso ?? '', sistema: meta.sistema ?? '',

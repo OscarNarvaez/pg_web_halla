@@ -41,6 +41,8 @@ export function mensajeError(error) {
     [/fechas_coherentes/i, 'La fecha final no puede ser anterior a la inicial.'],
     [/Ley 1581/i, 'Debes autorizar el tratamiento de tus datos personales.'],
     // Cargos y equipo auditor (migración 0009)
+    [/Auditores Internos o a los Auditores Externos/i, 'Elige si perteneces a los Auditores Internos o a los Auditores Externos.'],
+    [/fechas_reales_coherentes/i, 'La terminación real no puede ser anterior al inicio real.'],
     [/Cargo no permitido/i, 'Uno de los cargos elegidos no está en la lista institucional. Elígelos de nuevo.'],
     [/entre 1 y 5 cargos/i, 'Cada persona debe tener entre 1 y 5 cargos de la lista.'],
     [/equipo auditor/i, 'Revisa el equipo auditor: de 1 a 10 personas, cada una con su nombre y al menos un cargo.'],

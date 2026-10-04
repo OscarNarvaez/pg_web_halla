@@ -152,6 +152,37 @@ const mensajeRiesgo = construirMensaje({ alcance: 'PROCESOS', proceso: 'Urgencia
 ok(/METODOLOGÍA DE RIESGO/.test(mensajeRiesgo) && /5 Casi seguro/.test(mensajeRiesgo) && /CALIDAD_SEGURIDAD_PACIENTE/.test(mensajeRiesgo) && mensajeRiesgo.indexOf('METODOLOGÍA') < mensajeRiesgo.indexOf('HALLAZGO REPORTADO'),
   'el mensaje entrega las escalas del PR13 antes del hallazgo (el prompt del sistema no cambia)')
 
+console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
+{
+  const informe = await import('../supabase/functions/_shared/informe.ts')
+  const aud = { id: 'a1', codigo: 'AI-2026-001', titulo: 'Auditoría a Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null, objetivo: '',
+    criterios: ['NTC-ISO 9001:2015', 'PR13-GQ'], area_auditada: 'Urgencias', auditado_nombre: null, auditado_cargo: null,
+    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', fecha_inicio_real: '2026-10-02', fecha_fin_real: null }
+  const perfilInf = { nombre_completo: 'Ana Pérez', cedula: '1085123456', cargos: ['Auditor médico', 'Coordinadora'], equipo_auditor: [{ nombre: 'Luis Ruiz', cargos: ['Médico'] }], tipo_evaluador: 'AUDITORES_EXTERNOS' }
+  const pdf = { nombre: 'acta.pdf', paginas: 2, sha256: 'a'.repeat(64) }
+  const base = { severidad: null, estado: 'confirmado', criterio_requisito: 'c', evidencia: 'e', criterios_citados: [], controles: [{ descripcion: 'x', tipo: 'PREVENTIVO', origen: 'ia', adoptado: true }] }
+  const hs = [
+    { ...base, id: 'h1', consecutivo: 1, clasificacion: 'NO_CONFORMIDAD', hallazgo_corregido: 'NC uno', riesgo_probabilidad: 4, riesgo_impacto: 5, evidencia_archivo: pdf },
+    { ...base, id: 'h2', consecutivo: 2, clasificacion: 'FORTALEZA', hallazgo_corregido: 'Fortaleza uno', controles: [], evidencia_archivo: pdf },
+    { ...base, id: 'h3', consecutivo: 3, clasificacion: 'OBSERVACION', hallazgo_corregido: 'Obs uno', riesgo_probabilidad: 2, riesgo_impacto: 2 },
+  ]
+  const e = informe.calcularEstadisticas(hs)
+  const n = informe.narrativaRespaldo(aud, e)
+  ok(Object.values(n).every((v) => (Array.isArray(v) ? v.length : String(v).length) > 0), 'la plantilla de respaldo llena todas las secciones narrativas')
+  const c = informe.construirContenido({ auditoria: aud, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-04T17:14:00Z', version: 1, avisos: [] })
+  ok(JSON.stringify(c.hallazgos.map((g) => g.clasificacion)) === '["FORTALEZA","OPORTUNIDAD_DE_MEJORA","OBSERVACION","NO_CONFORMIDAD"]', 'las listas siguen el orden del formato: fortalezas, oportunidades, observaciones, no conformidades')
+  ok(c.ficha.evaluador === 'Auditores Externos' && c.encabezado.evaluador === 'Auditores Externos' && c.encabezado.anio === '2026' && c.encabezado.objeto === 'Urgencias',
+    'el evaluador y el título de la portada salen del perfil y de la auditoría')
+  ok(c.ficha.inicio_planeada === '2026-10-01' && c.ficha.inicio_real === '2026-10-02' && c.ficha.fin_real === '' && c.ficha.lider.cargo === 'Auditor médico, Coordinadora'
+    && c.ficha.equipo[0].nombre === 'Luis Ruiz', 'la Ficha Técnica lleva fechas planeadas y reales, el líder y el equipo')
+  ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)"]', 'los PDF de evidencia van en «Archivos adjuntos», sin repetir')
+  ok(c.objetivo === n.objetivo && n.objetivo.startsWith('Evaluar'), 'si la auditoría no trae objetivo, se redacta uno')
+  ok(c.indicadores.some((l) => l.includes('Riesgos evaluados con la escala del PR13_GQ: 2 (Bajo 1 · Moderado 0 · Alto 0 · Extremo 1)')) && c.indicadores.some((l) => l === 'Controles adoptados: 2.'),
+    'los indicadores los calcula el código (niveles de riesgo y controles)', c.indicadores.join(' | '))
+  ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
+  ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
+}
+
 console.log('\n▸ Catálogos del cliente y del servidor')
 ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosCliente.PROCESOS), 'los 19 procesos coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')
@@ -164,6 +195,12 @@ const dimensionesSql = [...migracion0007.match(/riesgo_dimension in \(([^)]*)\)/
 ok(JSON.stringify(dimensionesSql) === JSON.stringify(Object.keys(catalogosServidor.DIMENSIONES_IMPACTO).sort()), 'las dimensiones de impacto coinciden con el check de PostgreSQL', dimensionesSql.join(', '))
 const migracion0009 = readFileSync(new URL('../supabase/migrations/0009_cargos_y_equipo_auditor.sql', import.meta.url), 'utf8')
 const cargosSql = (funcion) => [...migracion0009.match(new RegExp(`function public\\.${funcion}\\(\\)[\\s\\S]*?array\\[([\\s\\S]*?)\\]::text\\[\\]`))[1].matchAll(/'([^']+)'/g)].map((m) => m[1])
+const migracion0010 = readFileSync(new URL('../supabase/migrations/0010_evaluador_y_fechas_reales.sql', import.meta.url), 'utf8')
+const evaluadoresSql = [...migracion0010.match(/evaluador_tipo as enum \(([^)]*)\)/)[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1])
+ok(JSON.stringify(Object.keys(catalogosCliente.TIPOS_EVALUADOR)) === JSON.stringify(evaluadoresSql)
+  && JSON.stringify(catalogosServidor.TIPOS_EVALUADOR) === JSON.stringify(catalogosCliente.TIPOS_EVALUADOR), 'los tipos de evaluador coinciden con el enum de PostgreSQL y entre cliente y servidor')
+ok(JSON.stringify(catalogosServidor.UMBRALES_RIESGO) === JSON.stringify(catalogosCliente.UMBRALES_RIESGO)
+  && Object.entries(catalogosServidor.NIVELES_RIESGO).every(([z, e]) => catalogosCliente.ZONAS_RIESGO[z]?.etiqueta === e), 'la escala fija de niveles de riesgo es la misma en el informe (servidor) y en la aplicación')
 for (const [nombre, funcion] of [['CARGOS_LIDER', 'cargos_lider'], ['CARGOS_EQUIPO', 'cargos_equipo']]) {
   const sql = cargosSql(funcion)
   ok(JSON.stringify(catalogosServidor[nombre]) === JSON.stringify(catalogosCliente[nombre]) && JSON.stringify(sql) === JSON.stringify(catalogosCliente[nombre]),

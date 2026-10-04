@@ -126,8 +126,8 @@ export function AppShell() {
       <main id="contenido" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
         {perfilIncompleto(perfil) && location.pathname !== '/app/perfil' && (
           <p role="status" className="no-imprimir mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
-            Completa tu perfil: elige tus cargos y los de tu equipo auditor de la lista institucional. Aparecen en las
-            firmas y sin ellos no se puede generar el informe. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
+            Completa tu perfil: elige tu grupo de auditores, tus cargos y los de tu equipo auditor. Aparecen en la Ficha
+            Técnica del informe y sin ellos no se puede generar. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
           </p>
         )}
         <Outlet />

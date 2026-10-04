@@ -155,3 +155,23 @@ export const CARGOS_EQUIPO = [
 
 export const MAX_CARGOS = 5
 export const MAX_EQUIPO = 10
+
+// ─── Evaluador (Ficha Técnica del informe, migración 0010) ─────────────────
+// El auditor elige al registrarse a cuál grupo pertenece. Mismas claves que el enum public.evaluador_tipo.
+export const TIPOS_EVALUADOR = {
+  AUDITORES_INTERNOS: 'Auditores Internos',
+  AUDITORES_EXTERNOS: 'Auditores Externos',
+}
+
+// ─── Escala de niveles de riesgo (fija, igual a src/lib/catalogos.js) ───────
+// Riesgo inherente = probabilidad × impacto: Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25.
+export const UMBRALES_RIESGO = { bajo: 4, moderado: 9, alto: 16 }
+export const NIVELES_RIESGO = { BAJA: 'Bajo', MODERADA: 'Moderado', ALTA: 'Alto', EXTREMA: 'Extremo' } as const
+
+export function zonaRiesgo(puntaje: number | null | undefined): keyof typeof NIVELES_RIESGO | null {
+  if (!puntaje) return null
+  if (puntaje <= UMBRALES_RIESGO.bajo) return 'BAJA'
+  if (puntaje <= UMBRALES_RIESGO.moderado) return 'MODERADA'
+  if (puntaje <= UMBRALES_RIESGO.alto) return 'ALTA'
+  return 'EXTREMA'
+}

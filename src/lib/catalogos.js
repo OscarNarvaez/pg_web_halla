@@ -277,3 +277,10 @@ export const CARGOS_EQUIPO = [
 
 export const MAX_CARGOS = 5
 export const MAX_EQUIPO = 10
+
+// ─── Evaluador (Ficha Técnica del informe, migración 0010) ─────────────────
+// El auditor elige al registrarse a cuál grupo pertenece. Mismas claves que el enum public.evaluador_tipo.
+export const TIPOS_EVALUADOR = {
+  AUDITORES_INTERNOS: 'Auditores Internos',
+  AUDITORES_EXTERNOS: 'Auditores Externos',
+}

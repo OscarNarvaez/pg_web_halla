@@ -3,7 +3,7 @@ import { supabase, mensajeError } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
-const CAMPOS_PERFIL = ['nombre_completo', 'cedula', 'celular', 'cargos', 'equipo_auditor', 'alcance', 'proceso', 'sistema']
+const CAMPOS_PERFIL = ['nombre_completo', 'cedula', 'celular', 'tipo_evaluador', 'cargos', 'equipo_auditor', 'alcance', 'proceso', 'sistema']
 // Campos que son listas (migración 0009): nunca se envían como texto ni como null
 const LISTAS_PERFIL = new Set(['cargos', 'equipo_auditor'])
 const valorPerfil = (c, v) => (LISTAS_PERFIL.has(c) ? (Array.isArray(v) ? v : []) : v || null)

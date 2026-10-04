@@ -1,6 +1,6 @@
-import { Controller, useFieldArray, useWatch } from 'react-hook-form'
-import { Network, Trash2, UserPlus, Workflow } from 'lucide-react'
-import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS } from '../../lib/catalogos'
+import { Controller, useController, useFieldArray, useWatch } from 'react-hook-form'
+import { Building2, Network, Trash2, UserPlus, Users, Workflow } from 'lucide-react'
+import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS, TIPOS_EVALUADOR } from '../../lib/catalogos'
 import { integranteVacio } from '../../lib/esquemas'
 import { cx } from '../../lib/cx'
 import { Boton } from '../ui/Boton'
@@ -35,13 +35,65 @@ function CampoCargos({ control, name, etiqueta, opciones, ayuda }) {
   )
 }
 
-/** Nombre, cédula, celular y cargos del auditor líder. Recibe los métodos de react-hook-form. */
+const OPCIONES_EVALUADOR = [
+  { valor: 'AUDITORES_INTERNOS', descripcion: 'Trabajas en el hospital y auditas sus procesos o sistemas.', icono: Building2 },
+  { valor: 'AUDITORES_EXTERNOS', descripcion: 'Auditas al hospital desde otra entidad o como contratista.', icono: Users },
+]
+
+/**
+ * Grupo de auditores al que pertenece (el «Evaluador» de la Ficha Técnica del informe). Se valida al elegir: así el
+ * mensaje de error desaparece en ese momento y no al salir del campo, que movería el formulario bajo el siguiente clic.
+ */
+function CampoEvaluador({ errors, control }) {
+  const { field } = useController({ control, name: 'tipo_evaluador' })
+  const elegido = field.value
+  return (
+    <fieldset className="sm:col-span-2">
+      <legend className="text-sm font-medium text-tinta-700">
+        ¿A qué grupo de auditores perteneces? <span className="text-nc-texto" aria-hidden="true">*</span>
+      </legend>
+      <p className="mt-0.5 text-xs text-tinta-500">Aparece como «Evaluador» en la Ficha Técnica del informe.</p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-2" aria-describedby={errors.tipo_evaluador ? 'tipo_evaluador-error' : undefined}>
+        {OPCIONES_EVALUADOR.map(({ valor, descripcion, icono: Icono }) => (
+          <label
+            key={valor}
+            className={cx(
+              'relative flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors focus-within:ring-2 focus-within:ring-halla-500',
+              elegido === valor ? 'border-halla-600 bg-halla-50' : 'border-tinta-100 bg-white hover:border-tinta-300',
+            )}
+          >
+            <input
+              type="radio"
+              name={field.name}
+              value={valor}
+              checked={elegido === valor}
+              ref={valor === OPCIONES_EVALUADOR[0].valor ? field.ref : undefined}
+              onChange={() => { field.onChange(valor); field.onBlur() }}
+              className="sr-only"
+            />
+            <Icono className={cx('mt-0.5 size-5 shrink-0', elegido === valor ? 'text-halla-700' : 'text-tinta-300')} aria-hidden="true" />
+            <span>
+              <span className="block text-sm font-semibold text-tinta-900">{TIPOS_EVALUADOR[valor]}</span>
+              <span className="block text-xs text-tinta-500">{descripcion}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {errors.tipo_evaluador && (
+        <p id="tipo_evaluador-error" className="mt-1.5 text-sm font-medium text-nc-texto" role="alert">{errors.tipo_evaluador.message}</p>
+      )}
+    </fieldset>
+  )
+}
+
+/** Nombre, cédula, celular, grupo de evaluador y cargos del auditor líder. Recibe los métodos de react-hook-form. */
 export function CamposAuditor({ register, errors, control }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Campo etiqueta="Nombre completo" autoComplete="name" required error={errors.nombre_completo?.message} className="sm:col-span-2" {...register('nombre_completo')} />
       <Campo etiqueta="Número de cédula" inputMode="numeric" autoComplete="off" required ayuda="Solo números; puedes escribirla con puntos." error={errors.cedula?.message} {...register('cedula')} />
       <Campo etiqueta="Número de celular" type="tel" inputMode="tel" autoComplete="tel-national" required ayuda="10 dígitos; el prefijo +57 se quita solo." error={errors.celular?.message} {...register('celular')} />
+      <CampoEvaluador errors={errors} control={control} />
       <div className="sm:col-span-2">
         <CampoCargos control={control} name="cargos" etiqueta="Cargos" opciones={CARGOS_LIDER}
           ayuda={`Elige uno o varios de la lista de líderes (hasta ${MAX_CARGOS}). Aparecen en tu firma del informe.`} />

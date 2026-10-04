@@ -13,6 +13,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0007_riesgo_controles_matriz.sql` | Estado `cambios_sugeridos`, riesgo del PR13_GQ (dimensión, probabilidad, impacto), controles validados, huella del PDF de evidencia, umbrales de riesgo por auditoría (retirados en la 0008) y la regla «editar un validado lo devuelve a pendiente» |
 | `0008_escala_riesgo_fija.sql` | Retira `auditorias.umbrales_riesgo`: la escala de niveles de riesgo es fija y no editable (decisión del dueño) |
 | `0009_cargos_y_equipo_auditor.sql` | Cargos de una lista institucional (`cargos text[]`) y equipo auditor de varias personas (`equipo_auditor jsonb`); retira `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo` conservando lo que coincide con la lista |
+| `0010_evaluador_y_fechas_reales.sql` | `profiles.tipo_evaluador` (Auditores Internos o Externos, obligatorio al crear o cambiar el perfil) y `auditorias.fecha_inicio_real`/`fecha_fin_real` para la Ficha Técnica del formato oficial |
 
 ## Modelo
 
@@ -32,6 +33,7 @@ erDiagram
     text celular "10 dígitos"
     text_array cargos "1 a 5 de la lista de líderes (0009)"
     jsonb equipo_auditor "1 a 10 personas: nombre y 1 a 5 cargos (0009)"
+    evaluador_tipo tipo_evaluador "AUDITORES_INTERNOS | AUDITORES_EXTERNOS (0010)"
     alcance_tipo alcance "PROCESOS | SISTEMAS"
     proceso_tipo proceso "solo si PROCESOS"
     sistema_tipo sistema "solo si SISTEMAS"
@@ -48,6 +50,8 @@ erDiagram
     date fecha_inicio
     date fecha_fin
     estado_auditoria estado
+    date fecha_inicio_real "0010"
+    date fecha_fin_real "0010"
   }
   HALLAZGOS {
     uuid id PK

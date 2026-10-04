@@ -223,6 +223,10 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
 - **Minimización de datos (Ley 1581).** La 0009 elimina las columnas del cargo escrito a mano y del acompañante
   único en vez de dejarlas como copia sin uso. La autorización de datos menciona ahora los nombres y cargos de
   las personas del equipo que registra el auditor.
+- **Informe con la plantilla oficial.** El ODT y el PDF se arman en el navegador con datos que el auditor ya
+  puede leer por RLS: no hay un servicio nuevo que proteger. A la IA del informe llegan los hallazgos anonimizados y
+  los cargos del equipo, nunca sus nombres. Los metadatos del ODT llevan como autor a quien genera el informe: la
+  plantilla traía el correo de quien la elaboró y no se copia a los informes. *Prueba:* `probar-interfaz`.
 - **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
   endpoint de exportación nuevo que proteger.
 
@@ -266,10 +270,10 @@ Ordenadas por importancia. Ninguna se puede hacer desde el código.
 ## Cómo repetir la auditoría
 
 ```bash
-pnpm probar            # sin red: 76 de validación (V1–V7), anonimización y catálogos, 14 de cascada,
-                       # 96 de base de datos (RLS, aprobación, ataques de integridad, cuota, riesgo,
-                       # controles, cargos y equipo auditor) y 8 de búsqueda
-pnpm probar:interfaz   # 121 de extremo a extremo, incluidas CSP, PDF, matriz, cargos, cuentas pendientes, admin e iframe
+pnpm probar            # sin red: 87 de validación (V1–V7, anonimización, catálogos e informe), 14 de cascada,
+                       # 103 de base de datos (RLS, aprobación, ataques de integridad, cuota, riesgo,
+                       # controles, cargos, equipo auditor y evaluador) y 8 de búsqueda
+pnpm probar:interfaz   # 124 de extremo a extremo, incluidas CSP, PDF, matriz, cargos, informe oficial (ODT y PDF), admin e iframe
 pnpm verificar-rls     # contra el proyecto Supabase real
 pnpm audit             # vulnerabilidades conocidas en dependencias
 ```

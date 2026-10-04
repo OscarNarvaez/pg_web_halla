@@ -63,7 +63,7 @@ const ok = (c, d, det = '') => {
 const perfil = {
   id: USUARIO, nombre_completo: 'Ana María Rodríguez Peña', cedula: '1085123456', celular: '3001234567', cargos: ['Auditor médico', 'Coordinadora'],
   equipo_auditor: [{ nombre: 'Laura Gómez Ñáñez', cargos: ['Enfermera'] }, { nombre: 'Pedro Pérez Ortiz', cargos: ['Médico', 'Tesorera'] }],
-  alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
+  tipo_evaluador: 'AUDITORES_INTERNOS', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
   rol: 'auditor', aprobado: true, aprobado_en: '2026-09-02T10:00:00Z', acepto_tratamiento_datos_en: '2026-09-01T10:00:00Z',
   creado_en: '2026-09-01T10:00:00Z', actualizado_en: '2026-09-01T10:00:00Z',
 }
@@ -229,8 +229,8 @@ async function funciones(route) {
     const estadisticas = calcularEstadisticas(lista)
     const narrativa = narrativaRespaldo(a, estadisticas)
     const version = db.informes.filter((i) => i.auditoria_id === a.id).length + 1
-    const contenido = construirContenido({ auditoria: a, perfil, hallazgos: lista, estadisticas, narrativa, fechaEmision: '2026-10-04', version, avisos: [] })
-    const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, ...narrativa, recomendaciones: narrativa.recomendaciones.join('\n'), estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.0.0', generado_en: new Date().toISOString() }
+    const contenido = construirContenido({ auditoria: a, perfil, hallazgos: lista, estadisticas, narrativa, generadoEn: new Date().toISOString(), version, avisos: [] })
+    const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, resumen_ejecutivo: narrativa.observaciones, conclusiones: narrativa.conclusiones, recomendaciones: narrativa.recomendaciones.join('\n'), estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.1.0', generado_en: new Date().toISOString() }
     db.informes.push(informe)
     return json({ ok: true, informe, meta: { modelo: 'gemini-3.8-flash', ia: true } })
   }
@@ -323,6 +323,8 @@ console.log('\n▸ Páginas públicas')
   await p.getByRole('button', { name: 'Continuar' }).click()
   ok(await p.getByText('La cédula debe tener entre 6 y 12 dígitos').isVisible(), 'registro paso 2: rechaza una cédula corta con mensaje en español')
   ok(await p.getByText('Elige al menos uno de tus cargos').isVisible(), 'registro paso 2: exige al menos un cargo')
+  ok(await p.getByText('Elige si perteneces a los Auditores Internos o a los Auditores Externos').isVisible(), 'registro paso 2: exige elegir el grupo de auditores (evaluador)')
+  await p.getByText('Auditores Internos', { exact: true }).click()
   await p.getByRole('button', { name: /^Cargos Elige uno o varios cargos/ }).click()
   ok((await p.getByRole('checkbox').count()) === 22, 'el selector ofrece los 22 cargos de líderes')
   await p.getByRole('searchbox', { name: 'Buscar cargo' }).fill('subgerente')
@@ -399,6 +401,7 @@ ok((await listaEquipo.getByRole('checkbox').count()) === 25 && (await listaEquip
   ok(JSON.stringify(signup?.cuerpo?.data?.cargos) === '["Auditor médico","Coordinadora"]'
     && JSON.stringify(signup?.cuerpo?.data?.equipo_auditor) === JSON.stringify([{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }, { nombre: 'Pedro Pérez', cargos: ['Médico', 'Tesorera'] }]),
     'el registro envía varios cargos y un equipo de varias personas', JSON.stringify(signup?.cuerpo?.data))
+  ok(signup?.cuerpo?.data?.tipo_evaluador === 'AUDITORES_INTERNOS', 'el registro envía el grupo de auditores elegido (evaluador del informe)')
   await p.getByRole('button', { name: 'Reenviar correo de confirmación' }).click()
   await p.getByText(/enviamos un nuevo correo/).waitFor()
   ok(authPeticiones.some((x) => x.ruta === 'resend' && x.cuerpo?.type === 'signup'), 'el botón reenvía el correo de confirmación')
@@ -586,70 +589,135 @@ await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 1, 'el contador de no conformidades filtra la lista')
 await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 
-// Informe
+// Informe final con el formato oficial (src/formato_de_informe_final/Auditoria_interna.odt)
 await p.getByRole('link', { name: 'Generar informe' }).click()
+await p.getByLabel('Fecha inicio (real)').fill('2026-10-01')
+await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
+await p.getByRole('button', { name: 'Guardar fechas' }).click()
+await p.getByText(/Fechas reales guardadas/).waitFor()
+ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
 await p.getByRole('button', { name: 'Generar informe' }).click()
-await p.getByRole('heading', { name: 'Informe de auditoría interna' }).waitFor()
-const secciones = await p.locator('article h2[id^="seccion-"]').allTextContents()
-ok(secciones.length === 11 && secciones[0].startsWith('1. ') && secciones[10].startsWith('11. '), 'el informe tiene las 11 secciones', secciones.join(' | '))
-const grupos = await p.locator('article h3').allTextContents()
-ok(/No conformidades/.test(grupos[0]) && /Observaciones/.test(grupos[1]) && /Oportunidades/.test(grupos[2]) && /Fortalezas/.test(grupos[3]), 'hallazgos en orden NC → OBS → OM → FORT', grupos.join(' | '))
-const equipoInforme = await p.locator('#seccion-5').locator('..').innerText()
-ok(/Auditor médico, Coordinadora/.test(equipoInforme) && /Laura Gómez Ñáñez, Enfermera/.test(equipoInforme) && /Pedro Pérez Ortiz, Médico, Tesorera/.test(equipoInforme),
-  'sección 5: el líder con sus cargos y cada persona del equipo con los suyos', equipoInforme)
-ok((await p.locator('#seccion-11').locator('..').getByText('Equipo auditor', { exact: true }).count()) === 2, 'sección 11: una firma por cada persona del equipo auditor (además del líder)')
+const hoja = p.getByRole('article', { name: 'Informe final de auditoría' })
+await hoja.waitFor()
+const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
+const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
+  'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
+  'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora',
+  'Archivos adjuntos evidencia.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
+  'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Oportunidades', 'Observaciones',
+  'Conclusiones', 'RECOMENDACIONES:', 'Generado por Ana María Rodríguez Peña - ']
+const enOrden = (texto, partes) => {
+  let desde = 0
+  for (const parte of partes) {
+    const i = texto.indexOf(parte, desde)
+    if (i < 0) return parte
+    desde = i + parte.length
+  }
+  return ''
+}
+const faltaVista = enOrden(textoHoja, ORDEN_VISTA)
+ok(!faltaVista, 'la vista sigue el formato oficial: portada, Ficha Técnica, hallazgos (fortalezas → oportunidades → observaciones → no conformidades) y secciones', faltaVista)
+const extintor = db.hallazgos.find((h) => h.clasificacion === 'NO_CONFORMIDAD' && /extintor/.test(h.hallazgo_corregido)).hallazgo_corregido
+ok(textoHoja.indexOf(extintor.slice(0, 60)) > textoHoja.indexOf('NO CONFORMIDADES') && textoHoja.indexOf(extintor.slice(0, 60)) < textoHoja.indexOf('Objetivo'),
+  'cada hallazgo va en su lista, con la redacción validada')
 await p.screenshot({ path: `${CAPTURAS}07-informe.png`, fullPage: true })
 
+// ODT: la plantilla oficial llena
+const [descargaOdt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (ODT)' }).click()])
+const rutaOdt = `${CAPTURAS}${descargaOdt.suggestedFilename()}`
+await descargaOdt.saveAs(rutaOdt)
+ok(/^Informe_AI-2026-001_\d{8}\.odt$/.test(descargaOdt.suggestedFilename()), `nombre del documento: ${descargaOdt.suggestedFilename()}`)
+const listado = execSync(`unzip -v "${rutaOdt}"`).toString().split('\n').filter((l) => /\s(Stored|Defl:\w)\s/.test(l))
+ok(/\sStored\s.*\smimetype$/.test(listado[0] ?? '') && execSync(`unzip -p "${rutaOdt}" mimetype`).toString() === 'application/vnd.oasis.opendocument.text',
+  'el archivo es un ODT válido (mimetype primero y sin comprimir)')
+const textoOdf = (xml) => xml.replace(/<text:s\/>/g, ' ').replace(/<text:s text:c="(\d+)"\/>/g, (_, n) => ' '.repeat(Number(n)))
+  .replace(/<\/(text:p|text:h)>/g, '\n').replace(/<\/table:table-cell>/g, ' | ').replace(/<[^>]+>/g, '')
+  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+// Una línea por párrafo; las celdas de una fila de tabla se unen con « | »
+const lineas = (xml) => textoOdf(xml.replace(/<\/text:p>(?=\s*<\/table:table-cell>)/g, '').replace(/<table:table-row[^>]*>|<\/table:table>/g, '\n'))
+  .split('\n').map((l) => l.replace(/\s+/g, ' ').replace(/(\s*\|\s*)+$/, '').replace(/^(\s*\|\s*)+/, '').trim()).filter(Boolean)
+const PLANTILLA = `${REPO}/src/formato_de_informe_final/Auditoria_interna.odt`
+const original = lineas(execSync(`unzip -p "${PLANTILLA}" content.xml`).toString())
+const llenado = lineas(execSync(`unzip -p "${rutaOdt}" content.xml`).toString())
+const textoLlenado = llenado.join('\n')
+// Todos los textos de la plantilla siguen ahí, en el mismo orden (menos el título y el año de la portada, que se llenan)
+const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
+const faltaFijo = enOrden(textoLlenado, fijos)
+ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
+const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
+  'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
+  'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
+  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
+  'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
+  'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
+  'Indicadores', '• Hallazgos registrados: 5', 'Oportunidades', 'Observaciones', 'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia', 'RECOMENDACIONES:', '1. ']
+const faltaOdt = enOrden(textoLlenado, ORDEN_ODT)
+ok(!faltaOdt, 'el ODT llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar', faltaOdt)
+const estilosOdt = execSync(`unzip -p "${rutaOdt}" styles.xml`).toString()
+ok(/Auditoria Interna - 2026 - Urgencias/.test(textoOdf(estilosOdt)) && /Generado por Ana María Rodríguez Peña - 20\d\d-\d\d-\d\d \d{1,2}:\d\d [AP]M/.test(textoOdf(estilosOdt))
+  && /<text:page-number[^>]*>/.test(estilosOdt) && /<text:page-count/.test(estilosOdt), 'encabezado y pie de la plantilla con la auditoría, quien lo generó y el número de página')
+const posicionesPie = [...estilosOdt.matchAll(/draw:name="Textbox \d+"[^>]*?svg:y="([\d.]+in)"|svg:y="([\d.]+in)"[^>]*?draw:name="Textbox \d+"/g)].map((m) => m[1] ?? m[2])
+ok(new Set(posicionesPie).size <= 2, 'el encabezado y el pie quedan en el mismo lugar en todas las páginas', posicionesPie.join(', '))
+ok(!/tatis6661212/.test(execSync(`unzip -p "${rutaOdt}" meta.xml`).toString()), 'los metadatos no arrastran datos personales de quien elaboró la plantilla')
+const imagenesOdt = execSync(`unzip -l "${rutaOdt}"`).toString()
+ok(/(media|Pictures)\/[^\s]+\.jpe?g/.test(imagenesOdt) && !/Thumbnails\//.test(imagenesOdt), 'el logo de la plantilla se conserva (y no la miniatura de la plantilla vacía)')
+const xmlInvalido = ['content.xml', 'styles.xml', 'meta.xml', 'META-INF/manifest.xml'].filter((x) => {
+  try {
+    execSync(`unzip -p "${rutaOdt}" ${x} | python3 -c "import sys; from xml.dom import minidom; minidom.parseString(sys.stdin.buffer.read())"`, { stdio: 'ignore' })
+    return false
+  } catch {
+    return true
+  }
+})
+ok(!xmlInvalido.length, 'todos los XML del documento son válidos', xmlInvalido.join(', '))
+// Si LibreOffice está instalado, el ODT se convierte a PDF para ver cómo queda (no es obligatorio en CI)
+try {
+  execSync(`timeout 120 soffice --headless --convert-to pdf --outdir "${CAPTURAS}odt" "${rutaOdt}"`, { stdio: 'ignore' })
+  const pdfOdt = `${CAPTURAS}odt/${descargaOdt.suggestedFilename().replace(/\.odt$/, '.pdf')}`
+  const textoPdfOdt = execSync(`pdftotext "${pdfOdt}" -`).toString()
+  ok(/Página 1\/\d/.test(textoPdfOdt) && /FORTALEZAS IDENTIFICADAS/.test(textoPdfOdt), 'LibreOffice abre el ODT y numera las páginas')
+  execSync(`pdftoppm -r 60 -png "${pdfOdt}" "${CAPTURAS}odt/pagina"`)
+} catch {
+  console.log('  · LibreOffice no está instalado: se omite la conversión del ODT a PDF')
+}
+
+// PDF con el mismo formato
 const [descargaPdf] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'PDF' }).click()])
 const rutaPdf = `${CAPTURAS}${descargaPdf.suggestedFilename()}`
 await descargaPdf.saveAs(rutaPdf)
 ok(/^Informe_AI-2026-001_\d{8}\.pdf$/.test(descargaPdf.suggestedFilename()), `nombre del PDF: ${descargaPdf.suggestedFilename()}`)
-const textoPdf = execSync(`pdftotext -layout "${rutaPdf}" -`).toString()
+const textoPdf = execSync(`pdftotext "${rutaPdf}" -`).toString().replace(/\s+/g, ' ')
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
-ok(/Auditoría/.test(textoPdf) && /Observación|Observaciones/.test(textoPdf) && /Ñáñez/.test(textoPdf) && /Rodríguez Peña/.test(textoPdf), 'el PDF conserva tildes y «ñ» (Ñáñez, Rodríguez, Auditoría)')
-ok(new RegExp(`Página 1 de ${paginasPdf}`).test(textoPdf) && /Generado el/.test(textoPdf), `pie con número de página y fecha (${paginasPdf} páginas)`)
-ok(/Pedro Pérez Ortiz/.test(textoPdf) && /Médico, Tesorera/.test(textoPdf) && (textoPdf.replace('5. EQUIPO AUDITOR', '').match(/EQUIPO AUDITOR/g) ?? []).length === 2 && /AUDITOR LÍDER/.test(textoPdf),
-  'el PDF lista todo el equipo y tiene una firma por persona')
-ok(/AI-2026-001 · Informe de auditoría interna/.test(textoPdf), 'encabezado con el código de la auditoría')
-ok(/(Letter|612 x 792)/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño carta')
+ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño A4, como la plantilla')
+const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
+  'Evaluador', 'Auditores Internos', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
+  'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Oportunidades', 'Observaciones', 'Conclusiones', 'RECOMENDACIONES:'])
+ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
+ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),
+  `encabezado y pie de la plantilla en cada página (${paginasPdf} páginas), con tildes y «ñ»`)
 const fuentesPdf = execSync(`pdffonts "${rutaPdf}"`).toString()
-ok(/SourceSerif4/.test(fuentesPdf) && /Inter/.test(fuentesPdf) && !/Helvetica/.test(fuentesPdf), 'fuentes Unicode incrustadas (Source Serif 4 e Inter, sin Helvetica)')
-// pdfimages lista una fila por aparición; las de tipo «image» deben ser una por página más la portada
+ok(/LiberationSans/.test(fuentesPdf) && !/Helvetica/.test(fuentesPdf), 'fuente libre incrustada (Liberation Sans, con las medidas de Arial)')
 const imagenesPdf = execSync(`pdfimages -list "${rutaPdf}"`).toString().split('\n').filter((l) => /^\s*\d+\s+\d+\s+image\b/.test(l))
-ok(imagenesPdf.length === paginasPdf + 1 && /\bsmask\b/.test(execSync(`pdfimages -list "${rutaPdf}"`).toString()), `el PDF lleva el logo en la portada y en el encabezado de las ${paginasPdf} páginas`, `${imagenesPdf.length} apariciones`)
+ok(imagenesPdf.length === 1 && /^\s*1\s/.test(imagenesPdf[0]), 'el logo de la plantilla va solo en la portada', imagenesPdf.join(' / '))
+execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
 
-const [descargaDocx] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Word' }).click()])
-const rutaDocx = `${CAPTURAS}${descargaDocx.suggestedFilename()}`
-await descargaDocx.saveAs(rutaDocx)
-ok(/^Informe_AI-2026-001_\d{8}\.docx$/.test(descargaDocx.suggestedFilename()), `nombre del Word: ${descargaDocx.suggestedFilename()}`)
-const xml = execSync(`unzip -p "${rutaDocx}" word/document.xml`).toString()
-ok(/Observaciones/.test(xml) && /Ñáñez/.test(xml) && /Heading1|Ttulo1|Título 1/.test(xml), 'el Word tiene tildes y encabezados nativos (Heading 1)')
-ok(/instrText[^>]*>TOC [^<]*\\o/.test(xml), 'el Word incluye la tabla de contenido automática')
-ok(/Pedro Pérez Ortiz/.test(xml) && (xml.match(/EQUIPO AUDITOR/g) ?? []).length === 2, 'el Word lista todo el equipo y tiene una firma por persona')
-ok(/w:shd [^>]*w:fill="FEF2F2"/.test(xml), 'filas coloreadas según la clasificación')
-const archivosDocx = execSync(`unzip -l "${rutaDocx}"`).toString()
-ok(/word\/media\/[^\s]+\.png/.test(archivosDocx) && /<w:drawing>/.test(xml) && /<w:drawing>/.test(execSync(`unzip -p "${rutaDocx}" 'word/header*.xml'`).toString()), 'el Word lleva el logo en la portada y en el encabezado')
-
-// Un informe generado antes de la 0009 (un solo acompañante) se sigue mostrando
+// Un informe generado con el formato anterior pide generar una nueva versión
 {
-  const actual = db.informes.at(-1)
-  const { integrantes, ...resto } = actual.contenido.equipo_auditor
-  const viejo = structuredClone(actual)
+  const viejo = structuredClone(db.informes.at(-1))
   Object.assign(viejo, { id: crypto.randomUUID(), version: 99 })
-  viejo.contenido.version_estructura = 1
-  viejo.contenido.equipo_auditor = { ...resto, acompanante: { nombre: 'Laura Gómez Ñáñez', cargo: 'Profesional de calidad' } }
-  viejo.contenido.firmas = viejo.contenido.firmas.slice(0, 2)
+  viejo.contenido = { version_estructura: 2, identificacion: viejo.contenido.identificacion }
   db.informes.push(viejo)
   await p.goto(`${BASE}/app/auditorias/${A1}/informe`)
-  await p.getByRole('heading', { name: 'Informe de auditoría interna' }).waitFor()
-  ok(/Laura Gómez Ñáñez, Profesional de calidad/.test(await p.locator('#seccion-5').locator('..').innerText()) && integrantes.length === 2,
-    'un informe anterior, con un solo acompañante, se sigue mostrando')
+  await p.getByRole('heading', { name: 'Esta versión tiene el formato anterior' }).waitFor()
+  ok((await p.getByRole('button', { name: 'Documento (ODT)' }).count()) === 0, 'un informe con el formato anterior pide generar una nueva versión y no se descarga')
   db.informes.pop()
 }
 perfil.cargos = []
 await p.goto(`${BASE}/app`)
-await p.getByText(/Completa tu perfil: elige tus cargos/).waitFor()
-ok(true, 'un perfil anterior sin cargos ve el aviso para completarlo en «Mi perfil»')
+await p.getByText(/Completa tu perfil: elige tu grupo de auditores/).waitFor()
+ok(true, 'un perfil anterior incompleto ve el aviso para completarlo en «Mi perfil»')
 perfil.cargos = ['Auditor médico', 'Coordinadora']
 
 // Ruta profunda tras recargar

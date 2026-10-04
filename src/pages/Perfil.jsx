@@ -14,6 +14,7 @@ const valoresDe = (p) => ({
   ...p,
   proceso: p.proceso ?? '',
   sistema: p.sistema ?? '',
+  tipo_evaluador: p.tipo_evaluador ?? undefined,
   cargos: p.cargos ?? [],
   equipo_auditor: p.equipo_auditor?.length ? p.equipo_auditor : [integranteVacio()],
 })
@@ -42,8 +43,9 @@ export default function Perfil() {
         {error && <p role="alert" className="rounded-md border border-nc-borde bg-nc-bg px-3 py-2 text-sm text-nc-texto">{error}</p>}
         {perfilIncompleto(perfil) && (
           <p className="rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
-            Ahora los cargos se eligen de la lista institucional y el equipo auditor puede tener varias personas. Elige tus
-            cargos y los de tu equipo, y guarda los cambios: sin ellos no se puede generar el informe.
+            Faltan datos que pide el informe: tu grupo de auditores (internos o externos), tus cargos de la lista
+            institucional y los de cada persona de tu equipo auditor. Complétalos y guarda los cambios: sin ellos no se
+            puede generar el informe.
           </p>
         )}
         <Tarjeta titulo="Cuenta">

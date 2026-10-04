@@ -78,7 +78,7 @@ que no se reutiliza código: se reutiliza como especificación de producto.
 `Main.dc.html` referencia blobs que no están en el repositorio: el **logo del hospital**
 (`/_blob/e615…`) y la base normativa (`/_blob/889a…`). La base normativa se sustituye por `normas/`;
 **el logo hay que conseguirlo aparte**. *Resuelto el 2026-10-04:* el dueño entregó el logo y está en
-`src/assets/logo-hila.webp` (interfaz), `src/assets/logo-hila.png` (PDF y Word) y `public/favicon-32.png` /
+`src/assets/logo-hila.webp` (interfaz) y `public/favicon-32.png` /
 `public/apple-touch-icon.png`.
 
 ## C. Documentos normativos
@@ -171,6 +171,11 @@ Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder re
 > CSV), además de la carga de un PDF de evidencia. Ver la migración `0007`, `docs/MANUAL_AUDITOR.md` §3 y §6,
 > y `docs/SEGURIDAD.md` (ampliación). Siguen pendientes la lista de verificación, la conclusión integrada
 > ISO 19011 y `pgvector`.
+>
+> **Informe final (4/10/2026):** el dueño entregó el formato oficial (`src/formato_de_informe_final/Auditoria_interna.odt`)
+> y pidió seguirlo tal cual. Reemplaza la estructura de 11 secciones (ISO 19011) que proponía el prompt maestro: portada,
+> Ficha Técnica, listas de hallazgos (fortalezas → oportunidades de mejora → observaciones → no conformidades) y las
+> secciones Objetivo… RECOMENDACIONES. Se descarga como ODT (la plantilla llena) y PDF; el Word (.docx) se retiró.
 
 - **Riesgo por hallazgo (etapa 5):** probabilidad e impacto de 1 a 5 según el PR13-GQ, riesgo
   inherente = P × I, niveles Bajo/Moderado/Alto/Extremo (en el prototipo los umbrales eran editables; implementado con la escala fija 4/9/16),

@@ -1,7 +1,9 @@
-// Informe de auditoría (§9.5): estadísticas en código, estructura ISO 19011 y narrativa.
-// Los números del informe NUNCA los produce la IA: se calculan aquí.
+// Informe final de auditoría con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.odt).
+// Los números del informe NUNCA los produce la IA: se calculan aquí. La IA solo redacta las secciones narrativas.
 
-import { ETIQUETAS, INSTITUCION, ORDEN_INFORME, type Clasificacion } from './catalogos.ts'
+import {
+  ETIQUETAS, INSTITUCION, NIVELES_RIESGO, TIPOS_EVALUADOR, documentosParaAlcance, zonaRiesgo, type Clasificacion,
+} from './catalogos.ts'
 
 export interface HallazgoInforme {
   id: string
@@ -14,6 +16,12 @@ export interface HallazgoInforme {
   estado: string
   editado_por_usuario?: boolean
   criterios_citados: Array<{ criterio_id: string; numeral: string | null; documento: string; titulo?: string }>
+  riesgo_descripcion?: string | null
+  riesgo_dimension?: string | null
+  riesgo_probabilidad?: number | null
+  riesgo_impacto?: number | null
+  controles?: Array<{ descripcion: string; tipo: string; origen: string; adoptado: boolean }> | null
+  evidencia_archivo?: { nombre: string; paginas: number; sha256: string } | null
 }
 
 export interface AuditoriaInforme {
@@ -30,6 +38,8 @@ export interface AuditoriaInforme {
   auditado_cargo: string | null
   fecha_inicio: string | null
   fecha_fin: string | null
+  fecha_inicio_real?: string | null
+  fecha_fin_real?: string | null
 }
 
 export interface PerfilInforme {
@@ -37,20 +47,39 @@ export interface PerfilInforme {
   cedula: string
   cargos: string[]
   equipo_auditor: Array<{ nombre: string; cargos: string[] }>
+  tipo_evaluador: string | null
 }
 
 /** «Coordinadora, Líder equipo»: varios cargos de una persona en una sola línea. */
 export const unirCargos = (cargos?: string[] | null) => (cargos ?? []).join(', ')
 
-/** Un perfil sin cargos o sin equipo auditor completo no puede firmar un informe. */
+/** Sin grupo de evaluador, cargos o equipo auditor completo no se puede llenar la Ficha Técnica. */
 export const perfilIncompletoInforme = (p: PerfilInforme) =>
-  !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m.nombre || !m.cargos?.length)
+  !p.tipo_evaluador || !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m.nombre || !m.cargos?.length)
 
+/** Secciones que redacta la IA (o la plantilla de respaldo si la IA no está disponible). */
 export interface Narrativa {
-  resumen_ejecutivo: string
+  objetivo: string
+  alcance: string
+  criterios_seleccion_equipo: string[]
+  priorizacion_procesos: string
+  riesgos_oportunidades: string
+  oportunidades: string
+  observaciones: string
   conclusiones: string
   recomendaciones: string[]
 }
+
+// Orden de las listas de hallazgos en el formato oficial
+export const ORDEN_FORMATO: Clasificacion[] = ['FORTALEZA', 'OPORTUNIDAD_DE_MEJORA', 'OBSERVACION', 'NO_CONFORMIDAD']
+
+// Métodos de la auditoría (el formato tiene cuatro renglones para ellos)
+export const METODOS_AUDITORIA = [
+  'Revisión documental de registros, procedimientos e información documentada del proceso.',
+  'Entrevistas con el personal responsable y los auditados.',
+  'Observación directa de las actividades en el lugar de trabajo.',
+  'Evaluación de los riesgos con la metodología del PR13_GQ y clasificación de los hallazgos asistida por el sistema experto halla, con verificación del auditor.',
+]
 
 const vacioPorClasificacion = (): Record<Clasificacion, number> => ({
   NO_CONFORMIDAD: 0, OBSERVACION: 0, OPORTUNIDAD_DE_MEJORA: 0, FORTALEZA: 0,
@@ -71,9 +100,12 @@ export function calcularEstadisticas(hallazgos: HallazgoInforme[]) {
   const porSeveridad = { alta: 0, media: 0, baja: 0, sin_definir: 0 }
   const porCriterio = new Map<string, { documento: string; numeral: string | null; titulo: string; total: number; por_clasificacion: Record<Clasificacion, number> }>()
   const porDocumento = new Map<string, number>()
+  const porNivelRiesgo = { BAJA: 0, MODERADA: 0, ALTA: 0, EXTREMA: 0, sin_evaluar: 0 }
   let confirmados = 0
   let editados = 0
   let sinRequisito = 0
+  let controlesAdoptados = 0
+  let ncConRequisito = 0
 
   for (const h of hallazgos) {
     porClasificacion[h.clasificacion]++
@@ -81,6 +113,12 @@ export function calcularEstadisticas(hallazgos: HallazgoInforme[]) {
     if (h.estado === 'confirmado') confirmados++
     if (h.editado_por_usuario) editados++
     if (!h.criterios_citados?.length) sinRequisito++
+    else if (h.clasificacion === 'NO_CONFORMIDAD') ncConRequisito++
+    if (h.clasificacion !== 'FORTALEZA') {
+      const zona = zonaRiesgo((h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0))
+      porNivelRiesgo[zona ?? 'sin_evaluar']++
+    }
+    controlesAdoptados += (h.controles ?? []).filter((c) => c.adoptado).length
     const documentosDelHallazgo = new Set<string>()
     for (const c of h.criterios_citados ?? []) {
       const clave = `${c.documento}|${c.numeral ?? ''}`
@@ -103,6 +141,9 @@ export function calcularEstadisticas(hallazgos: HallazgoInforme[]) {
     sin_confirmar: hallazgos.length - confirmados,
     editados_por_auditor: editados,
     sin_requisito_verificado: sinRequisito,
+    no_conformidades_con_requisito: ncConRequisito,
+    por_nivel_riesgo: porNivelRiesgo,
+    controles_adoptados: controlesAdoptados,
   }
 }
 
@@ -122,37 +163,87 @@ export function criteriosAplicados(hallazgos: HallazgoInforme[]): Array<{ docume
     .sort((a, b) => a.documento.localeCompare(b.documento))
 }
 
-export const SISTEMA_INFORME = `Actúas como auditor interno líder del ${INSTITUCION.nombre} (${INSTITUCION.ciudad}).
-Redacta ÚNICAMENTE las partes narrativas del informe de auditoría interna:
-- "resumen_ejecutivo": un párrafo de 80 a 160 palabras con el propósito, el alcance y los resultados principales.
-- "conclusiones": uno o dos párrafos que valoren la adecuación, la conveniencia y la eficacia del proceso o sistema auditado frente a los criterios aplicados, apoyados en los hallazgos.
-- "recomendaciones": de 3 a 6 recomendaciones, una acción concreta por elemento, derivadas de las no conformidades, observaciones y oportunidades de mejora. Las fortalezas no generan recomendaciones.
 
-No inventes hallazgos, cifras ni requisitos. Usa exclusivamente los hallazgos y estadísticas entregados.
-Cita normas o numerales solo si aparecen en los hallazgos entregados.
+// ─── Datos que no redacta la IA ────────────────────────────────────────────
+
+const objetoDe = (a: AuditoriaInforme) => (a.alcance === 'SISTEMAS' ? a.sistema : a.proceso) ?? ''
+const normasDe = (a: AuditoriaInforme) => (a.criterios?.length ? a.criterios : documentosParaAlcance(a.alcance, a.sistema))
+const porcentaje = (parte: number, total: number) => (total ? Math.round((100 * parte) / total) : 0)
+
+/** «NTC-ISO 9001:2015 (numerales citados: 7.2, 8.5.1)» por cada norma aplicable o citada. */
+export function criteriosDeAuditoria(a: AuditoriaInforme, hallazgos: HallazgoInforme[]): string[] {
+  const citados = new Map(criteriosAplicados(hallazgos).map((c) => [c.documento, c.numerales]))
+  const documentos = [...new Set([...normasDe(a), ...citados.keys()])]
+  return documentos.map((d) => {
+    const numerales = citados.get(d) ?? []
+    return numerales.length ? `${d} (numerales citados: ${numerales.join(', ')})` : d
+  })
+}
+
+/** Indicadores de la auditoría, calculados en código. */
+export function indicadores(e: Estadisticas): string[] {
+  const c = e.por_clasificacion
+  const r = e.por_nivel_riesgo
+  const evaluados = r.BAJA + r.MODERADA + r.ALTA + r.EXTREMA
+  const lineas = [
+    `Hallazgos registrados: ${e.total} (validados: ${e.confirmados}, ${porcentaje(e.confirmados, e.total)} %).`,
+    `${ETIQUETAS.FORTALEZA.plural}: ${c.FORTALEZA} · ${ETIQUETAS.OPORTUNIDAD_DE_MEJORA.plural}: ${c.OPORTUNIDAD_DE_MEJORA} · ${ETIQUETAS.OBSERVACION.plural}: ${c.OBSERVACION} · ${ETIQUETAS.NO_CONFORMIDAD.plural}: ${c.NO_CONFORMIDAD}.`,
+  ]
+  if (c.NO_CONFORMIDAD) lineas.push(`No conformidades con requisito verificado en las normas cargadas: ${e.no_conformidades_con_requisito} de ${c.NO_CONFORMIDAD}.`)
+  if (evaluados) {
+    lineas.push(`Riesgos evaluados con la escala del PR13_GQ: ${evaluados} (${NIVELES_RIESGO.BAJA} ${r.BAJA} · ${NIVELES_RIESGO.MODERADA} ${r.MODERADA} · ${NIVELES_RIESGO.ALTA} ${r.ALTA} · ${NIVELES_RIESGO.EXTREMA} ${r.EXTREMA}).`)
+  }
+  lineas.push(`Controles adoptados: ${e.controles_adoptados}.`)
+  return lineas
+}
+
+// ─── Narrativa con la IA ────────────────────────────────────────────────────
+
+export const SISTEMA_INFORME = `Actúas como auditor interno líder del ${INSTITUCION.nombre} (${INSTITUCION.ciudad}).
+Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría interna, con el formato oficial del hospital:
+- "objetivo": solo si la auditoría no trae objetivo; una oración que empiece con un verbo en infinitivo. Si ya trae objetivo, devuelve una cadena vacía.
+- "alcance": un párrafo con el proceso o sistema auditado, el área y el periodo entregados.
+- "criterios_seleccion_equipo": de 3 a 5 aspectos que se tienen en cuenta para seleccionar al equipo auditor (competencia, independencia frente al proceso auditado, conocimiento de las normas, formación como auditor según la ISO 19011, cargos del equipo entregados). Sin nombres de personas.
+- "priorizacion_procesos": un párrafo que explique por qué se priorizó el proceso o sistema auditado, apoyado en los niveles de riesgo y los hallazgos entregados.
+- "riesgos_oportunidades": un párrafo con los riesgos y las oportunidades del programa de auditoría que se derivan de los riesgos evaluados y de las oportunidades de mejora entregadas.
+- "oportunidades": un párrafo que resuma las oportunidades de mejora identificadas y su beneficio esperado.
+- "observaciones": un párrafo de resumen general de la auditoría (propósito, alcance y resultados principales).
+- "conclusiones": uno o dos párrafos que valoren la adecuación, la conveniencia y la eficacia del proceso o sistema frente a los criterios aplicados.
+- "recomendaciones": de 3 a 6 recomendaciones, una acción concreta por elemento, derivadas de las no conformidades, observaciones y oportunidades de mejora.
+
+No inventes hallazgos, cifras, fechas, nombres ni requisitos: usa exclusivamente los datos entregados. Si un dato no está, no lo supongas.
+Cita normas o numerales solo si aparecen en los datos entregados.
 Redacta en español técnico de auditoría, en tercera persona, sin adjetivos valorativos.
 Responde únicamente con el JSON del esquema.`
 
-export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas): string {
+export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas, equipo: { lider: string[]; integrantes: string[][]; evaluador: string }): string {
   const objeto = a.alcance === 'SISTEMAS' ? `Sistema: ${a.sistema}` : `Proceso: ${a.proceso}`
   const lineas = [
     '## AUDITORÍA',
     `Código: ${a.codigo}`,
     `Título: ${a.titulo}`,
     `Alcance: ${a.alcance} · ${objeto}${a.area_auditada ? ` · Área: ${a.area_auditada}` : ''}`,
-    `Objetivo: ${a.objetivo ?? 'No informado'}`,
-    `Periodo: ${a.fecha_inicio ?? 'no informado'} a ${a.fecha_fin ?? 'no informado'}`,
+    `Objetivo: ${a.objetivo?.trim() || 'NO INFORMADO (redáctalo)'}`,
+    `Periodo planeado: ${a.fecha_inicio ?? 'no informado'} a ${a.fecha_fin ?? 'no informado'}`,
+    `Periodo real: ${a.fecha_inicio_real ?? 'no informado'} a ${a.fecha_fin_real ?? 'no informado'}`,
+    `Normas aplicables: ${normasDe(a).join(', ')}`,
+    '',
+    '## EQUIPO AUDITOR (solo cargos)',
+    `Evaluador: ${equipo.evaluador}`,
+    `Líder del equipo: ${equipo.lider.join(', ')}`,
+    ...equipo.integrantes.map((c, i) => `Integrante ${i + 1}: ${c.join(', ')}`),
     '',
     '## ESTADÍSTICAS (calculadas por el sistema; no las modifiques)',
-    `Total de hallazgos: ${e.total}`,
-    ...ORDEN_INFORME.map((c) => `${ETIQUETAS[c].plural}: ${e.por_clasificacion[c]}`),
-    `Severidad alta: ${e.por_severidad.alta} · media: ${e.por_severidad.media} · baja: ${e.por_severidad.baja}`,
+    ...indicadores(e),
     '',
     '## HALLAZGOS',
   ]
-  for (const c of ORDEN_INFORME) {
+  for (const c of ORDEN_FORMATO) {
     for (const h of hallazgos.filter((x) => x.clasificacion === c)) {
-      lineas.push(`[H${h.consecutivo}] ${ETIQUETAS[c].singular}${h.severidad ? ` (severidad ${h.severidad})` : ''}: ${h.hallazgo_corregido}`, `    Criterio: ${h.criterio_requisito}`)
+      const puntaje = (h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0)
+      const zona = zonaRiesgo(puntaje)
+      lineas.push(`[H${h.consecutivo}] ${ETIQUETAS[c].singular}: ${h.hallazgo_corregido}`, `    Criterio: ${h.criterio_requisito}`)
+      if (h.riesgo_descripcion && zona) lineas.push(`    Riesgo: ${h.riesgo_descripcion} (nivel ${NIVELES_RIESGO[zona]}, ${puntaje})`)
     }
   }
   lineas.push('', 'Responde ÚNICAMENTE con el JSON definido en el esquema.')
@@ -161,22 +252,36 @@ export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: Hallazgo
 
 const PALABRAS = ['ninguna', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez']
 const cuantas = (n: number, singular: string, plural: string) => `${n <= 10 ? PALABRAS[n] : n} ${n === 1 ? singular : plural}`
+const enLista = (partes: string[]) => (partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : partes[0] ?? '')
 
-/** Narrativa determinista, usada cuando la IA no está disponible. Retoma la conclusión del prototipo. */
+/** Narrativa determinista, usada cuando la IA no está disponible. */
 export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrativa {
   const objeto = a.alcance === 'SISTEMAS' ? `el ${a.sistema}` : `el proceso de ${a.proceso}`
   const c = e.por_clasificacion
-  const partes = [
+  const r = e.por_nivel_riesgo
+  const lista = enLista([
     c.NO_CONFORMIDAD ? cuantas(c.NO_CONFORMIDAD, 'no conformidad', 'no conformidades') : '',
     c.OBSERVACION ? cuantas(c.OBSERVACION, 'observación', 'observaciones') : '',
     c.OPORTUNIDAD_DE_MEJORA ? cuantas(c.OPORTUNIDAD_DE_MEJORA, 'oportunidad de mejora', 'oportunidades de mejora') : '',
     c.FORTALEZA ? cuantas(c.FORTALEZA, 'fortaleza', 'fortalezas') : '',
-  ].filter(Boolean)
-  const lista = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : partes[0] ?? 'ningún hallazgo'
+  ].filter(Boolean)) || 'ningún hallazgo'
 
-  const resumen = `La auditoría interna ${a.codigo} evaluó ${objeto} del ${INSTITUCION.nombre}` +
-    `${a.objetivo ? ` con el objetivo de ${a.objetivo.replace(/^\s*(?:el objetivo es|objetivo:)\s*/i, '').replace(/\.$/, '').replace(/^./, (m) => m.toLowerCase())}` : ''}. ` +
-    `Como resultado se registraron ${cuantas(e.total, 'hallazgo', 'hallazgos')}: ${lista}.`
+  const objetivo = `Evaluar la conformidad de ${objeto} del ${INSTITUCION.nombre} frente a los requisitos aplicables.`
+  const periodo = a.fecha_inicio_real || a.fecha_inicio
+  const periodoFin = a.fecha_fin_real || a.fecha_fin
+  const alcance = `La auditoría comprende ${objeto}${a.area_auditada ? `, en el área ${a.area_auditada}` : ''}` +
+    `${periodo ? `, en el periodo del ${periodo}${periodoFin ? ` al ${periodoFin}` : ''}` : ''}, frente a ${enLista(normasDe(a))}.`
+  const altos = r.ALTA + r.EXTREMA
+  const priorizacion = altos
+    ? `Se priorizó ${objeto} por la presencia de riesgos de nivel alto o extremo según la escala del PR13_GQ, que requieren tratamiento.`
+    : `Se priorizó ${objeto} dentro del programa de auditoría interna para verificar el cumplimiento de los requisitos aplicables y la gestión de sus riesgos.`
+  const riesgos = altos
+    ? `Los riesgos de nivel alto o extremo identificados en los hallazgos requieren reducirse, evitarse, compartirse o transferirse según el PR13_GQ; el programa de auditoría debe hacer seguimiento a sus controles.`
+    : `Los riesgos evaluados en los hallazgos se ubican en niveles que permiten asumirlos o reducirlos con los controles adoptados; el programa de auditoría debe verificar su eficacia.`
+  const oportunidades = c.OPORTUNIDAD_DE_MEJORA
+    ? `Se identificaron ${cuantas(c.OPORTUNIDAD_DE_MEJORA, 'oportunidad de mejora', 'oportunidades de mejora')} cuya implementación contribuirá a la eficacia de ${objeto}.`
+    : `No se identificaron oportunidades de mejora en esta auditoría.`
+  const observaciones = `La auditoría interna ${a.codigo} evaluó ${objeto} del ${INSTITUCION.nombre}. Como resultado se registraron ${cuantas(e.total, 'hallazgo', 'hallazgos')}: ${lista}.`
 
   const adecuacion = c.NO_CONFORMIDAD
     ? `presenta una adecuación parcial frente a los criterios aplicados, toda vez que se ${c.NO_CONFORMIDAD === 1 ? 'identificó' : 'identificaron'} ${cuantas(c.NO_CONFORMIDAD, 'no conformidad', 'no conformidades')}`
@@ -195,87 +300,107 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrati
   if (c.OBSERVACION) recomendaciones.push('Analizar las observaciones registradas y definir controles preventivos que eviten su materialización como incumplimientos.')
   if (c.OPORTUNIDAD_DE_MEJORA) recomendaciones.push('Evaluar la viabilidad de las oportunidades de mejora e incorporarlas en el plan de mejoramiento del proceso.')
   if (c.NO_CONFORMIDAD || c.OBSERVACION) recomendaciones.push('Verificar la eficacia de las acciones tomadas en la siguiente auditoría interna.')
-  return { resumen_ejecutivo: resumen, conclusiones, recomendaciones }
+  if (!recomendaciones.length) recomendaciones.push('Mantener las prácticas identificadas como fortalezas y verificar su continuidad en la siguiente auditoría interna.')
+
+  return {
+    objetivo: a.objetivo?.trim() ? '' : objetivo,
+    alcance,
+    criterios_seleccion_equipo: [
+      'Competencia del equipo auditor en las normas aplicables a la auditoría.',
+      'Independencia de los auditores frente al proceso o sistema auditado.',
+      'Formación como auditor interno según las directrices de la ISO 19011.',
+      'Conocimiento del proceso o sistema auditado y de sus riesgos.',
+    ],
+    priorizacion_procesos: priorizacion,
+    riesgos_oportunidades: riesgos,
+    oportunidades,
+    observaciones,
+    conclusiones,
+    recomendaciones,
+  }
 }
+
+/** Todos los textos de la narrativa, para revisar cifras y referencias. */
+export const textosNarrativa = (n: Narrativa) => [
+  n.objetivo, n.alcance, ...n.criterios_seleccion_equipo, n.priorizacion_procesos, n.riesgos_oportunidades, n.oportunidades,
+  n.observaciones, n.conclusiones, ...n.recomendaciones,
+]
 
 /** Cifras de la narrativa que no se pueden rastrear a las estadísticas, los hallazgos o la auditoría. */
 export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas): string[] {
-  const permitidas = new Set<string>()
+  const permitidas = new Set<string>(['9001', '14001', '45001', '19011', '31000', '2015', '2018', '13'])
   const agregar = (x: unknown) => String(x ?? '').match(/\d+(?:[.,]\d+)*/g)?.forEach((m) => permitidas.add(m))
-  ;[e.total, e.confirmados, ...Object.values(e.por_clasificacion), ...Object.values(e.por_severidad), a.codigo, a.titulo,
-    a.fecha_inicio, a.fecha_fin, a.objetivo].forEach(agregar)
-  hallazgos.forEach((h) => [h.consecutivo, h.hallazgo_corregido, h.criterio_requisito, h.evidencia].forEach(agregar))
-  const texto = [n.resumen_ejecutivo, n.conclusiones, ...n.recomendaciones].join(' ')
+  ;[...indicadores(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_inicio_real, a.fecha_fin_real,
+    a.objetivo, a.area_auditada, ...(a.criterios ?? [])].forEach(agregar)
+  hallazgos.forEach((h) => [h.consecutivo, h.hallazgo_corregido, h.criterio_requisito, h.evidencia, h.riesgo_descripcion,
+    h.riesgo_probabilidad, h.riesgo_impacto, (h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0)].forEach(agregar))
+  const texto = textosNarrativa(n).join(' ')
   return [...new Set((texto.match(/\d+(?:[.,]\d+)*/g) ?? []).filter((m) => !permitidas.has(m)))]
 }
 
-/** Estructura completa del informe, en el orden obligatorio de 11 secciones (ISO 19011). */
+/**
+ * Contenido del informe con la estructura del formato oficial (version_estructura 3): portada, Ficha Técnica,
+ * listas de hallazgos en el orden del formato y las secciones de Objetivo a Recomendaciones.
+ */
 export function construirContenido(opciones: {
   auditoria: AuditoriaInforme
   perfil: PerfilInforme
   hallazgos: HallazgoInforme[]
   estadisticas: Estadisticas
   narrativa: Narrativa
-  fechaEmision: string
+  generadoEn: string
   version: number
   avisos: string[]
 }) {
   const { auditoria: a, perfil: p, hallazgos, estadisticas: e, narrativa: n } = opciones
-  const lider = { nombre: p.nombre_completo, cargo: unirCargos(p.cargos), cedula: p.cedula }
-  const integrantes = (p.equipo_auditor ?? []).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) }))
+  const evaluador = TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? ''
+  const objeto = objetoDe(a)
+  const adjuntos = [...new Map(hallazgos
+    .filter((h) => h.evidencia_archivo?.nombre)
+    .map((h) => [h.evidencia_archivo!.sha256, `${h.evidencia_archivo!.nombre} (${h.evidencia_archivo!.paginas} ${h.evidencia_archivo!.paginas === 1 ? 'página' : 'páginas'})`])).values()]
   return {
-    // 2: el equipo auditor es una lista (integrantes) y cada persona puede tener varios cargos
-    version_estructura: 2,
+    version_estructura: 3,
+    formato: 'Auditoria_interna.odt',
     identificacion: {
       codigo: a.codigo,
       titulo: a.titulo,
       institucion: INSTITUCION.nombre,
       ciudad: INSTITUCION.ciudad,
-      fecha_emision: opciones.fechaEmision,
+      fecha_emision: opciones.generadoEn.slice(0, 10),
       version: opciones.version,
     },
-    objetivo: a.objetivo ?? '',
-    alcance: {
-      tipo: a.alcance,
-      objeto: a.alcance === 'SISTEMAS' ? a.sistema : a.proceso,
-      area_auditada: a.area_auditada ?? '',
-      periodo: { inicio: a.fecha_inicio, fin: a.fecha_fin },
-      auditado: { nombre: a.auditado_nombre ?? '', cargo: a.auditado_cargo ?? '' },
+    // «Auditoria Interna - <año> - <proceso o sistema>», como en el encabezado y la portada del formato
+    encabezado: { anio: (a.fecha_inicio ?? opciones.generadoEn).slice(0, 4), objeto, evaluador },
+    generado: { por: p.nombre_completo, en: opciones.generadoEn },
+    ficha: {
+      inicio_planeada: a.fecha_inicio ?? '',
+      fin_planeada: a.fecha_fin ?? '',
+      inicio_real: a.fecha_inicio_real ?? '',
+      fin_real: a.fecha_fin_real ?? '',
+      sistema_referencia: a.alcance === 'SISTEMAS' ? `${a.sistema} · ${normasDe(a).join(', ')}` : normasDe(a).join(', '),
+      evaluador,
+      equipo: (p.equipo_auditor ?? []).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) })),
+      lider: { nombre: p.nombre_completo, cargo: unirCargos(p.cargos) },
+      adjuntos,
     },
-    criterios: criteriosAplicados(hallazgos),
-    equipo_auditor: { lider, integrantes },
-    metodologia: [
-      'Revisión documental de registros, procedimientos e información documentada del proceso.',
-      'Entrevistas con el personal responsable y los auditados.',
-      'Observación directa de las actividades en el lugar de trabajo.',
-      'Clasificación y redacción de hallazgos asistida por el sistema experto halla, con verificación del auditor.',
-    ],
-    resumen_resultados: {
-      total: e.total,
-      por_clasificacion: ORDEN_INFORME.map((c) => ({ clasificacion: c, etiqueta: ETIQUETAS[c].plural, total: e.por_clasificacion[c] })),
-      por_severidad: e.por_severidad,
-    },
-    hallazgos: ORDEN_INFORME.map((c) => ({
+    hallazgos: ORDEN_FORMATO.map((c) => ({
       clasificacion: c,
-      etiqueta: ETIQUETAS[c].plural,
-      items: hallazgos
-        .filter((h) => h.clasificacion === c)
-        .map((h) => ({
-          id: h.id,
-          consecutivo: h.consecutivo,
-          hallazgo_corregido: h.hallazgo_corregido,
-          criterio_requisito: h.criterio_requisito,
-          evidencia: h.evidencia,
-          severidad: h.severidad,
-        })),
+      items: hallazgos.filter((h) => h.clasificacion === c).map((h) => ({ id: h.id, consecutivo: h.consecutivo, texto: h.hallazgo_corregido })),
     })),
-    resumen_ejecutivo: n.resumen_ejecutivo,
+    objetivo: a.objetivo?.trim() || n.objetivo,
+    alcance: n.alcance,
+    criterios_seleccion_equipo: n.criterios_seleccion_equipo,
+    criterios_auditoria: criteriosDeAuditoria(a, hallazgos),
+    priorizacion_procesos: n.priorizacion_procesos,
+    metodos: METODOS_AUDITORIA,
+    riesgos_oportunidades: n.riesgos_oportunidades,
+    indicadores: indicadores(e),
+    oportunidades: n.oportunidades,
+    observaciones: n.observaciones,
     conclusiones: n.conclusiones,
     recomendaciones: n.recomendaciones,
-    firmas: [
-      { rol: 'Auditor líder', ...lider },
-      ...integrantes.map((m) => ({ rol: 'Equipo auditor', ...m, cedula: null })),
-    ],
     avisos: opciones.avisos,
   }
 }
+
+export type ContenidoInforme = ReturnType<typeof construirContenido>

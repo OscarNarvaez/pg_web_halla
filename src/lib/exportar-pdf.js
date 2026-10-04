@@ -1,18 +1,17 @@
-// Exportación del informe a PDF (jspdf + jspdf-autotable). Se importa bajo demanda.
+// Informe final en PDF con el formato oficial (src/formato_de_informe_final/Auditoria_interna.odt): A4, portada
+// con el logo de la plantilla, Ficha Técnica y las secciones en el mismo orden, con el encabezado y el pie de la
+// plantilla en cada página. Las medidas salen de la plantilla (en pulgadas × 72). Se importa bajo demanda.
+//
+// Fuentes: la plantilla usa Trebuchet MS y Arial, que no se pueden redistribuir. Se incrusta Liberation Sans
+// (licencia OFL, con las mismas medidas de Arial) para que el PDF se vea igual en cualquier equipo.
 import { jsPDF } from 'jspdf'
-import { autoTable } from 'jspdf-autotable'
-import { fechaHora, fechaLarga, formatearCedula } from './formato'
-import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, hexARgb, integrantesEquipo, nombreArchivo, periodoDe, solidoDe } from './exportar-comun'
-
-// ═════════════════════════════════════════════════════════════════════════════
-// PDF
-// ═════════════════════════════════════════════════════════════════════════════
+import { logoDePlantilla } from './plantilla-informe'
+import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria } from './formato-informe'
+import { hexARgb, nombreArchivo } from './exportar-comun'
 
 const FUENTES = [
-  { archivo: 'SourceSerif4-Regular.ttf', familia: 'SourceSerif4', estilo: 'normal' },
-  { archivo: 'SourceSerif4-SemiBold.ttf', familia: 'SourceSerif4', estilo: 'bold' },
-  { archivo: 'Inter-Regular.ttf', familia: 'Inter', estilo: 'normal' },
-  { archivo: 'Inter-SemiBold.ttf', familia: 'Inter', estilo: 'bold' },
+  { archivo: 'LiberationSans-Regular.ttf', familia: 'LiberationSans', estilo: 'normal' },
+  { archivo: 'LiberationSans-Bold.ttf', familia: 'LiberationSans', estilo: 'bold' },
 ]
 let fuentesCache = null
 
@@ -40,293 +39,200 @@ async function cargarFuentes() {
   return fuentesCache
 }
 
+const PULGADA = 72
+const pt = (pulgadas) => pulgadas * PULGADA
+const NEGRO = '#000000'
+const GRIS_PIE = '#b3b3b3' // encabezado y pie de la plantilla (Arial 8 pt)
+const GRIS_CELDA = '#efefef' // celdas de etiqueta de la Ficha Técnica
+const BORDE_CELDA = '#cccccc'
+const TAMANO = 7.5 // todo el cuerpo de la plantilla va en 7,5 pt
+const ESCALA_TITULO = 1.2 // la plantilla ensancha los títulos al 120 %
+const ESCALA_ROTULO = 1.15 // y los rótulos de las listas al 115 %
+const RENGLON = 9.5
+const ESPACIO_PARRAFO = 6.6 // margen superior de los párrafos de la plantilla (≈ 0,092 in)
+const RENGLON_VACIO = 10.5
+
+// Renglones vacíos que la plantilla deja después de cada bloque (el primero se usa para el contenido)
+const VACIOS_TRAS = {
+  'FORTALEZAS IDENTIFICADAS': 3, 'OPORTUNIDADES DE MEJORA': 2, OBSERVACIONES: 2, 'NO CONFORMIDADES': 3,
+  Objetivo: 1, Alcance: 1, 'Criterios de selección equipo auditor': 1, 'Criterios de auditoría': 1, 'Priorización de procesos': 1,
+  'Métodos a emplear para el desarrollo de la auditoría': 3, 'Riesgos y oportunidades del programa auditoria': 2,
+  Indicadores: 1, Oportunidades: 1, Observaciones: 3, Conclusiones: 0, [TEXTOS_FORMATO.recomendaciones]: 0,
+}
+
 export async function exportarPdf(informe) {
   const c = informe.contenido
-  // putOnlyUsedFonts: el PDF declara solo las fuentes Unicode incrustadas, no las 14 estándar de jsPDF
-  const doc = new jsPDF({ unit: 'pt', format: 'letter', compress: true, putOnlyUsedFonts: true })
-  const [fuentes, logo] = await Promise.all([cargarFuentes(), cargarLogo()])
+  const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true, putOnlyUsedFonts: true })
+  const [fuentes, logo] = await Promise.all([cargarFuentes(), logoDePlantilla().catch(() => null)])
   for (const f of fuentes) {
     doc.addFileToVFS(f.archivo, f.base64)
     doc.addFont(f.archivo, f.familia, f.estilo)
   }
-  // El alias hace que el PDF guarde el logo una sola vez aunque aparezca en todas las páginas
-  const dibujarLogo = (x, yLogo, lado) => logo && doc.addImage(logo, 'PNG', x, yLogo, lado, lado, 'logo-hila')
-  doc.setProperties({ title: `Informe de auditoría ${c.identificacion.codigo}`, subject: c.identificacion.titulo, creator: 'halla.ink' })
+  doc.setProperties({ title: tituloAuditoria(c), subject: c.identificacion.titulo, author: c.generado.por, creator: 'halla.ink' })
 
   const W = doc.internal.pageSize.getWidth()
-  const H = doc.internal.pageSize.getHeight()
-  const M = 56.7 // 2 cm
-  const ANCHO = W - 2 * M
-  const SUPERIOR = M + 6
-  let y = SUPERIOR
+  // Páginas 2 en adelante (página maestra 2 de la plantilla)
+  const IZQ = pt(0.5277)
+  const ANCHO = W - IZQ - pt(0.3194)
+  const ARRIBA = pt(0.52)
+  const ABAJO = pt(11.2)
+  let y = ARRIBA
 
-  const color = (hex) => doc.setTextColor(...hexARgb(hex))
-  const asegurar = (alto) => {
-    if (y + alto > H - M) {
-      doc.addPage()
-      y = SUPERIOR
-    }
-  }
-  const parrafo = (texto, { familia = 'SourceSerif4', estilo = 'normal', tamano = 10.5, tinta = TINTA, sangria = 0, despues = 8, interlineado = 1.45 } = {}) => {
-    doc.setFont(familia, estilo)
+  const fuente = (estilo, tamano, tinta = NEGRO) => {
+    doc.setFont('LiberationSans', estilo)
     doc.setFontSize(tamano)
-    color(tinta)
-    const alto = tamano * interlineado
-    for (const linea of doc.splitTextToSize(String(texto ?? ''), ANCHO - sangria)) {
-      asegurar(alto)
-      doc.text(linea, M + sangria, y + tamano)
-      y += alto
+    doc.setTextColor(...hexARgb(tinta))
+  }
+  const ancho = (texto, escala = 1) => doc.getTextWidth(texto) * escala
+  const nuevaPagina = () => {
+    doc.addPage()
+    y = ARRIBA
+  }
+  const asegurar = (alto) => {
+    if (y + alto > ABAJO) nuevaPagina()
+  }
+
+  /** Un renglón de texto con el escalado horizontal y el subrayado de la plantilla. */
+  const texto = (t, x, base, { escala = 1, subrayado = false, alinear = 'left' } = {}) => {
+    const w = ancho(t, escala)
+    const x0 = alinear === 'center' ? x - w / 2 : x
+    doc.text(t, x0, base, { horizontalScale: escala })
+    if (subrayado) {
+      doc.setDrawColor(...hexARgb(NEGRO))
+      doc.setLineWidth(0.4)
+      doc.line(x0, base + 1.2, x0 + w, base + 1.2)
     }
-    y += despues
   }
-  const dato = (etiqueta, valor) => {
-    doc.setFont('Inter', 'bold')
-    doc.setFontSize(9)
-    color(TINTA_SUAVE)
-    asegurar(16)
-    doc.text(etiqueta, M, y + 10)
-    const lineas = doc.splitTextToSize(String(valor || 'No informado'), ANCHO - 150)
-    doc.setFont('SourceSerif4', 'normal')
-    doc.setFontSize(10.5)
-    color(TINTA)
-    lineas.forEach((l, i) => {
-      if (i) asegurar(15)
-      doc.text(l, M + 150, y + 10)
-      y += 15
-    })
-    y += 3
+
+  /** Párrafo con salto de línea y de página. */
+  const parrafo = (t, { estilo = 'normal', escala = 1, sangria = 0, subrayado = false, centrado = false } = {}) => {
+    fuente(estilo, TAMANO)
+    y += ESPACIO_PARRAFO
+    const lineas = doc.splitTextToSize(String(t ?? ''), (ANCHO - sangria) / escala)
+    for (const linea of lineas) {
+      asegurar(RENGLON)
+      texto(linea, centrado ? IZQ + ANCHO / 2 : IZQ + sangria, y + TAMANO, { escala, subrayado, alinear: centrado ? 'center' : 'left' })
+      y += RENGLON
+    }
   }
-  const seccion = (n, titulo) => {
-    asegurar(48)
-    y += 14
-    doc.setFont('Inter', 'bold')
-    doc.setFontSize(10)
-    color(MARCA)
-    doc.text(`${n}. ${titulo.toUpperCase()}`, M, y + 10)
-    y += 16
-    doc.setDrawColor(...hexARgb(LINEA))
+  const vacios = (clave) => {
+    y += (VACIOS_TRAS[clave] ?? 0) * RENGLON_VACIO
+  }
+
+  // ─── Portada (página 1): medidas de la página maestra 1 de la plantilla ────
+  if (logo) doc.addImage(logo.datos, logo.formato, pt(4.4), pt(1.36), pt(2.3333), pt(2.3229), 'logo-plantilla')
+  const centroPortada = pt(0.7868 + 2.0847) + (W - pt(0.7868 + 2.0847) - pt(0.2951 + 2.1611)) / 2
+  const anchoPortada = W - pt(0.7868 + 2.0847) - pt(0.2951 + 2.1611)
+  fuente('bold', TAMANO)
+  let yPortada = pt(4.08)
+  const lineaPortada = (t, despues = 11) => {
+    for (const l of doc.splitTextToSize(t, anchoPortada / ESCALA_TITULO)) {
+      texto(l, centroPortada, yPortada, { escala: ESCALA_TITULO, alinear: 'center' })
+      yPortada += despues
+    }
+  }
+  lineaPortada(TEXTOS_FORMATO.institucion, 12)
+  lineaPortada(`${tituloAuditoria(c)} ${c.encabezado.evaluador}`.trim(), 12)
+  yPortada += 6
+  lineaPortada(c.encabezado.anio, 10)
+  lineaPortada(TEXTOS_FORMATO.programa)
+
+  // ─── Ficha Técnica (desde la página 2) ─────────────────────────────────────
+  nuevaPagina()
+  const ANCHO_TABLA = pt(7.0798)
+  const COL = ANCHO_TABLA / 4
+  const X_TABLA = IZQ + 1
+  const celda = (x, w, alto, { fondo, t = '', negrita = false, centrado = true }) => {
+    doc.setDrawColor(...hexARgb(BORDE_CELDA))
     doc.setLineWidth(0.75)
-    doc.line(M, y, W - M, y)
-    y += 10
+    if (fondo) {
+      doc.setFillColor(...hexARgb(fondo))
+      doc.rect(x, y, w, alto, 'FD')
+    } else doc.rect(x, y, w, alto, 'S')
+    if (!t) return
+    fuente(negrita ? 'bold' : 'normal', TAMANO)
+    const lineas = doc.splitTextToSize(t, w - 8)
+    const base = y + alto / 2 - ((lineas.length - 1) * RENGLON) / 2 + 2.6
+    lineas.forEach((l, i) => texto(l, centrado ? x + w / 2 : x + 4, base + i * RENGLON, { alinear: centrado ? 'center' : 'left' }))
   }
-  const vineta = (texto, marca = '•') => {
-    doc.setFont('SourceSerif4', 'normal')
-    doc.setFontSize(10.5)
-    color(TINTA)
-    const lineas = doc.splitTextToSize(texto, ANCHO - 16)
-    lineas.forEach((l, i) => {
-      asegurar(15)
-      if (i === 0) doc.text(marca, M + 2, y + 10.5)
-      doc.text(l, M + 16, y + 10.5)
-      y += 15
-    })
-    y += 3
+  const altoPara = (t, w) => {
+    fuente('normal', TAMANO)
+    return Math.max(15.7, doc.splitTextToSize(t || ' ', w - 8).length * RENGLON + 6)
   }
-  const tabla = (opciones) => {
-    autoTable(doc, {
-      startY: y,
-      margin: { top: SUPERIOR, left: M, right: M, bottom: M },
-      styles: { font: 'SourceSerif4', fontSize: 9, cellPadding: 5, textColor: hexARgb(TINTA), lineColor: hexARgb(LINEA), lineWidth: 0.5, valign: 'top' },
-      headStyles: { font: 'Inter', fontStyle: 'bold', fontSize: 8.5 },
-      ...opciones,
-    })
-    y = doc.lastAutoTable.finalY + 12
+  const cabecera = (t) => {
+    asegurar(12)
+    celda(X_TABLA, ANCHO_TABLA, 12, { fondo: GRIS_CELDA, t, negrita: true })
+    y += 12
   }
-
-  // Portada breve
-  if (logo) {
-    dibujarLogo(W / 2 - 34, y, 68)
-    y += 80
+  const filaDoble = (e1, v1, e2, v2) => {
+    asegurar(15.7)
+    celda(X_TABLA, COL, 15.7, { fondo: GRIS_CELDA, t: e1, negrita: true })
+    celda(X_TABLA + COL, COL, 15.7, { t: v1 })
+    celda(X_TABLA + 2 * COL, COL, 15.7, { fondo: GRIS_CELDA, t: e2, negrita: true })
+    celda(X_TABLA + 3 * COL, COL, 15.7, { t: v2 })
+    y += 15.7
   }
-  doc.setFont('Inter', 'normal')
-  doc.setFontSize(8.5)
-  color(TINTA_SUAVE)
-  doc.text(`${c.identificacion.institucion.toUpperCase()} · ${c.identificacion.ciudad.toUpperCase()}`, W / 2, y + 8, { align: 'center' })
-  y += 22
-  parrafo('Informe de auditoría interna', { familia: 'SourceSerif4', estilo: 'bold', tamano: 22, despues: 2, interlineado: 1.2 })
-  parrafo(c.identificacion.titulo, { tamano: 12, tinta: TINTA_SUAVE, despues: 14 })
-
-  // Resumen ejecutivo en un recuadro
-  doc.setFont('SourceSerif4', 'normal')
-  doc.setFontSize(10.5)
-  const lineasResumen = doc.splitTextToSize(c.resumen_ejecutivo, ANCHO - 24)
-  const altoResumen = 26 + lineasResumen.length * 15
-  asegurar(Math.min(altoResumen, 300))
-  if (altoResumen < H - 2 * M) {
-    doc.setFillColor(...hexARgb('#f4f6f8'))
-    doc.roundedRect(M, y, ANCHO, altoResumen, 4, 4, 'F')
-  }
-  doc.setFont('Inter', 'bold')
-  doc.setFontSize(8.5)
-  color(TINTA_SUAVE)
-  doc.text('RESUMEN EJECUTIVO', M + 12, y + 16)
-  y += 22
-  doc.setFont('SourceSerif4', 'normal')
-  doc.setFontSize(10.5)
-  color(TINTA)
-  for (const l of lineasResumen) {
-    asegurar(15)
-    doc.text(l, M + 12, y + 10.5)
-    y += 15
-  }
-  y += 12
-
-  seccion(1, 'Identificación')
-  dato('Código', c.identificacion.codigo)
-  dato('Institución', c.identificacion.institucion)
-  dato('Fecha de emisión', fechaLarga(c.identificacion.fecha_emision))
-  dato('Versión del informe', String(c.identificacion.version))
-
-  seccion(2, 'Objetivo de la auditoría')
-  parrafo(c.objetivo || 'No informado')
-
-  seccion(3, 'Alcance')
-  dato(c.alcance.tipo === 'SISTEMAS' ? 'Sistema auditado' : 'Proceso auditado', c.alcance.objeto)
-  dato('Área auditada', c.alcance.area_auditada)
-  dato('Periodo', periodoDe(c))
-  dato('Auditado', [c.alcance.auditado.nombre, c.alcance.auditado.cargo].filter(Boolean).join(', '))
-
-  seccion(4, 'Criterios de auditoría')
-  if (c.criterios.length) {
-    c.criterios.forEach((cr) => vineta(`${cr.documento}${cr.numerales.length ? `: ${cr.numerales.length === 1 ? 'numeral' : 'numerales'} ${cr.numerales.join(', ')}` : ''}`))
-  } else {
-    parrafo('Ningún hallazgo cita un requisito verificado de los documentos cargados.', { tinta: TINTA_SUAVE })
-  }
-
-  seccion(5, 'Equipo auditor')
-  dato('Auditor líder', `${c.equipo_auditor.lider.nombre}, ${c.equipo_auditor.lider.cargo}`)
-  integrantesEquipo(c).forEach((m, i) => dato(i === 0 ? 'Equipo auditor' : '', `${m.nombre}, ${m.cargo}`))
-
-  seccion(6, 'Metodología')
-  c.metodologia.forEach((m) => vineta(m))
-
-  seccion(7, 'Resumen de resultados')
-  const total = c.resumen_resultados.total
-  tabla({
-    head: [['Clasificación', 'Hallazgos', '%']],
-    body: [
-      ...c.resumen_resultados.por_clasificacion.map((x) => [x.etiqueta, String(x.total), total ? `${Math.round((x.total / total) * 100)} %` : '0 %']),
-      [{ content: 'Total', styles: { font: 'Inter', fontStyle: 'bold' } }, { content: String(total), styles: { font: 'Inter', fontStyle: 'bold' } }, ''],
-    ],
-    headStyles: { font: 'Inter', fontStyle: 'bold', fontSize: 8.5, fillColor: hexARgb('#f4f6f8'), textColor: hexARgb(TINTA) },
-    columnStyles: { 0: { cellPadding: { top: 5, bottom: 5, left: 11, right: 5 } }, 1: { halign: 'right', cellWidth: 70 }, 2: { halign: 'right', cellWidth: 50 } },
-    tableWidth: 300,
-    didDrawCell: (d) => {
-      // marca de color de la clasificación junto a su nombre
-      const x = c.resumen_resultados.por_clasificacion[d.row.index]
-      if (d.section === 'body' && d.column.index === 0 && x) {
-        doc.setFillColor(...hexARgb(solidoDe(x.clasificacion)))
-        doc.rect(d.cell.x + 1.5, d.cell.y + 5, 2.5, d.cell.height - 10, 'F')
-      }
-    },
-  })
-  // Barras horizontales proporcionales: extremo redondeado de 4 pt, valor al final de la barra
-  const maximo = Math.max(1, ...c.resumen_resultados.por_clasificacion.map((x) => x.total))
-  asegurar(c.resumen_resultados.por_clasificacion.length * 18 + 8)
-  for (const x of c.resumen_resultados.por_clasificacion) {
-    const largo = (x.total / maximo) * (ANCHO - 170)
-    doc.setFont('Inter', 'normal')
-    doc.setFontSize(8.5)
-    color(TINTA_SUAVE)
-    doc.text(x.etiqueta, M, y + 9)
-    if (largo > 0) {
-      doc.setFillColor(...hexARgb(solidoDe(x.clasificacion)))
-      doc.roundedRect(M + 130, y + 1, Math.max(largo, 4), 10, 2, 2, 'F')
-    }
-    color(TINTA)
-    doc.text(String(x.total), M + 136 + largo, y + 9)
-    y += 18
-  }
-  y += 6
-
-  seccion(8, 'Hallazgos en detalle')
-  for (const grupo of c.hallazgos) {
-    asegurar(40)
-    doc.setFillColor(...hexARgb(solidoDe(grupo.clasificacion)))
-    doc.rect(M, y + 2, 8, 8, 'F')
-    doc.setFont('Inter', 'bold')
-    doc.setFontSize(10)
-    color(TINTA)
-    doc.text(`${grupo.etiqueta} (${grupo.items.length})`, M + 14, y + 10)
-    y += 18
-    if (!grupo.items.length) {
-      parrafo(`No se registraron ${grupo.etiqueta.toLowerCase()}.`, { tinta: TINTA_SUAVE, tamano: 9.5 })
-      continue
-    }
-    tabla({
-      head: [['N.º', 'Hallazgo', 'Criterio / requisito', 'Evidencia']],
-      body: grupo.items.map((h) => [
-        `H-${String(h.consecutivo).padStart(2, '0')}${h.severidad ? `\n${h.severidad}` : ''}`,
-        h.hallazgo_corregido,
-        h.criterio_requisito,
-        h.evidencia,
-      ]),
-      headStyles: { font: 'Inter', fontStyle: 'bold', fontSize: 8.5, fillColor: hexARgb(solidoDe(grupo.clasificacion)), textColor: [255, 255, 255] },
-      bodyStyles: { fillColor: hexARgb(fondoDe(grupo.clasificacion)) },
-      alternateRowStyles: { fillColor: [255, 255, 255] },
-      columnStyles: { 0: { cellWidth: 38, font: 'Inter', fontSize: 8 }, 1: { cellWidth: 220 }, 2: { cellWidth: 120 } },
-    })
-  }
-
-  seccion(9, 'Conclusiones')
-  c.conclusiones.split(/\n\s*\n/).forEach((p) => parrafo(p))
-
-  seccion(10, 'Recomendaciones')
-  c.recomendaciones.forEach((r, i) => vineta(r, `${i + 1}.`))
-
-  // El título y las firmas van juntos: nunca un «11. Firmas» huérfano al pie de una página
-  asegurar(48 + 120)
-  seccion(11, 'Firmas')
-  // Dos firmas por fila; el equipo auditor puede tener varias personas y cada una varios cargos
-  const anchoFirma = (ANCHO - 40) / 2
-  for (let i = 0; i < c.firmas.length; i += 2) {
-    const fila = c.firmas.slice(i, i + 2)
-    doc.setFont('Inter', 'normal')
-    doc.setFontSize(9)
-    const cargos = fila.map((f) => doc.splitTextToSize(f.cargo || '', anchoFirma))
-    const alto = 14 + Math.max(...cargos.map((l) => l.length)) * 12 + 30
-    asegurar(50 + alto)
-    y += 50
-    fila.forEach((f, j) => {
-      const x = M + j * (anchoFirma + 40)
-      doc.setDrawColor(...hexARgb(TINTA))
-      doc.setLineWidth(0.75)
-      doc.line(x, y, x + anchoFirma, y)
-      doc.setFont('Inter', 'bold')
-      doc.setFontSize(9.5)
-      color(TINTA)
-      doc.text(f.nombre, x, y + 14)
-      doc.setFont('Inter', 'normal')
-      doc.setFontSize(9)
-      color(TINTA_SUAVE)
-      cargos[j].forEach((l, k) => doc.text(l, x, y + 27 + k * 12))
-      const tras = y + 27 + cargos[j].length * 12
-      doc.text(`C.C. ${f.cedula ? formatearCedula(f.cedula) : '______________________'}`, x, tras + 1)
-      doc.setFontSize(7.5)
-      doc.text(f.rol.toUpperCase(), x, tras + 14)
-    })
+  const filaSimple = (e, v) => {
+    const alto = altoPara(v, 3 * COL)
+    asegurar(alto)
+    celda(X_TABLA, COL, alto, { fondo: GRIS_CELDA, t: e, negrita: true })
+    celda(X_TABLA + COL, 3 * COL, alto, { t: v, centrado: false })
     y += alto
   }
+  const filaCompleta = (v) => {
+    const alto = altoPara(v, ANCHO_TABLA)
+    asegurar(alto)
+    celda(X_TABLA, ANCHO_TABLA, alto, { t: v, centrado: false })
+    y += alto
+  }
+  const f = c.ficha
+  cabecera(TEXTOS_FORMATO.fichaTecnica)
+  filaDoble(TEXTOS_FORMATO.fechaInicioPlaneada, f.inicio_planeada, TEXTOS_FORMATO.fechaFinPlaneada, f.fin_planeada)
+  filaDoble(TEXTOS_FORMATO.fechaInicioReal, f.inicio_real, TEXTOS_FORMATO.fechaFinReal, f.fin_real)
+  filaSimple(TEXTOS_FORMATO.sistemaReferencia, f.sistema_referencia)
+  filaSimple(TEXTOS_FORMATO.evaluador, f.evaluador)
+  cabecera(TEXTOS_FORMATO.equipoAuditor)
+  for (const persona of f.equipo.length ? f.equipo : [{}]) filaSimple(TEXTOS_FORMATO.equipoAuditor, personaFicha(persona))
+  filaSimple(TEXTOS_FORMATO.liderEquipo, personaFicha(f.lider))
+  cabecera(TEXTOS_FORMATO.archivosAdjuntos)
+  const adjuntos = [...f.adjuntos]
+  while (adjuntos.length < 3) adjuntos.push('')
+  adjuntos.forEach(filaCompleta)
 
-  // Encabezado y pie en todas las páginas (se dibujan al final para conocer el total)
-  const paginas = doc.internal.getNumberOfPages()
-  const generado = fechaHora(new Date())
-  for (let p = 1; p <= paginas; p++) {
-    doc.setPage(p)
-    doc.setDrawColor(...hexARgb(LINEA))
-    doc.setLineWidth(0.5)
-    doc.setFont('Inter', 'normal')
-    doc.setFontSize(8)
-    color(TINTA_SUAVE)
-    dibujarLogo(M, 14, 22)
-    doc.text(`${c.identificacion.codigo} · Informe de auditoría interna`, logo ? M + 28 : M, 28)
-    doc.text(`${c.identificacion.institucion} · v${c.identificacion.version}`, W - M, 28, { align: 'right' })
-    doc.line(M, 40, W - M, 40)
-    doc.line(M, H - 40, W - M, H - 40)
-    doc.text(`Generado el ${generado} · halla.ink`, M, H - 28)
-    doc.text(`Página ${p} de ${paginas}`, W - M, H - 28, { align: 'right' })
+  // ─── Hallazgos ─────────────────────────────────────────────────────────────
+  y += 2
+  parrafo(TEXTOS_FORMATO.programa, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
+  for (const lista of LISTAS_HALLAZGOS) {
+    parrafo(lista.titulo, { escala: ESCALA_ROTULO })
+    const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []
+    if (items.length) items.forEach((h) => parrafo(`• ${h.texto}`))
+    else parrafo(lista.vacio)
+    vacios(lista.titulo)
   }
 
+  // ─── Secciones de Objetivo a Recomendaciones ───────────────────────────────
+  for (const s of seccionesFormato(c)) {
+    const estilo = s.estiloTitulo ?? 'subrayado'
+    if (estilo === 'cuerpo') parrafo(s.titulo, { escala: ESCALA_ROTULO })
+    else parrafo(s.titulo, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: estilo === 'subrayado', centrado: estilo === 'centrado' })
+    if (s.antes) parrafo(s.antes, { escala: 1.1 })
+    const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
+    if (!contenido.length) parrafo('No informado.')
+    contenido.forEach((t, i) => parrafo(s.tipo === 'vinetas' ? `• ${t}` : s.tipo === 'numerada' ? `${i + 1}. ${t}` : t))
+    vacios(s.titulo)
+  }
+
+  // ─── Encabezado y pie de la plantilla en todas las páginas ─────────────────
+  const total = doc.internal.getNumberOfPages()
+  const pie = lineaGenerado(c)
+  const titulo = tituloAuditoria(c)
+  for (let n = 1; n <= total; n++) {
+    doc.setPage(n)
+    fuente('normal', 8, GRIS_PIE)
+    doc.text(TEXTOS_FORMATO.institucion, pt(0.7729), pt(0.198) + 8)
+    doc.splitTextToSize(titulo, pt(2.0333)).forEach((l, i) => doc.text(l, pt(5.0861), pt(0.198) + 8 + i * 9.2))
+    doc.splitTextToSize(pie, pt(3.0333)).forEach((l, i) => doc.text(l, pt(0.7729), pt(11.3543) + 8 + i * 9.2))
+    doc.text(`Página ${n}/${total}`, pt(7.2756), pt(11.3543) + 8)
+  }
   doc.save(nombreArchivo(informe, 'pdf'))
 }
-

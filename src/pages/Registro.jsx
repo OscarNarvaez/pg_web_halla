@@ -16,7 +16,7 @@ import { Boton, Campo, CampoClave } from '../components/ui'
 
 const PASOS = [
   { titulo: 'Cuenta', campos: ['email', 'password', 'confirmacion'] },
-  { titulo: 'Datos del auditor', campos: ['nombre_completo', 'cedula', 'celular', 'cargos'] },
+  { titulo: 'Datos del auditor', campos: ['nombre_completo', 'cedula', 'celular', 'tipo_evaluador', 'cargos'] },
   { titulo: 'Equipo y alcance', campos: ['equipo_auditor', 'alcance', 'proceso', 'sistema', 'acepto_tratamiento_datos'] },
 ]
 

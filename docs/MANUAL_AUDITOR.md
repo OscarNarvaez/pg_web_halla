@@ -16,8 +16,10 @@ de guardarlo.
 Entre a **halla.ink → Crear cuenta**. Son tres pasos:
 
 1. **Cuenta:** correo y contraseña (mínimo 10 caracteres, con mayúscula, minúscula y número).
-2. **Datos del auditor:** nombre completo, cédula, celular y **cargos**. Puede escribir la cédula con puntos
-   (1.085.123.456) y el celular con +57: el sistema los normaliza. Los cargos no se escriben: pulse **Cargos**,
+2. **Datos del auditor:** nombre completo, cédula, celular, **grupo de auditores** y **cargos**. Puede escribir la
+   cédula con puntos (1.085.123.456) y el celular con +57: el sistema los normaliza. En el grupo elija si pertenece
+   a los **Auditores Internos** o a los **Auditores Externos**: es el «Evaluador» de la Ficha Técnica del informe y
+   aparece también en su portada. Los cargos no se escriben: pulse **Cargos**,
    busque en la lista de líderes (no importan las tildes) y marque uno o varios, hasta 5. Cada cargo elegido
    aparece como una etiqueta con una × para quitarlo.
 3. **Equipo auditor y alcance:** las personas que lo acompañan en la auditoría, al menos una y hasta 10. Para
@@ -30,12 +32,13 @@ Abra el enlace de confirmación que le llega al correo (revise también el corre
 administrador debe aprobar su cuenta**: hasta entonces verá el aviso «Tu cuenta está pendiente de
 aprobación». Avísele al administrador de la plataforma.
 
-Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en el informe,
-en la sección de equipo auditor y en las firmas (una por cada persona del equipo); puede cambiarlos en **Mi perfil**.
+Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en la Ficha
+Técnica del informe (evaluador, equipo auditor y líder del equipo); puede cambiarlos en **Mi perfil**.
 
 **Si su cuenta es anterior al 4 de octubre de 2026**, antes el cargo se escribía a mano. Si lo que escribió
 coincide con un cargo de la lista, se conservó; si no, verá el aviso «Completa tu perfil»: entre a **Mi
-perfil**, elija sus cargos y los de su equipo, y guarde. Sin eso no se puede generar el informe.
+perfil**, elija su grupo de auditores, sus cargos y los de su equipo, y guarde. Sin eso no se puede generar el
+informe.
 
 ## 2. Crear una auditoría
 
@@ -43,7 +46,8 @@ perfil**, elija sus cargos y los de su equipo, y guarde. Sin eso no se puede gen
 en un informe.
 
 - El **código** se propone solo (AI-2026-001, AI-2026-002…). Puede cambiarlo.
-- Escriba el **título** y las fechas, y confirme el proceso o sistema.
+- Escriba el **título**, las fechas de inicio y terminación **planeadas** y confirme el proceso o sistema. Las
+  fechas **reales** son opcionales aquí: puede registrarlas al generar el informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
   ajuste lo que haga falta antes de guardar.
 
@@ -245,17 +249,30 @@ riesgo y la escala de niveles.
 
 ## 7. Generar el informe
 
-Con al menos un hallazgo validado, pulse **Generar informe**. El informe incluye todos los hallazgos
-no descartados (si alguno está sin validar, se le avisa) y tiene once secciones: identificación,
-objetivo, alcance, criterios, equipo auditor, metodología, resumen de resultados, hallazgos en detalle
-(no conformidades, observaciones, oportunidades de mejora y fortalezas, en ese orden), conclusiones,
-recomendaciones y firmas.
+El informe final sigue **exactamente** el formato oficial del hospital (el documento
+`Auditoria_interna.odt` que entregó la oficina de calidad). Con al menos un hallazgo validado:
 
-- **Las cifras las calcula el sistema**, no la IA. La IA solo redacta el resumen ejecutivo, las
-  conclusiones y las recomendaciones.
-- En **criterios de auditoría** aparecen únicamente las normas y numerales realmente citados.
-- Si cambia los hallazgos, genere una **nueva versión**: las anteriores se conservan.
-- Descárguelo en **PDF** o en **Word** (para editarlo), o imprímalo directamente.
+1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
+   escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
+2. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
+
+El informe tiene, en este orden:
+
+| Parte | Qué lleva | Quién lo llena |
+|---|---|---|
+| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso», su grupo de auditores, el año y «Auditoria interna de SIG» | El sistema |
+| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor, líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
+| Auditoria interna de SIG | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
+| Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
+| Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones, Conclusiones y RECOMENDACIONES | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
+| Criterios de auditoría, Métodos a emplear e Indicadores | Las normas (con los numerales citados), los métodos de la auditoría y las cifras | El sistema |
+
+- **Las cifras las calcula el sistema**, no la IA. Si la IA escribe una cifra que no está en los datos, se le avisa.
+- A la IA no llegan los nombres del equipo auditor, solo sus cargos.
+- Si cambia los hallazgos o las fechas, genere una **nueva versión**: las anteriores se conservan.
+- Descárguelo como **Documento (ODT)**, que es la plantilla oficial llena y se abre en LibreOffice y en Word, o en
+  **PDF**, que reproduce el mismo formato.
+- Un informe generado antes de adoptar el formato oficial no se descarga: genere una nueva versión.
 
 ## 8. Consultar las normas
 

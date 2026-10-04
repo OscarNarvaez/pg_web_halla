@@ -96,7 +96,7 @@ supabase secrets set \
   GEMINI_MODEL=gemini-3.8-flash \
   GEMINI_MAX_OUTPUT_TOKENS=8192 \
   GEMINI_NIVEL_RAZONAMIENTO=low \
-  PROMPT_VERSION=1.1.0 \
+  PROMPT_VERSION=1.2.0 \
   LIMITE_IA_DIARIO_POR_USUARIO=40 \
   LIMITE_IA_POR_MINUTO=5
 ```
@@ -106,7 +106,7 @@ supabase secrets set \
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Verificado el 3/10/2026. `gemini-2.5-flash` (el del prompt maestro) devuelve 404 a cuentas nuevas |
 | `GEMINI_MODELOS_RESPALDO` | *(sin definir)* | Si no se define, se usa la cascada por defecto (abajo). Para desactivarla, defínelo igual al modelo principal: `GEMINI_MODELOS_RESPALDO=gemini-3.8-flash` |
 | `GEMINI_MAX_OUTPUT_TOKENS` | `8192` | Gemini 3.x razona por defecto y esos tokens cuentan; además cada hallazgo trae riesgo y controles (unos 400 tokens más). Con 2 048 la respuesta podía cortarse |
-| `PROMPT_VERSION` | `1.1.0` | Queda guardada en cada hallazgo. 1.1.0 agrega la metodología de riesgo del PR13_GQ al mensaje (el prompt del sistema sigue siendo el ANEXO A literal) |
+| `PROMPT_VERSION` | `1.2.0` | Queda guardada en cada hallazgo e informe. 1.1.0 agrega la metodología de riesgo del PR13_GQ al mensaje (el prompt del sistema sigue siendo el ANEXO A literal); 1.2.0, la narrativa del informe con el formato oficial |
 | `GEMINI_NIVEL_RAZONAMIENTO` | `low` | Misma calidad de clasificación con 1,7 s de latencia en vez de 6,2 s |
 | `LIMITE_IA_DIARIO_POR_USUARIO` | `40` sugerido | Ver «Cuota de la IA» |
 | `LIMITE_IA_POR_MINUTO` | `5` | Evita que un usuario agote la cuota compartida en segundos |
@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las nueve migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas).
+- [ ] `supabase db push` aplicó las diez migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -329,6 +329,19 @@ git push origin main
 La 0009 elimina las columnas `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo`: entre el `db push` y el
 `git push`, el frontend anterior no puede guardar perfiles, así que conviene hacer los tres pasos seguidos. Los
 cargos escritos antes que coinciden con la lista se conservan; los demás quedan vacíos y la app pide completarlos.
+
+**Actualización del informe con el formato oficial (4/10/2026):**
+
+```bash
+supabase db push                                   # 0010
+supabase secrets set PROMPT_VERSION=1.2.0
+supabase functions deploy generar-informe          # narrativa y Ficha Técnica del formato oficial
+git push origin main
+```
+
+La plantilla `src/formato_de_informe_final/Auditoria_interna.odt` se publica con el sitio (Vite la copia a
+`dist/assets/`). Si el dueño la reemplaza, basta con un `git push`; si cambia algún título o rótulo, hay que
+cambiarlo también en `src/lib/formato-informe.js` (la prueba `pnpm probar:interfaz` avisa si no coincide).
 
 ## Desarrollo local
 

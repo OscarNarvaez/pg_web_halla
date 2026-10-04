@@ -1,7 +1,7 @@
 // Esquemas de validación de formularios. Reflejan las restricciones CHECK de PostgreSQL
 // (supabase/migrations/0001 y 0002) para que el error se muestre antes de llegar al servidor.
 import { z } from 'zod'
-import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS } from './catalogos'
+import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS, TIPOS_EVALUADOR } from './catalogos'
 import { normalizarCedula, normalizarCelular } from './formato'
 
 const texto = (min, mensaje) => z.string().trim().min(min, mensaje)
@@ -18,6 +18,7 @@ export const camposAuditor = {
   cedula: z.preprocess(normalizarCedula, z.string().regex(/^\d{6,12}$/, 'La cédula debe tener entre 6 y 12 dígitos, sin puntos')),
   celular: z.preprocess(normalizarCelular, z.string().regex(/^\d{10}$/, 'El celular debe tener 10 dígitos')),
   cargos: reglaCargos(CARGOS_LIDER, 'Elige al menos uno de tus cargos'),
+  tipo_evaluador: z.enum(Object.keys(TIPOS_EVALUADOR), { error: 'Elige si perteneces a los Auditores Internos o a los Auditores Externos' }),
 }
 
 export const camposEquipoYAlcance = {
@@ -99,17 +100,31 @@ export const esquemaAuditoria = z
     auditado_cargo: z.string().trim().optional().default(''),
     fecha_inicio: z.string().optional().default(''),
     fecha_fin: z.string().optional().default(''),
+    fecha_inicio_real: z.string().optional().default(''),
+    fecha_fin_real: z.string().optional().default(''),
   })
   .superRefine((d, ctx) => {
     validarAlcance(d, ctx)
     if (d.fecha_inicio && d.fecha_fin && d.fecha_fin < d.fecha_inicio) {
       ctx.addIssue({ code: 'custom', path: ['fecha_fin'], message: 'La fecha final no puede ser anterior a la inicial' })
     }
+    validarFechasReales(d, ctx)
   })
+
+/** La terminación real no puede ser anterior al inicio real (check fechas_reales_coherentes, 0010). */
+export function validarFechasReales(d, ctx) {
+  if (d.fecha_inicio_real && d.fecha_fin_real && d.fecha_fin_real < d.fecha_inicio_real) {
+    ctx.addIssue({ code: 'custom', path: ['fecha_fin_real'], message: 'La terminación real no puede ser anterior al inicio real' })
+  }
+}
+
+export const esquemaFechasReales = z
+  .object({ fecha_inicio_real: z.string().optional().default(''), fecha_fin_real: z.string().optional().default('') })
+  .superRefine(validarFechasReales)
 
 /** Un perfil anterior a la 0009 puede no tener cargos o equipo completo: hay que completarlo en «Mi perfil». */
 export function perfilIncompleto(p) {
-  return Boolean(p) && (!p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m?.nombre || !m?.cargos?.length))
+  return Boolean(p) && (!p.tipo_evaluador || !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m?.nombre || !m?.cargos?.length))
 }
 
 /** Integrante vacío del equipo auditor, para el formulario. */

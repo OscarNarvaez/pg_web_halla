@@ -85,10 +85,16 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
 - Cargos (decisión del dueño, 4/10/2026): NO se escriben a mano. El líder elige 1 a 5 de `CARGOS_LIDER` y cada persona
   del equipo auditor (1 a 10 personas, `profiles.equipo_auditor` jsonb) elige 1 a 5 de `CARGOS_EQUIPO`. Las listas
   están en `catalogos.js`, `_shared/catalogos.ts` y `public.cargos_lider()`/`cargos_equipo()` (0009): cambia las
-  tres. Selector accesible en `src/components/ui/SelectorMultiple.jsx`. Los informes de estructura 1 (con
-  `acompanante`) se siguen leyendo con `integrantesEquipo()` de `src/lib/exportar-comun.js`.
-- Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`) y `logo-hila.png` en el PDF
-  y el Word (jsPDF y docx no leen WebP). Siempre sobre fondo blanco: su texto perimetral es oscuro.
+  tres. Selector accesible en `src/components/ui/SelectorMultiple.jsx`.
+- Informe final = formato oficial `src/formato_de_informe_final/Auditoria_interna.odt` (decisión del dueño, 4/10/2026):
+  «es tal cual ese formato, no debe cambiar». NUNCA edites la plantilla ni su orden; el dueño la reemplaza. El ODT se
+  llena SOBRE la plantilla (`src/lib/exportar-odt.js`, anclas por TEXTO, no por estilos); el PDF
+  (`exportar-pdf.js`, Liberation Sans OFL) y la vista (`VistaInforme`) la reproducen. Textos fijos en
+  `src/lib/formato-informe.js`. Únicos ajustes al llenar: campos de página en el pie (la plantilla traía «Página /») y
+  la posición del pie de la página maestra 2 (venía a mitad de hoja). Contenido `version_estructura: 3`; las versiones
+  anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
+- Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el ODT usan la imagen de la
+  propia plantilla. Siempre sobre fondo blanco: su texto perimetral es oscuro.
 - Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.
 - Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
 - V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).

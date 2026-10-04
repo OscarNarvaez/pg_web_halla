@@ -1,42 +1,43 @@
 import { AlertTriangle } from 'lucide-react'
-import { CLASIFICACIONES, TONOS } from '../../lib/catalogos'
-import { fechaLarga, formatearCedula } from '../../lib/formato'
-import { GraficaClasificaciones } from './GraficaClasificaciones'
-import { integrantesEquipo } from '../../lib/exportar-comun'
 import logo from '../../assets/logo-hila.webp'
+import { cx } from '../../lib/cx'
+import {
+  LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria,
+} from '../../lib/formato-informe'
 
-function Seccion({ n, titulo, children }) {
+// Tipografías de la plantilla (Trebuchet MS en el cuerpo, Arial en la tabla y el encabezado), con equivalentes libres
+const CUERPO = { fontFamily: '"Trebuchet MS", "Liberation Sans", Arial, sans-serif' }
+const TABLA = { fontFamily: 'Arial, "Liberation Sans", Helvetica, sans-serif' }
+const ENSANCHADO = { transform: 'scaleX(1.15)', transformOrigin: 'left', display: 'inline-block' }
+
+function Titulo({ children, estilo = 'subrayado' }) {
+  if (estilo === 'cuerpo') return <p className="mt-3" style={ENSANCHADO}>{children}</p>
   return (
-    <section className="break-inside-avoid-page" aria-labelledby={`seccion-${n}`}>
-      <h2 id={`seccion-${n}`} className="mb-3 mt-10 border-b border-tinta-100 pb-1 font-sans text-base font-semibold uppercase tracking-wide text-halla-700">
-        {n}. {titulo}
-      </h2>
+    <h2 className={cx('mt-4 font-bold', estilo === 'centrado' ? 'text-center' : 'underline underline-offset-2')}>
       {children}
-    </section>
+    </h2>
   )
 }
 
-function Dato({ etiqueta, children }) {
-  return (
-    <div className="grid gap-1 py-1.5 sm:grid-cols-[12rem_1fr]">
-      <dt className="font-sans text-sm font-semibold text-tinta-500">{etiqueta}</dt>
-      <dd className="text-tinta-900">{children || <span className="italic text-tinta-500">No informado</span>}</dd>
-    </div>
+function Celda({ etiqueta, children, ancho = 1, className }) {
+  return etiqueta ? (
+    <th scope="row" colSpan={ancho} className={cx('border border-[#cccccc] bg-[#efefef] px-2 py-1 text-center font-bold', className)}>{children}</th>
+  ) : (
+    <td colSpan={ancho} className={cx('border border-[#cccccc] px-2 py-1', className)}>{children}</td>
   )
 }
 
-/** Informe de auditoría con la estructura obligatoria de 11 secciones (ISO 19011). */
+/**
+ * Informe final con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.odt): portada,
+ * Ficha Técnica, listas de hallazgos y las secciones de Objetivo a Recomendaciones, en el orden de la plantilla.
+ */
 export function VistaInforme({ informe }) {
   const c = informe.contenido
-  const conteo = Object.fromEntries(c.resumen_resultados.por_clasificacion.map((x) => [x.clasificacion, x.total]))
-  const periodo = c.alcance.periodo.inicio
-    ? `${fechaLarga(c.alcance.periodo.inicio)}${c.alcance.periodo.fin ? ` a ${fechaLarga(c.alcance.periodo.fin)}` : ''}`
-    : ''
-
+  const f = c.ficha
   return (
-    <article className="mx-auto max-w-4xl rounded-lg border border-tinta-100 bg-white px-5 py-8 font-serif text-[15px] leading-relaxed text-tinta-900 shadow-sm sm:px-12 sm:py-12 print:border-0 print:p-0 print:shadow-none">
+    <div className="space-y-3">
       {c.avisos?.length > 0 && (
-        <ul className="no-imprimir mb-8 space-y-2 font-sans">
+        <ul className="no-imprimir mx-auto max-w-4xl space-y-2">
           {c.avisos.map((a) => (
             <li key={a} className="flex gap-2 rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{a}
@@ -45,149 +46,92 @@ export function VistaInforme({ informe }) {
         </ul>
       )}
 
-      <header className="text-center">
-        <img src={logo} alt={`Logo del ${c.identificacion.institucion}`} width="80" height="80" className="mx-auto mb-4 size-20" />
-        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-tinta-500">{c.identificacion.institucion} · {c.identificacion.ciudad}</p>
-        <h1 className="mt-2 text-3xl font-semibold">Informe de auditoría interna</h1>
-        <p className="mt-1 text-tinta-700">{c.identificacion.titulo}</p>
-      </header>
+      <article
+        aria-label="Informe final de auditoría"
+        className="mx-auto max-w-4xl rounded-lg border border-tinta-100 bg-white px-5 py-6 text-[13px] leading-snug text-black shadow-sm sm:px-10"
+        style={CUERPO}
+      >
+        {/* Encabezado de la plantilla */}
+        <header className="flex justify-between gap-6 text-[11px] text-[#767676]" style={TABLA}>
+          <span>{TEXTOS_FORMATO.institucion}</span>
+          <span className="text-right">{tituloAuditoria(c)}</span>
+        </header>
 
-      <section className="mt-8 rounded-md bg-tinta-50 p-5" aria-labelledby="resumen-ejecutivo">
-        <h2 id="resumen-ejecutivo" className="font-sans text-sm font-semibold uppercase tracking-wide text-tinta-500">Resumen ejecutivo</h2>
-        <p className="mt-2">{c.resumen_ejecutivo}</p>
-      </section>
+        {/* Portada */}
+        <section aria-label="Portada" className="border-b border-dashed border-tinta-100 py-10 text-center font-bold">
+          <img src={logo} alt={`Logo del ${c.identificacion.institucion}`} width="168" height="168" className="mx-auto mb-6 size-40" />
+          <p style={{ ...ENSANCHADO, transformOrigin: 'center' }}>{TEXTOS_FORMATO.institucion}</p>
+          <p>{tituloAuditoria(c)}</p>
+          <p>{c.encabezado.evaluador}</p>
+          <p className="mt-3">{c.encabezado.anio}</p>
+          <p>{TEXTOS_FORMATO.programa}</p>
+        </section>
 
-      <Seccion n={1} titulo="Identificación">
-        <dl>
-          <Dato etiqueta="Código">{c.identificacion.codigo}</Dato>
-          <Dato etiqueta="Institución">{c.identificacion.institucion}</Dato>
-          <Dato etiqueta="Fecha de emisión">{fechaLarga(c.identificacion.fecha_emision)}</Dato>
-          <Dato etiqueta="Versión del informe">{c.identificacion.version}</Dato>
-        </dl>
-      </Seccion>
-
-      <Seccion n={2} titulo="Objetivo de la auditoría">
-        <p>{c.objetivo || <span className="italic text-tinta-500">No informado</span>}</p>
-      </Seccion>
-
-      <Seccion n={3} titulo="Alcance">
-        <dl>
-          <Dato etiqueta={c.alcance.tipo === 'SISTEMAS' ? 'Sistema auditado' : 'Proceso auditado'}>{c.alcance.objeto}</Dato>
-          <Dato etiqueta="Área auditada">{c.alcance.area_auditada}</Dato>
-          <Dato etiqueta="Periodo">{periodo}</Dato>
-          <Dato etiqueta="Auditado">{[c.alcance.auditado.nombre, c.alcance.auditado.cargo].filter(Boolean).join(', ')}</Dato>
-        </dl>
-      </Seccion>
-
-      <Seccion n={4} titulo="Criterios de auditoría">
-        {c.criterios.length ? (
-          <ul className="list-disc space-y-1 pl-5">
-            {c.criterios.map((cr) => (
-              <li key={cr.documento}>
-                {cr.documento}
-                {cr.numerales.length > 0 && `: ${cr.numerales.length === 1 ? 'numeral' : 'numerales'} ${cr.numerales.join(', ')}`}
-              </li>
+        {/* Ficha Técnica */}
+        <table className="mt-6 w-full table-fixed border-collapse break-words text-[12px]" style={TABLA}>
+          <caption className="sr-only">{TEXTOS_FORMATO.fichaTecnica}</caption>
+          <tbody>
+            <tr><Celda etiqueta ancho={4}>{TEXTOS_FORMATO.fichaTecnica}</Celda></tr>
+            <tr>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaInicioPlaneada}</Celda><Celda className="text-center">{f.inicio_planeada}</Celda>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaFinPlaneada}</Celda><Celda className="text-center">{f.fin_planeada}</Celda>
+            </tr>
+            <tr>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaInicioReal}</Celda><Celda className="text-center">{f.inicio_real}</Celda>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaFinReal}</Celda><Celda className="text-center">{f.fin_real}</Celda>
+            </tr>
+            <tr><Celda etiqueta>{TEXTOS_FORMATO.sistemaReferencia}</Celda><Celda ancho={3}>{f.sistema_referencia}</Celda></tr>
+            <tr><Celda etiqueta>{TEXTOS_FORMATO.evaluador}</Celda><Celda ancho={3}>{f.evaluador}</Celda></tr>
+            <tr><Celda etiqueta ancho={4}>{TEXTOS_FORMATO.equipoAuditor}</Celda></tr>
+            {(f.equipo.length ? f.equipo : [{}]).map((p, i) => (
+              <tr key={`${p.nombre}-${i}`}><Celda etiqueta>{TEXTOS_FORMATO.equipoAuditor}</Celda><Celda ancho={3}>{personaFicha(p)}</Celda></tr>
             ))}
-          </ul>
-        ) : (
-          <p className="italic text-tinta-500">Ningún hallazgo cita un requisito verificado de los documentos cargados.</p>
-        )}
-      </Seccion>
+            <tr><Celda etiqueta>{TEXTOS_FORMATO.liderEquipo}</Celda><Celda ancho={3}>{personaFicha(f.lider)}</Celda></tr>
+            <tr><Celda etiqueta ancho={4}>{TEXTOS_FORMATO.archivosAdjuntos}</Celda></tr>
+            {[...f.adjuntos, '', '', ''].slice(0, Math.max(3, f.adjuntos.length)).map((archivo, i) => (
+              <tr key={`${archivo}-${i}`} className="h-6"><Celda ancho={4}>{archivo}</Celda></tr>
+            ))}
+          </tbody>
+        </table>
 
-      <Seccion n={5} titulo="Equipo auditor">
-        <dl>
-          <Dato etiqueta="Auditor líder">{c.equipo_auditor.lider.nombre}, {c.equipo_auditor.lider.cargo}</Dato>
-          <Dato etiqueta="Equipo auditor">
-            <ul className="space-y-0.5">
-              {integrantesEquipo(c).map((m, i) => <li key={`${m.nombre}-${i}`}>{m.nombre}, {m.cargo}</li>)}
-            </ul>
-          </Dato>
-        </dl>
-      </Seccion>
+        {/* Hallazgos */}
+        <Titulo>{TEXTOS_FORMATO.programa}</Titulo>
+        {LISTAS_HALLAZGOS.map((lista) => {
+          const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []
+          return (
+            <section key={lista.clasificacion} aria-label={lista.titulo} className="mb-5">
+              <p className="mt-3" style={ENSANCHADO}>{lista.titulo}</p>
+              {items.length ? (
+                <ul className="mt-1 space-y-1.5">
+                  {items.map((h) => <li key={h.id} className="pl-3 -indent-3">• {h.texto}</li>)}
+                </ul>
+              ) : <p className="mt-1">{lista.vacio}</p>}
+            </section>
+          )
+        })}
 
-      <Seccion n={6} titulo="Metodología">
-        <ul className="list-disc space-y-1 pl-5">{c.metodologia.map((m) => <li key={m}>{m}</li>)}</ul>
-      </Seccion>
+        {/* Secciones de Objetivo a Recomendaciones */}
+        {seccionesFormato(c).map((s) => {
+          const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
+          return (
+            <section key={s.titulo} aria-label={s.titulo.replace(/:$/, '')} className="mb-4">
+              <Titulo estilo={s.estiloTitulo}>{s.titulo}</Titulo>
+              {s.antes && <p className="mt-2">{s.antes}</p>}
+              {!contenido.length && <p className="mt-2">No informado.</p>}
+              {s.tipo === 'parrafo' && contenido.map((t) => <p key={t} className="mt-2 text-justify">{t}</p>)}
+              {s.tipo === 'vinetas' && (
+                <ul className="mt-2 space-y-1">{contenido.map((t) => <li key={t} className="pl-3 -indent-3">• {t}</li>)}</ul>
+              )}
+              {s.tipo === 'numerada' && (
+                <ol className="mt-2 space-y-1">{contenido.map((t, i) => <li key={t}>{i + 1}. {t}</li>)}</ol>
+              )}
+            </section>
+          )
+        })}
 
-      <Seccion n={7} titulo="Resumen de resultados">
-        <div className="grid gap-6 font-sans md:grid-cols-2 md:items-center">
-          <table className="w-full text-sm">
-            <caption className="sr-only">Hallazgos por clasificación</caption>
-            <thead>
-              <tr className="border-b border-tinta-300 text-left">
-                <th scope="col" className="py-2 font-semibold">Clasificación</th>
-                <th scope="col" className="py-2 text-right font-semibold">Hallazgos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {c.resumen_resultados.por_clasificacion.map((x) => (
-                <tr key={x.clasificacion} className="border-b border-tinta-100">
-                  <th scope="row" className="py-2 text-left font-normal">
-                    <span className="mr-2 inline-block size-2.5 rounded-sm align-middle" style={{ background: TONOS[CLASIFICACIONES[x.clasificacion].tono].solido }} aria-hidden="true" />
-                    {x.etiqueta}
-                  </th>
-                  <td className="py-2 text-right tabular-nums">{x.total}</td>
-                </tr>
-              ))}
-              <tr className="font-semibold">
-                <th scope="row" className="py-2 text-left">Total</th>
-                <td className="py-2 text-right tabular-nums">{c.resumen_resultados.total}</td>
-              </tr>
-            </tbody>
-          </table>
-          <GraficaClasificaciones conteo={conteo} alto={200} animar={false} />
-        </div>
-      </Seccion>
-
-      <Seccion n={8} titulo="Hallazgos en detalle">
-        {c.hallazgos.map((grupo) => (
-          <div key={grupo.clasificacion} className="mt-6 first:mt-0">
-            <h3 className="font-sans text-sm font-semibold text-tinta-700">
-              <span className="mr-2 inline-block size-2.5 rounded-sm align-middle" style={{ background: TONOS[CLASIFICACIONES[grupo.clasificacion].tono].solido }} aria-hidden="true" />
-              {grupo.etiqueta} ({grupo.items.length})
-            </h3>
-            {grupo.items.length === 0 ? (
-              <p className="mt-2 text-sm italic text-tinta-500">No se registraron {grupo.etiqueta.toLowerCase()}.</p>
-            ) : (
-              <ol className="mt-3 space-y-4">
-                {grupo.items.map((h) => (
-                  <li key={h.id} className="break-inside-avoid rounded-md border border-tinta-100 p-4" style={{ borderLeft: `4px solid ${TONOS[CLASIFICACIONES[grupo.clasificacion].tono].solido}` }}>
-                    <p className="font-sans text-xs font-semibold text-tinta-500">
-                      Hallazgo H-{String(h.consecutivo).padStart(2, '0')}{h.severidad ? ` · severidad ${h.severidad}` : ''}
-                    </p>
-                    <p className="mt-1">{h.hallazgo_corregido}</p>
-                    <p className="mt-2 text-sm"><span className="font-sans font-semibold text-tinta-500">Criterio: </span>{h.criterio_requisito}</p>
-                    <p className="mt-1 text-sm"><span className="font-sans font-semibold text-tinta-500">Evidencia: </span>{h.evidencia}</p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-        ))}
-      </Seccion>
-
-      <Seccion n={9} titulo="Conclusiones">
-        {c.conclusiones.split(/\n\s*\n/).map((p) => <p key={p.slice(0, 40)} className="mb-3">{p}</p>)}
-      </Seccion>
-
-      <Seccion n={10} titulo="Recomendaciones">
-        <ol className="list-decimal space-y-1 pl-5">{c.recomendaciones.map((r) => <li key={r}>{r}</li>)}</ol>
-      </Seccion>
-
-      <Seccion n={11} titulo="Firmas">
-        <div className="mt-12 grid gap-12 font-sans text-sm sm:grid-cols-2">
-          {c.firmas.map((f, i) => (
-            <div key={`${f.rol}-${i}`} className="break-inside-avoid">
-              <div className="border-t border-tinta-900 pt-2">
-                <p className="font-semibold text-tinta-900">{f.nombre}</p>
-                <p className="text-tinta-700">{f.cargo}</p>
-                <p className="text-tinta-700">C.C. {f.cedula ? formatearCedula(f.cedula) : '______________________'}</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-tinta-500">{f.rol}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Seccion>
-    </article>
+        {/* Pie de la plantilla */}
+        <footer className="mt-8 border-t border-tinta-100 pt-2 text-[11px] text-[#767676]" style={TABLA}>{lineaGenerado(c)}</footer>
+      </article>
+    </div>
   )
 }
