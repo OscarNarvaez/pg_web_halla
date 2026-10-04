@@ -67,6 +67,8 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
 - Alcance V1 = solo el prompt maestro. Riesgo PR13, controles, lista de verificación, matriz CSV y
   conclusión ISO 19011 del prototipo son Fase 8 (descritas en `docs/RECONOCIMIENTO.md`).
 - Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).
+- Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`) y `logo-hila.png` en el PDF
+  y el Word (jsPDF y docx no leen WebP). Siempre sobre fondo blanco: su texto perimetral es oscuro.
 - Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.
 - Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
 - V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).

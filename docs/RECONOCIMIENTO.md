@@ -77,7 +77,9 @@ que no se reutiliza código: se reutiliza como especificación de producto.
 
 `Main.dc.html` referencia blobs que no están en el repositorio: el **logo del hospital**
 (`/_blob/e615…`) y la base normativa (`/_blob/889a…`). La base normativa se sustituye por `normas/`;
-**el logo hay que conseguirlo aparte** y ponerlo en `public/`. Mientras tanto la marca es tipográfica.
+**el logo hay que conseguirlo aparte**. *Resuelto el 2026-10-04:* el dueño entregó el logo y está en
+`src/assets/logo-hila.webp` (interfaz), `src/assets/logo-hila.png` (PDF y Word) y `public/favicon-32.png` /
+`public/apple-touch-icon.png`.
 
 ## C. Documentos normativos
 

@@ -1,11 +1,11 @@
 // Exportación del informe a Word (docx + file-saver). Se importa bajo demanda.
 import {
-  AlignmentType, BorderStyle, Document, Footer, Header, HeadingLevel, Packer, PageNumber, Paragraph,
+  AlignmentType, BorderStyle, Document, Footer, Header, HeadingLevel, ImageRun, Packer, PageNumber, Paragraph,
   ShadingType, Table, TableCell, TableOfContents, TableRow, TextRun, WidthType,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import { fechaHora, fechaLarga, formatearCedula } from './formato'
-import { LINEA, MARCA, TINTA, TINTA_SUAVE, fondoDe, nombreArchivo, periodoDe, sinNumeral, solidoDe } from './exportar-comun'
+import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, nombreArchivo, periodoDe, sinNumeral, solidoDe } from './exportar-comun'
 
 // ═════════════════════════════════════════════════════════════════════════════
 // WORD
@@ -43,8 +43,18 @@ export async function exportarDocx(informe) {
   const c = informe.contenido
   const total = c.resumen_resultados.total
   const ANCHO = 12240 - 2 * TWIPS_2CM // carta menos márgenes, en twips
+  const logo = await cargarLogo()
+  // transformation va en píxeles (96 por pulgada): 90 px ≈ 2,4 cm en la portada y 22 px en el encabezado
+  const imagenLogo = (lado) =>
+    new ImageRun({
+      type: 'png',
+      data: logo,
+      transformation: { width: lado, height: lado },
+      altText: { name: 'logo-hila', title: 'Logo', description: `Logo del ${c.identificacion.institucion}` },
+    })
 
   const cuerpo = [
+    ...(logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 }, children: [imagenLogo(90)] })] : []),
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${c.identificacion.institucion} · ${c.identificacion.ciudad}`.toUpperCase(), font: TITULOS, size: 18, color: sinNumeral(TINTA_SUAVE) })] }),
     new Paragraph({ heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Informe de auditoría interna', font: CUERPO })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: [texto(c.identificacion.titulo, { color: sinNumeral(TINTA_SUAVE) })] }),
@@ -179,7 +189,14 @@ export async function exportarDocx(informe) {
         },
         headers: {
           default: new Header({
-            children: [new Paragraph({ children: [new TextRun({ text: `${c.identificacion.codigo} · Informe de auditoría interna · ${c.identificacion.institucion}`, font: TITULOS, size: 16, color: sinNumeral(TINTA_SUAVE) })] })],
+            children: [
+              new Paragraph({
+                children: [
+                  ...(logo ? [imagenLogo(22), new TextRun({ text: '  ', size: 16 })] : []),
+                  new TextRun({ text: `${c.identificacion.codigo} · Informe de auditoría interna · ${c.identificacion.institucion}`, font: TITULOS, size: 16, color: sinNumeral(TINTA_SUAVE) }),
+                ],
+              }),
+            ],
           }),
         },
         footers: {

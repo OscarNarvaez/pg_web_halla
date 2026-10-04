@@ -1,20 +1,16 @@
 import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { INSTITUCION } from '../../lib/catalogos'
+import logo from '../../assets/logo-hila.webp'
 
-/** Logotipo tipográfico de halla. Mientras no exista el logo oficial del hospital, la marca es solo texto. */
+/**
+ * Marca de halla con el logo del hospital. El logo va sobre un disco blanco: su texto perimetral es oscuro
+ * y desaparecería sobre los fondos `invertida` (barra lateral y pantallas con la foto de la fachada).
+ */
 export function Marca({ a = '/', invertida = false, conInstitucion = false, className }) {
   return (
     <Link to={a} className={cx('group inline-flex items-center gap-2.5 rounded-md', className)} aria-label="halla, ir al inicio">
-      <span
-        aria-hidden="true"
-        className={cx(
-          'grid size-8 place-items-center rounded-lg font-serif text-lg font-semibold',
-          invertida ? 'bg-white text-halla-700' : 'bg-halla-700 text-white',
-        )}
-      >
-        h
-      </span>
+      <img src={logo} alt="" width="40" height="40" className="size-10 shrink-0 rounded-full bg-white p-0.5" />
       <span className="leading-tight">
         <span className={cx('block font-serif text-xl font-semibold', invertida ? 'text-white' : 'text-tinta-900')}>halla</span>
         {conInstitucion && (

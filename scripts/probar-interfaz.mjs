@@ -250,6 +250,13 @@ console.log('\n▸ Páginas públicas')
   // decode() espera la descarga: falla si la CSP o la ruta del asset bloquean la foto
   const fachadaCarga = (pagina) => pagina.locator('img[srcset*="fachada-hila"]').first().evaluate((img) => img.decode().then(() => img.naturalWidth > 0, () => false))
   ok(await fachadaCarga(p), 'landing: la foto de la fachada carga de fondo')
+  ok(await p.locator('header img[src*="logo-hila"]').first().evaluate((img) => img.decode().then(() => img.naturalWidth > 0, () => false)), 'la marca muestra el logo del hospital')
+  const favicon = await p.evaluate(async () => {
+    const href = document.querySelector('link[rel="icon"]')?.getAttribute('href')
+    const r = href ? await fetch(href) : null
+    return { href, ok: r?.ok, tipo: r?.headers.get('content-type') }
+  })
+  ok(favicon.ok && /image\/png/.test(favicon.tipo), `el favicon es el logo y existe (${favicon.href})`)
   await p.screenshot({ path: `${CAPTURAS}01-landing.png`, fullPage: true })
 
   await p.goto(`${BASE}/registro`)
@@ -440,6 +447,9 @@ ok(/AI-2026-001 · Informe de auditoría interna/.test(textoPdf), 'encabezado co
 ok(/(Letter|612 x 792)/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño carta')
 const fuentesPdf = execSync(`pdffonts "${rutaPdf}"`).toString()
 ok(/SourceSerif4/.test(fuentesPdf) && /Inter/.test(fuentesPdf) && !/Helvetica/.test(fuentesPdf), 'fuentes Unicode incrustadas (Source Serif 4 e Inter, sin Helvetica)')
+// pdfimages lista una fila por aparición; las de tipo «image» deben ser una por página más la portada
+const imagenesPdf = execSync(`pdfimages -list "${rutaPdf}"`).toString().split('\n').filter((l) => /^\s*\d+\s+\d+\s+image\b/.test(l))
+ok(imagenesPdf.length === paginasPdf + 1 && /\bsmask\b/.test(execSync(`pdfimages -list "${rutaPdf}"`).toString()), `el PDF lleva el logo en la portada y en el encabezado de las ${paginasPdf} páginas`, `${imagenesPdf.length} apariciones`)
 
 const [descargaDocx] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Word' }).click()])
 const rutaDocx = `${CAPTURAS}${descargaDocx.suggestedFilename()}`
@@ -449,6 +459,8 @@ const xml = execSync(`unzip -p "${rutaDocx}" word/document.xml`).toString()
 ok(/Observaciones/.test(xml) && /Ñáñez/.test(xml) && /Heading1|Ttulo1|Título 1/.test(xml), 'el Word tiene tildes y encabezados nativos (Heading 1)')
 ok(/instrText[^>]*>TOC [^<]*\\o/.test(xml), 'el Word incluye la tabla de contenido automática')
 ok(/w:shd [^>]*w:fill="FEF2F2"/.test(xml), 'filas coloreadas según la clasificación')
+const archivosDocx = execSync(`unzip -l "${rutaDocx}"`).toString()
+ok(/word\/media\/[^\s]+\.png/.test(archivosDocx) && /<w:drawing>/.test(xml) && /<w:drawing>/.test(execSync(`unzip -p "${rutaDocx}" 'word/header*.xml'`).toString()), 'el Word lleva el logo en la portada y en el encabezado')
 
 // Ruta profunda tras recargar
 await p.goto(`${BASE}/app/auditorias/${A1}/informe`)

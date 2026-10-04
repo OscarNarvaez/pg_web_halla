@@ -1,6 +1,7 @@
 // Utilidades compartidas por la exportación a PDF y a Word.
 import { CLASIFICACIONES, TONOS } from './catalogos'
 import { fechaArchivo, fechaLarga } from './formato'
+import logoPng from '../assets/logo-hila.png'
 
 // Colores de la marca y de las clasificaciones (tailwind.config.js)
 export const TINTA = '#16222c'
@@ -24,4 +25,24 @@ export function periodoDe(c) {
   const { inicio, fin } = c.alcance.periodo
   if (!inicio) return 'No informado'
   return `${fechaLarga(inicio)}${fin ? ` a ${fechaLarga(fin)}` : ''}`
+}
+
+let logoCache = null
+
+/**
+ * Bytes del logo del hospital para el PDF y el Word (en PNG: ni jsPDF ni docx leen WebP).
+ * Si no se puede descargar, devuelve null y el informe sale sin logo en lugar de fallar.
+ */
+export function cargarLogo() {
+  if (!logoCache) {
+    logoCache = fetch(logoPng)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`logo: HTTP ${r.status}`))))
+      .then((buffer) => new Uint8Array(buffer))
+      .catch((e) => {
+        console.warn('No se pudo cargar el logo del informe:', e)
+        logoCache = null
+        return null
+      })
+  }
+  return logoCache
 }

@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import { CLASIFICACIONES, TONOS } from '../../lib/catalogos'
 import { fechaLarga, formatearCedula } from '../../lib/formato'
 import { GraficaClasificaciones } from './GraficaClasificaciones'
+import logo from '../../assets/logo-hila.webp'
 
 function Seccion({ n, titulo, children }) {
   return (
@@ -44,6 +45,7 @@ export function VistaInforme({ informe }) {
       )}
 
       <header className="text-center">
+        <img src={logo} alt={`Logo del ${c.identificacion.institucion}`} width="80" height="80" className="mx-auto mb-4 size-20" />
         <p className="font-sans text-xs font-semibold uppercase tracking-widest text-tinta-500">{c.identificacion.institucion} · {c.identificacion.ciudad}</p>
         <h1 className="mt-2 text-3xl font-semibold">Informe de auditoría interna</h1>
         <p className="mt-1 text-tinta-700">{c.identificacion.titulo}</p>

@@ -2,7 +2,7 @@
 import { jsPDF } from 'jspdf'
 import { autoTable } from 'jspdf-autotable'
 import { fechaHora, fechaLarga, formatearCedula } from './formato'
-import { LINEA, MARCA, TINTA, TINTA_SUAVE, fondoDe, hexARgb, nombreArchivo, periodoDe, solidoDe } from './exportar-comun'
+import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, hexARgb, nombreArchivo, periodoDe, solidoDe } from './exportar-comun'
 
 // ═════════════════════════════════════════════════════════════════════════════
 // PDF
@@ -44,10 +44,13 @@ export async function exportarPdf(informe) {
   const c = informe.contenido
   // putOnlyUsedFonts: el PDF declara solo las fuentes Unicode incrustadas, no las 14 estándar de jsPDF
   const doc = new jsPDF({ unit: 'pt', format: 'letter', compress: true, putOnlyUsedFonts: true })
-  for (const f of await cargarFuentes()) {
+  const [fuentes, logo] = await Promise.all([cargarFuentes(), cargarLogo()])
+  for (const f of fuentes) {
     doc.addFileToVFS(f.archivo, f.base64)
     doc.addFont(f.archivo, f.familia, f.estilo)
   }
+  // El alias hace que el PDF guarde el logo una sola vez aunque aparezca en todas las páginas
+  const dibujarLogo = (x, yLogo, lado) => logo && doc.addImage(logo, 'PNG', x, yLogo, lado, lado, 'logo-hila')
   doc.setProperties({ title: `Informe de auditoría ${c.identificacion.codigo}`, subject: c.identificacion.titulo, creator: 'halla.ink' })
 
   const W = doc.internal.pageSize.getWidth()
@@ -131,6 +134,10 @@ export async function exportarPdf(informe) {
   }
 
   // Portada breve
+  if (logo) {
+    dibujarLogo(W / 2 - 34, y, 68)
+    y += 80
+  }
   doc.setFont('Inter', 'normal')
   doc.setFontSize(8.5)
   color(TINTA_SUAVE)
@@ -300,8 +307,9 @@ export async function exportarPdf(informe) {
     doc.setFont('Inter', 'normal')
     doc.setFontSize(8)
     color(TINTA_SUAVE)
-    doc.text(`${c.identificacion.codigo} · Informe de auditoría interna`, M, 34)
-    doc.text(`${c.identificacion.institucion} · v${c.identificacion.version}`, W - M, 34, { align: 'right' })
+    dibujarLogo(M, 14, 22)
+    doc.text(`${c.identificacion.codigo} · Informe de auditoría interna`, logo ? M + 28 : M, 28)
+    doc.text(`${c.identificacion.institucion} · v${c.identificacion.version}`, W - M, 28, { align: 'right' })
     doc.line(M, 40, W - M, 40)
     doc.line(M, H - 40, W - M, H - 40)
     doc.text(`Generado el ${generado} · halla.ink`, M, H - 28)
