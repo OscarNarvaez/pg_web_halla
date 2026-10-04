@@ -217,6 +217,57 @@ const errCerrada = await falla(comoUsuario(db, como(A), (tx) => tx.query(
 ok(Boolean(errCerrada), 'una auditoría cerrada no admite hallazgos nuevos')
 await comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set estado = 'en_curso' where id = $1`, [audA.id]))
 
+console.log('\n▸ Riesgo, controles y matriz (0007)')
+const comoA = (sql, params = []) => comoUsuario(db, como(A), (tx) => tx.query(sql, params))
+const errP6 = await falla(comoA(`update public.hallazgos set riesgo_probabilidad = 6 where id = $1`, [h2.id]))
+ok(errP6?.includes('riesgo_probabilidad_rango'), 'la probabilidad solo admite valores de 1 a 5 (escala del PR13)', errP6)
+const errDim = await falla(comoA(`update public.hallazgos set riesgo_dimension = 'INVENTADA' where id = $1`, [h2.id]))
+ok(errDim?.includes('riesgo_dimension_valida'), 'la dimensión de impacto debe ser una de las seis del PR13', errDim)
+const controlIA = { descripcion: 'Verificar diariamente el registro de la valoración de enfermería al ingreso', tipo: 'PREVENTIVO', origen: 'ia', adoptado: false, criterio_id: crit933.id }
+await comoUsuario(db, servicio, (tx) => tx.query(`update public.hallazgos set controles = $2 where id = $1`, [h2.id, JSON.stringify([controlIA])]))
+const { rows: [conControl] } = await db.query('select controles from public.hallazgos where id = $1', [h2.id])
+ok(conControl.controles[0].documento === 'NTC-ISO 9001:2015' && conControl.controles[0].numeral === '9.3.3',
+  'un control que cita un criterio se normaliza con el documento y el numeral de la base de datos', JSON.stringify(conControl.controles))
+const errAdoptar = await falla(comoA(`update public.hallazgos set controles = $2 where id = $1`, [h2.id, JSON.stringify([{ ...controlIA, adoptado: true }])]))
+ok(errAdoptar === null, 'el auditor adopta un control propuesto por la IA', errAdoptar)
+const errReescribir = await falla(comoA(`update public.hallazgos set controles = $2 where id = $1`,
+  [h2.id, JSON.stringify([{ ...controlIA, descripcion: 'Control que la IA nunca propuso', adoptado: true }])]))
+ok(errReescribir?.includes('no se pueden reescribir'), 'hacer pasar un control propio por uno propuesto por la IA', errReescribir)
+const errCtrlCrit = await falla(comoA(`update public.hallazgos set controles = $2 where id = $1`,
+  [h2.id, JSON.stringify([{ descripcion: 'Control con cita inventada', tipo: 'CORRECTIVO', origen: 'auditor', adoptado: true, criterio_id: '00000000-0000-4000-8000-000000000000' }])]))
+ok(errCtrlCrit?.includes('no verificable'), 'un control no puede citar un criterio inexistente', errCtrlCrit)
+const muchos = Array.from({ length: 11 }, (_, i) => ({ descripcion: `Control propio número ${i + 1}`, tipo: 'CORRECTIVO', origen: 'auditor', adoptado: true }))
+const errMuchos = await falla(comoA(`update public.hallazgos set controles = $2 where id = $1`, [h2.id, JSON.stringify(muchos)]))
+ok(errMuchos?.includes('máximo 10'), 'un hallazgo admite como máximo 10 controles', errMuchos)
+const errPropio = await falla(comoA(`update public.hallazgos set controles = $2 where id = $1`,
+  [h2.id, JSON.stringify([{ ...controlIA, adoptado: true }, { descripcion: 'Socializar el procedimiento con el personal', tipo: 'CORRECTIVO', origen: 'auditor', adoptado: true }])]))
+ok(errPropio === null, 'el auditor agrega un control propio', errPropio)
+await comoA(`update public.hallazgos set riesgo_descripcion = 'Riesgo de omitir valoraciones', riesgo_dimension = 'CALIDAD_SEGURIDAD_PACIENTE',
+  riesgo_probabilidad = 4, riesgo_impacto = 4, estado = 'confirmado' where id = $1`, [h2.id])
+const { rows: [validado] } = await db.query('select estado from public.hallazgos where id = $1', [h2.id])
+ok(validado.estado === 'confirmado', 'el auditor valida el hallazgo (Validado)', validado.estado)
+await comoA(`update public.hallazgos set riesgo_impacto = 3 where id = $1`, [h2.id])
+const { rows: [trasEditar] } = await db.query('select estado, editado_por_usuario from public.hallazgos where id = $1', [h2.id])
+ok(trasEditar.estado === 'editado' && trasEditar.editado_por_usuario, 'editar un hallazgo validado lo devuelve a Pendiente: hay que volver a validarlo', JSON.stringify(trasEditar))
+const errCambios = await falla(comoA(`update public.hallazgos set estado = 'cambios_sugeridos', nota_validacion = 'Precisar el número de registros revisados' where id = $1`, [h2.id]))
+ok(errCambios === null, 'el auditor marca «Se sugiere hacer cambios» con una nota', errCambios)
+const { rows: histRiesgo } = await db.query(`select despues from public.hallazgos_historial where hallazgo_id = $1 and antes->>'riesgo_impacto' = '4' and despues->>'riesgo_impacto' = '3'`, [h2.id])
+ok(histRiesgo.length === 1, 'el historial registra los cambios del riesgo')
+const errPdf = await falla(comoA(`update public.hallazgos set evidencia_archivo = '{"nombre":"x.pdf","paginas":1,"sha256":"${'a'.repeat(64)}"}' where id = $1`, [h2.id]))
+ok(errPdf?.includes('no se pueden modificar'), 'la huella del PDF de evidencia no se puede cambiar después', errPdf)
+const insertarConPdf = (archivo) => falla(comoUsuario(db, servicio, async (tx) => {
+  await tx.query(`insert into public.hallazgos (auditoria_id, user_id, entrada_auditor, clasificacion, justificacion, hallazgo_corregido,
+     criterio_requisito, evidencia, evidencia_archivo) values ($1,$2,'x','FORTALEZA','j','h','c','e',$3)`, [audA.id, A, JSON.stringify(archivo)])
+  throw new Error('insertado') // se deshace: solo interesa si el check lo admite
+}))
+const pdfOk = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'b'.repeat(64) })
+const pdfMalo = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'no-es-un-hash' })
+ok(pdfOk === 'insertado' && pdfMalo?.includes('evidencia_archivo_valida'), 'el PDF de evidencia solo guarda nombre, páginas y una huella SHA-256 válida', `${pdfOk} | ${pdfMalo}`)
+const errUmbrales = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 9, "moderado": 4, "alto": 16}' where id = $1`, [audA.id]))
+ok(errUmbrales?.includes('umbrales_riesgo_validos'), 'los umbrales de riesgo deben ir en orden (bajo < moderado < alto)', errUmbrales)
+const errUmbralesOk = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 3, "moderado": 8, "alto": 15}' where id = $1`, [audA.id]))
+ok(errUmbralesOk === null, 'el auditor ajusta los umbrales de su auditoría', errUmbralesOk)
+
 console.log('\n▸ Normas, ia_eventos y cuota de IA')
 const { rows: crit } = await comoUsuario(db, como(A), (tx) => tx.query('select id from public.criterios_normativos'))
 ok(crit.length === 2, 'un usuario aprobado lee los criterios')
