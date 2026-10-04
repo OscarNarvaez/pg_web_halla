@@ -20,9 +20,20 @@
   }
 }
 
+@page {
+  size: letter;
+  margin: 2cm;
+}
+
 @media print {
   .no-imprimir {
     display: none !important;
+  }
+  #contenido {
+    padding: 0 !important;
+  }
+  .break-inside-avoid {
+    break-inside: avoid;
   }
   body {
     background: #fff;

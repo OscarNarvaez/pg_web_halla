@@ -26,3 +26,6 @@ pnpm-debug.log*
 # Lockfiles que no usamos (el proyecto usa pnpm)
 package-lock.json
 yarn.lock
+
+# Pruebas de extremo a extremo (pnpm probar:interfaz)
+.e2e/

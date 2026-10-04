@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { CLASIFICACIONES, ORDEN_INFORME, TONOS } from '../../lib/catalogos'
 
 function Ayuda({ active, payload }) {
@@ -15,6 +15,17 @@ function Ayuda({ active, payload }) {
         {d.porcentaje !== null && ` · ${d.porcentaje} %`}
       </p>
     </div>
+  )
+}
+
+/** Rótulo del eje con el nombre y, debajo, el valor: también se lee el 0, que no tiene columna. */
+function Rotulo({ x, y, payload, datos }) {
+  const d = datos.find((x) => x.corta === payload.value)
+  return (
+    <text x={x} y={y + 12} textAnchor="middle" fontSize={12}>
+      <tspan x={x} fill="#4a6072">{payload.value}</tspan>
+      <tspan x={x} dy={16} fill="#16222c" fontWeight={600}>{d?.total ?? ''}</tspan>
+    </text>
   )
 }
 
@@ -38,29 +49,31 @@ export function GraficaClasificaciones({ conteo, alto = 240, animar = true }) {
     <figure>
       <div style={{ height: alto }} aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={datos} margin={{ top: 22, right: 8, bottom: 0, left: -18 }} barCategoryGap="30%">
+          <BarChart data={datos} margin={{ top: 12, right: 8, bottom: 0, left: -18 }} barCategoryGap="30%">
             <CartesianGrid vertical={false} stroke="#e6eaee" strokeWidth={1} />
-            <XAxis dataKey="corta" tickLine={false} axisLine={{ stroke: '#9fb0bf' }} tick={{ fill: '#4a6072', fontSize: 12 }} interval={0} />
+            <XAxis dataKey="corta" tickLine={false} axisLine={{ stroke: '#9fb0bf' }} tick={<Rotulo datos={datos} />} interval={0} height={44} />
             <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#4a6072', fontSize: 12 }} width={44} />
             <Tooltip content={<Ayuda />} cursor={{ fill: '#f4f6f8' }} />
             <Bar dataKey="total" maxBarSize={24} radius={[4, 4, 0, 0]} isAnimationActive={animar}>
               {datos.map((d) => <Cell key={d.clave} fill={d.color} />)}
-              <LabelList dataKey="total" position="top" fill="#2b3b49" fontSize={12} fontWeight={600} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <table className="sr-only">
-        <caption>Hallazgos por clasificación</caption>
-        <thead>
-          <tr><th scope="col">Clasificación</th><th scope="col">Hallazgos</th><th scope="col">Porcentaje</th></tr>
-        </thead>
-        <tbody>
-          {datos.map((d) => (
-            <tr key={d.clave}><th scope="row">{d.etiqueta}</th><td>{d.total}</td><td>{d.porcentaje ?? 0} %</td></tr>
-          ))}
-        </tbody>
-      </table>
+      {/* La tabla va dentro de un contenedor sr-only: una <table> ignora width: 1px y desbordaría en móvil */}
+      <div className="sr-only">
+        <table>
+          <caption>Hallazgos por clasificación</caption>
+          <thead>
+            <tr><th scope="col">Clasificación</th><th scope="col">Hallazgos</th><th scope="col">Porcentaje</th></tr>
+          </thead>
+          <tbody>
+            {datos.map((d) => (
+              <tr key={d.clave}><th scope="row">{d.etiqueta}</th><td>{d.total}</td><td>{d.porcentaje ?? 0} %</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   )
 }

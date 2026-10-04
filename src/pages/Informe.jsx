@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FileText, Printer, RefreshCw } from 'lucide-react'
+import { FileDown, FileText, Printer, RefreshCw } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { useConsulta } from '../hooks/useConsulta'
 import { useToast } from '../contexts/ToastContext'
@@ -28,6 +28,7 @@ export default function Informe() {
   )
   const [versionElegida, setVersionElegida] = useState(null)
   const [generando, setGenerando] = useState(false)
+  const [exportando, setExportando] = useState('')
 
   if (auditoria.cargando || informes.cargando) return <PantallaCarga />
   if (auditoria.error) return <EstadoError mensaje={auditoria.error} alReintentar={auditoria.recargar} />
@@ -48,6 +49,20 @@ export default function Informe() {
     notificar(data.meta?.ia ? `Informe versión ${data.informe.version} generado` : 'Informe generado con plantilla: la IA no estuvo disponible', data.meta?.ia ? 'exito' : 'aviso')
   }
 
+  const exportar = async (formato) => {
+    setExportando(formato)
+    try {
+      // jspdf y docx se cargan solo al exportar, cada uno por separado
+      if (formato === 'pdf') await (await import('../lib/exportar-pdf')).exportarPdf(informe)
+      else await (await import('../lib/exportar-docx')).exportarDocx(informe)
+    } catch (e) {
+      console.error(e)
+      notificar(`No se pudo generar el archivo ${formato === 'pdf' ? 'PDF' : 'Word'}. Inténtalo de nuevo.`, 'error')
+    } finally {
+      setExportando('')
+    }
+  }
+
   return (
     <>
       <div className="no-imprimir">
@@ -61,7 +76,13 @@ export default function Informe() {
               <Boton icono={lista.length ? RefreshCw : FileText} onClick={generar} cargando={generando} disabled={!puedeGenerar}>
                 {lista.length ? 'Generar nueva versión' : 'Generar informe'}
               </Boton>
-              {informe && <Boton variante="secundario" icono={Printer} onClick={() => window.print()}>Imprimir</Boton>}
+              {informe && (
+                <>
+                  <Boton variante="secundario" icono={FileDown} onClick={() => exportar('pdf')} cargando={exportando === 'pdf'} disabled={Boolean(exportando)}>PDF</Boton>
+                  <Boton variante="secundario" icono={FileDown} onClick={() => exportar('docx')} cargando={exportando === 'docx'} disabled={Boolean(exportando)}>Word</Boton>
+                  <Boton variante="secundario" icono={Printer} onClick={() => window.print()}>Imprimir</Boton>
+                </>
+              )}
             </>
           }
         />

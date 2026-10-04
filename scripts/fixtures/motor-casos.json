@@ -1,0 +1,250 @@
+{
+ "fuente": "pnpm probar:motor, 2026-10-04",
+ "modelos": [
+  "gemini-3.8-flash",
+  "gemini-flash-latest",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite"
+ ],
+ "resultados": [
+  {
+   "caso": {
+    "n": 1,
+    "entrada": "Se revisaron 20 historias clínicas y en 5 de ellas no se encontró registrada la valoración de enfermería requerida.",
+    "espera": [
+     "NO_CONFORMIDAD"
+    ],
+    "proceso": "Hospitalización"
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "NO_CONFORMIDAD",
+      "justificacion": "Existe un incumplimiento comprobado mediante evidencia objetiva (5 de 20 historias clínicas revisadas sin el registro obligatorio de la valoración de enfermería), lo cual vulnera las condiciones controladas y el mantenimiento de la información documentada del servicio.",
+      "hallazgo_corregido": "Durante la revisión de historias clínicas realizada el [fecha por confirmar] en el servicio de Hospitalización, se evidenció que 5 de las 20 historias clínicas auditadas no contaban con la valoración de enfermería registrada, incumpliendo el control de la prestación del servicio bajo condiciones controladas y la conservación de la información documentada necesaria para apoyar la operación de los procesos, según lo establecido en la NTC-ISO 9001:2015, numerales 7.5.1 y 8.5.1.",
+      "criterio_requisito": "NTC-ISO 9001:2015, numerales 7.5.1 y 8.5.1",
+      "evidencia": "En 5 de 20 historias clínicas revisadas en el servicio de Hospitalización no se encontró registrada la valoración de enfermería.",
+      "severidad": "media",
+      "criterios_citados": [
+       {
+        "criterio_id": "75feb3dc-c8ec-41ee-b76b-76cb9448709d",
+        "numeral": "7.5.1",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Información documentada — Generalidades",
+        "verificado": true
+       },
+       {
+        "criterio_id": "a7f08e0e-debb-4ecf-8ccb-379439e1a0d6",
+        "numeral": "8.5.1",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Control de la producción y de la provisión del servicio",
+        "verificado": true
+       }
+      ],
+      "avisos": [
+       "Se retiraron referencias normativas que no corresponden a los criterios cargados.",
+       "Se marcaron fechas o cifras que no aparecen en tu texto: complétalas o confírmalas."
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 2,
+    "entrada": "El equipo realiza seguimiento mensual a los indicadores y utiliza los resultados para definir acciones.",
+    "espera": [
+     "FORTALEZA"
+    ],
+    "proceso": "Gestión de calidad"
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "FORTALEZA",
+      "justificacion": "El proceso realiza un seguimiento sistemático mensual a los indicadores e integra activamente sus resultados en la toma de decisiones y definición de acciones, representando una práctica destacada con impacto positivo en la gestión.",
+      "hallazgo_corregido": "Se evidencia el seguimiento mensual a los indicadores de gestión y el uso sistemático de sus resultados para la definición de acciones, lo cual favorece la toma de decisiones basada en evidencia y contribuye al fortalecimiento continuo del desempeño del proceso.",
+      "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3",
+      "evidencia": "Seguimiento mensual documentado a los indicadores del proceso y registros de acciones definidas a partir del análisis de los resultados.",
+      "severidad": "baja",
+      "criterios_citados": [
+       {
+        "criterio_id": "79f6348a-9ca1-49d9-9272-39c30e3a7a40",
+        "numeral": "9.1.3",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Análisis y evaluación",
+        "verificado": true
+       }
+      ],
+      "avisos": []
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 3,
+    "entrada": "Los registros están completos, pero algunas firmas son poco legibles.",
+    "espera": [
+     "OBSERVACION"
+    ],
+    "proceso": "Consulta externa"
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "OBSERVACION",
+      "justificacion": "No se demuestra el incumplimiento de un requisito obligatorio documentado o normativo explícito sobre las firmas, pero la baja legibilidad de las mismas constituye una debilidad que puede comprometer la trazabilidad y la autenticidad de los registros.",
+      "hallazgo_corregido": "Se evidencia que en los registros del proceso la firma de los responsables presenta baja legibilidad, situación que podría afectar la clara identificación de los firmantes y la trazabilidad de la información conservada.",
+      "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+      "evidencia": "Registros del proceso de Consulta externa completados que presentan firmas poco legibles.",
+      "severidad": "baja",
+      "criterios_citados": [],
+      "avisos": []
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 4,
+    "entrada": "El registro de asistencia actualmente se realiza correctamente en formato físico.",
+    "espera": [
+     "OPORTUNIDAD_DE_MEJORA"
+    ],
+    "proceso": "Gestión humana"
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "OPORTUNIDAD_DE_MEJORA",
+      "justificacion": "El registro de asistencia se realiza de manera correcta cumpliendo con la actividad; no obstante, el proceso presenta una posibilidad de optimización mediante la digitalización del registro para mejorar la eficiencia del proceso de Gestión Humana.",
+      "hallazgo_corregido": "El proceso de registro de asistencia en el área de Gestión Humana es susceptible de mejorar mediante la implementación de mecanismos o herramientas digitales de registro, lo cual permitirá agilizar la consolidación de la información y facilitar su posterior análisis.",
+      "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+      "evidencia": "Verificación del registro de asistencia de personal realizado actualmente en formato físico de forma correcta.",
+      "severidad": "baja",
+      "criterios_citados": [],
+      "avisos": []
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 5,
+    "entrada": "En la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora.",
+    "espera": [
+     "NO_CONFORMIDAD"
+    ],
+    "proceso": "Gestión gerencial",
+    "citaEsperada": [
+     "NTC-ISO 9001:2015",
+     "9.3.3"
+    ]
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "NO_CONFORMIDAD",
+      "justificacion": "Existe un incumplimiento directo de un requisito obligatorio de la norma NTC-ISO 9001:2015, ya que las salidas de la revisión por la dirección deben incluir explícitamente las decisiones y acciones relacionadas con las oportunidades de mejora.",
+      "hallazgo_corregido": "Durante la evaluación del proceso de Gestión Gerencial, se evidenció que en las salidas de la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3, literal a.",
+      "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.3.3, literal a",
+      "evidencia": "Ausencia de decisiones y acciones registradas sobre oportunidades de mejora en el acta/registro de la revisión por la dirección.",
+      "severidad": "media",
+      "criterios_citados": [
+       {
+        "criterio_id": "2132479f-ffb1-4fa0-9850-38ab68537caa",
+        "numeral": "9.3.3",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Salidas de la revisión por la dirección",
+        "verificado": true
+       }
+      ],
+      "avisos": []
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 6,
+    "entrada": "El parqueadero de visitantes es pequeño y se llena los viernes.",
+    "espera": [
+     "*"
+    ],
+    "proceso": "Gestión de recursos físicos",
+    "sinNumeral": true
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "OPORTUNIDAD_DE_MEJORA",
+      "justificacion": "No se evidencia el incumplimiento de un requisito obligatorio ni una vulnerabilidad crítica para la prestación del servicio asistencial, pero existe una posibilidad de optimizar la capacidad y operatividad de la infraestructura asociada.",
+      "hallazgo_corregido": "La capacidad del área de parqueadero de visitantes es susceptible de mejorar mediante la evaluación de alternativas de ampliación, reorganización de espacios o convenios externos de estacionamiento, lo cual permitirá optimizar la disponibilidad de parqueo y brindar mayor comodidad a los usuarios durante los días de alta afluencia.",
+      "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+      "evidencia": "Limitación de capacidad y saturación del parqueadero de visitantes durante los días viernes.",
+      "severidad": "baja",
+      "criterios_citados": [],
+      "avisos": []
+     }
+    ]
+   }
+  },
+  {
+   "caso": {
+    "n": 7,
+    "entrada": "Se evidenció extintor vencido en el área de urgencias y además el personal muestra un excelente dominio del protocolo de código azul.",
+    "espera": [
+     "NO_CONFORMIDAD",
+     "FORTALEZA"
+    ],
+    "proceso": "Urgencias"
+   },
+   "resultado": {
+    "hallazgos": [
+     {
+      "clasificacion": "NO_CONFORMIDAD",
+      "justificacion": "Se identificó un extintor con fecha de vigencia expirada en el área de urgencias, lo cual constituye un incumplimiento de los requisitos de control de la infraestructura y el entorno para la operación segura de los procesos.",
+      "hallazgo_corregido": "Durante la auditoría realizada el [fecha por confirmar] en el área de Urgencias, se evidenció un extintor con fecha de vigencia expirada (vencido), incumpliendo el requisito de asegurar el uso de la infraestructura y el entorno adecuados para la operación de los procesos, establecido en la norma NTC-ISO 9001:2015, numeral 8.5.1, literal d).",
+      "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1, literal d)",
+      "evidencia": "Extintor con fecha de vigencia expirada en el área de urgencias.",
+      "severidad": "media",
+      "criterios_citados": [
+       {
+        "criterio_id": "a7f08e0e-debb-4ecf-8ccb-379439e1a0d6",
+        "numeral": "8.5.1",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Control de la producción y de la provisión del servicio",
+        "verificado": true
+       }
+      ],
+      "avisos": [
+       "Se marcaron fechas o cifras que no aparecen en tu texto: complétalas o confírmalas."
+      ]
+     },
+     {
+      "clasificacion": "FORTALEZA",
+      "justificacion": "El personal del área de urgencias demuestra un alto nivel de competencia y apropiación del protocolo de código azul, lo cual contribuye directamente a la seguridad del paciente y a la efectividad de la atención de emergencias.",
+      "hallazgo_corregido": "Se evidencia un alto nivel de apropiación y dominio técnico por parte del personal del área de Urgencias respecto al protocolo de código azul, lo cual favorece la seguridad del paciente y contribuye a la efectividad en la atención de emergencias vitales.",
+      "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.2",
+      "evidencia": "Demostración de dominio del protocolo de código azul por parte del personal de urgencias durante la auditoría.",
+      "severidad": "baja",
+      "criterios_citados": [
+       {
+        "criterio_id": "be3c13cc-24e7-42fd-a4f9-e61c9a7abf4e",
+        "numeral": "7.2",
+        "documento": "NTC-ISO 9001:2015",
+        "titulo": "Competencia",
+        "verificado": true
+       }
+      ],
+      "avisos": []
+     }
+    ]
+   }
+  }
+ ]
+}
