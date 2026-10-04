@@ -26,7 +26,7 @@ export default {
         },
         // Colores semánticos por clasificación — úsalos SIEMPRE consistentes
         nc: { bg: '#fef2f2', borde: '#fca5a5', texto: '#991b1b', solido: '#b42318' }, // NO CONFORMIDAD
-        obs: { bg: '#fffbeb', borde: '#fcd34d', texto: '#92400e', solido: '#94620a' }, // OBSERVACIÓN
+        obs: { bg: '#fffbeb', borde: '#fcd34d', texto: '#92400e', solido: '#b7791f' }, // OBSERVACIÓN
         fort: { bg: '#f0fdf4', borde: '#86efac', texto: '#166534', solido: '#1b7a4b' }, // FORTALEZA
         om: { bg: '#eff6ff', borde: '#93c5fd', texto: '#1e40af', solido: '#1f5fa8' }, // OPORTUNIDAD DE MEJORA
       },

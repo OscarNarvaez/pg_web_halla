@@ -1,4 +1,4 @@
-export { Boton } from './Boton'
+export { Boton, BotonEnlace } from './Boton'
 export { Campo, EnvolturaCampo, claseControl } from './Campo'
 export { AreaTexto } from './AreaTexto'
 export { Select } from './Select'

@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { cx } from '../../lib/cx'
 
@@ -14,6 +15,9 @@ const TAMANOS = {
   md: 'min-h-11 px-4 text-sm gap-2',
   lg: 'min-h-12 px-6 text-base gap-2',
 }
+
+const BASE =
+  'inline-flex items-center justify-center rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-halla-500 focus-visible:ring-offset-2'
 
 /**
  * Botón de la aplicación.
@@ -35,7 +39,8 @@ export const Boton = forwardRef(function Boton(
       disabled={disabled || cargando}
       aria-busy={cargando || undefined}
       className={cx(
-        'inline-flex items-center justify-center rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-halla-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed',
+        BASE,
+        'disabled:cursor-not-allowed',
         VARIANTES[variante],
         TAMANOS[tamano],
         className,
@@ -49,5 +54,32 @@ export const Boton = forwardRef(function Boton(
       )}
       {children}
     </button>
+  )
+})
+
+/**
+ * Enlace de navegación con aspecto de botón (no se anida un <button> dentro de un <a>).
+ * @param {object} props
+ * @param {string} props.a Ruta de destino.
+ * @param {boolean} [props.deshabilitado] Se muestra como botón inactivo y no navega.
+ */
+export const BotonEnlace = forwardRef(function BotonEnlace(
+  { a, variante = 'primario', tamano = 'md', icono: Icono, deshabilitado = false, className, children, ...resto },
+  ref,
+) {
+  const clases = cx(BASE, VARIANTES[variante], TAMANOS[tamano], className)
+  if (deshabilitado) {
+    return (
+      <span ref={ref} role="link" aria-disabled="true" className={cx(clases, 'cursor-not-allowed opacity-50')} {...resto}>
+        {Icono && <Icono className="size-4 shrink-0" aria-hidden="true" />}
+        {children}
+      </span>
+    )
+  }
+  return (
+    <Link ref={ref} to={a} className={clases} {...resto}>
+      {Icono && <Icono className="size-4 shrink-0" aria-hidden="true" />}
+      {children}
+    </Link>
   )
 })

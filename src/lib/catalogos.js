@@ -63,9 +63,11 @@ export const CLASIFICACIONES = {
 export const ORDEN_INFORME = ['NO_CONFORMIDAD', 'OBSERVACION', 'OPORTUNIDAD_DE_MEJORA', 'FORTALEZA']
 
 // Clases de Tailwind por tono. Se escriben completas para que el purgado de Tailwind las detecte.
+// Los «solido» (barras de gráficas, bordes de tarjetas) están validados para daltonismo: el ámbar
+// del prototipo (#94620a) quedaba a ΔE 3 del rojo para deuteranopía; #b7791f pasa todos los controles.
 export const TONOS = {
   nc: { badge: 'bg-nc-bg text-nc-texto border-nc-borde', solido: '#b42318', barra: 'bg-nc-solido' },
-  obs: { badge: 'bg-obs-bg text-obs-texto border-obs-borde', solido: '#94620a', barra: 'bg-obs-solido' },
+  obs: { badge: 'bg-obs-bg text-obs-texto border-obs-borde', solido: '#b7791f', barra: 'bg-obs-solido' },
   fort: { badge: 'bg-fort-bg text-fort-texto border-fort-borde', solido: '#1b7a4b', barra: 'bg-fort-solido' },
   om: { badge: 'bg-om-bg text-om-texto border-om-borde', solido: '#1f5fa8', barra: 'bg-om-solido' },
 }
