@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "ingest": "node scripts/ingest-normas.mjs",
     "ingest:dry": "node scripts/ingest-normas.mjs --dry-run",
-    "verificar-rls": "node scripts/verificar-rls.mjs"
+    "verificar-rls": "node scripts/verificar-rls.mjs",
+    "probar:bd": "node scripts/probar-bd.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -31,6 +32,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^9.39.5",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.20",
