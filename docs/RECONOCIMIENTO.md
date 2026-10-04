@@ -107,33 +107,51 @@ se trocea limpio (376 caracteres).
 
 ## D. Gemini — verificado contra la API
 
-Pruebas con la API key real el 3 de octubre de 2026:
+Pruebas con la API key real el 3 de octubre de 2026, hechas desde Node.
+
+> **Corrección.** Una primera ronda con `curl` dio 404 con cuerpo vacío para `gemini-flash-latest` y
+> `gemini-3.5-flash`. Era un artefacto del proxy del entorno de trabajo: repetidas desde Node, ambas
+> funcionan. Solo los 404 que traen mensaje de la API son reales.
 
 | Modelo | Resultado |
 |---|---|
 | `gemini-2.5-flash` (default del prompt §5) | **404**: «This model is no longer available to new users. Please update your code to use models/gemini-3.8-flash» |
-| `gemini-flash-latest` | 404 |
-| `gemini-3.5-flash` | 404 |
-| **`gemini-3.8-flash`** | **200**: respeta `responseMimeType` + `responseSchema` con `enum` y arreglos anidados; clasificó `NO_CONFORMIDAD` y copió el `criterio_id` exacto citando 9.3.3 |
+| `gemini-2.5-flash-lite`, `gemini-3.8-flash-lite` | 404 |
+| **`gemini-3.8-flash`** | **200** · respeta `responseSchema` con `enum` y arreglos anidados; copió el `criterio_id` exacto citando 9.3.3 |
+| `gemini-flash-latest` | 200 · resuelve a `gemini-3.8-flash`, **con cuota propia** |
+| `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash` | 200 · mismo resultado (el 3.7 da 503 con frecuencia) |
+| `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` | 200 · mismo resultado, en 1 a 1,5 s |
 
-Los tres modelos que fallan **aparecen en `GET /v1beta/models`**: el listado no refleja lo que la key
-puede usar. Hay que probar con `generateContent`.
+### La cuota gratuita es de 20 solicitudes diarias por modelo
 
-Ajustes de diseño derivados:
+El prompt asumía «unos cientos por día». La realidad, según el error de la API:
+`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, **límite 20**. Es por proyecto (compartida por
+todos los auditores) y **por modelo**: agotar uno no agota los demás. Se agotó durante estas pruebas.
+
+Por eso `gemini.ts` usa una **cascada de modelos**: si el principal no tiene cuota, no existe o está
+saturado, pasa al siguiente (`GEMINI_MODEL` + `GEMINI_MODELOS_RESPALDO`). Con los siete modelos
+disponibles suman unas 140 solicitudes diarias gratis. Cada hallazgo guarda en `modelo_ia` el modelo
+que realmente respondió. Para uso en producción con varios auditores, **lo recomendable es activar la
+facturación del proyecto de Google AI Studio** (nivel 1): los límites suben a miles por día a un costo
+bajo para modelos Flash.
+
+### Otros ajustes derivados
 
 - **Gemini 3.x razona por defecto** (344 tokens de pensamiento en la prueba), y esos tokens cuentan
   contra `maxOutputTokens`. Con 2 048 hay riesgo de `finishReason: MAX_TOKENS` con texto vacío.
   Se usa `thinkingConfig: { thinkingLevel: 'low' }` (0 tokens de pensamiento, latencia de 6,2 s a
   1,7 s, misma clasificación y cita) y `GEMINI_MAX_OUTPUT_TOKENS=4096`.
-- La parte de la respuesta trae `thoughtSignature`: se lee `parts.find(p => p.text)`, no `parts[0].text`.
-- **2 de 5 llamadas devolvieron `503 high demand`**: los reintentos con backoff cubren 429 y todo 5xx.
+- La parte de la respuesta trae `thoughtSignature`: se lee la parte con texto, no `parts[0].text`.
+- **Hay 503 «high demand» frecuentes.** Los reintentos con backoff cubren 429 por minuto y todo 5xx;
+  un 429 de cuota **diaria** no se reintenta (sería inútil) y pasa directo al modelo siguiente.
 
 ## E. Discrepancias del prompt maestro con la realidad
 
 | # | El prompt dice | Realidad | Resolución |
 |---|---|---|---|
 | 1 | «Workflow ya existente, no lo rompas» (§0, §1.3) | No hay ningún workflow | Se crea `deploy.yml` desde cero |
-| 2 | `GEMINI_MODEL=gemini-2.5-flash` | 404 para usuarios nuevos | `gemini-3.8-flash` |
+| 2 | `GEMINI_MODEL=gemini-2.5-flash` | 404 para usuarios nuevos | `gemini-3.8-flash` + cascada de respaldo |
+| 2b | «Unos cientos de solicitudes por día» (§5) | 20 por día, por proyecto y por modelo | Cascada de modelos; recomendar facturación |
 | 3 | `GEMINI_MAX_OUTPUT_TOKENS=2048` | Insuficiente con razonamiento activo | `4096` + `thinkingLevel: low` |
 | 4 | `grep -ri "AIza" src/ dist/` (§13) | Las keys nuevas tienen formato `AQ.…` | `grep -riE "AIza[0-9A-Za-z_-]{20,}\|AQ\.[0-9A-Za-z_-]{20,}"` |
 | 5 | `npm` en todo (§12.1, Anexo C) | Regla del equipo: solo pnpm | pnpm, `pnpm/action-setup`, `pnpm-lock.yaml` |

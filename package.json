@@ -14,7 +14,13 @@
     "ingest:dry": "node scripts/ingest-normas.mjs --dry-run",
     "verificar-rls": "node scripts/verificar-rls.mjs",
     "probar:bd": "node scripts/probar-bd.mjs",
-    "probar:busqueda": "node scripts/probar-busqueda.mjs"
+    "probar:busqueda": "node scripts/probar-busqueda.mjs",
+    "probar:validacion": "node scripts/probar-validacion.mjs",
+    "probar:motor": "node scripts/probar-motor.mjs",
+    "probar:gemini": "node scripts/probar-gemini.mjs",
+    "verificar:prompt": "node scripts/verificar-prompt.mjs",
+    "probar": "node scripts/verificar-prompt.mjs && node scripts/probar-validacion.mjs && node scripts/probar-gemini.mjs && node scripts/probar-bd.mjs && node scripts/probar-busqueda.mjs",
+    "check:funciones": "cd supabase/functions && pnpm dlx deno check clasificar-hallazgo/index.ts completar-auditoria/index.ts generar-informe/index.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
