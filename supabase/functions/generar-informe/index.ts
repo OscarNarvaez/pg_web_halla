@@ -7,8 +7,8 @@ import { anonimizar } from '../_shared/anonimizar.ts'
 import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
-  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, narrativaRespaldo,
-  SISTEMA_INFORME, type HallazgoInforme, type Narrativa,
+  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, narrativaRespaldo, perfilIncompletoInforme,
+  SISTEMA_INFORME, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto } from '../_shared/validar-salida.ts'
 
@@ -37,10 +37,13 @@ Deno.serve(async (req) => {
   // 2. Perfil y hallazgos no descartados, por consecutivo
   const { data: perfil } = await admin
     .from('profiles')
-    .select('nombre_completo, cedula, cargo, equipo_auditor_nombre, equipo_auditor_cargo')
+    .select('nombre_completo, cedula, cargos, equipo_auditor')
     .eq('id', userId)
     .maybeSingle()
   if (!perfil) return respuestaError(req, 'Completa tu perfil de auditor antes de generar el informe.', 409, 'sin_perfil')
+  if (perfilIncompletoInforme(perfil as PerfilInforme)) {
+    return respuestaError(req, 'Elige tus cargos y los de tu equipo auditor en «Mi perfil» antes de generar el informe: aparecen en las firmas.', 409, 'perfil_incompleto')
+  }
 
   const { data: hallazgos, error } = await admin
     .from('hallazgos')
@@ -113,7 +116,7 @@ Deno.serve(async (req) => {
   const { data: ultima } = await admin.from('informes').select('version').eq('auditoria_id', auditoria.id).order('version', { ascending: false }).limit(1).maybeSingle()
   const version = (ultima?.version ?? 0) + 1
   const contenido = construirContenido({
-    auditoria, perfil, hallazgos: lista, estadisticas, narrativa,
+    auditoria, perfil: perfil as PerfilInforme, hallazgos: lista, estadisticas, narrativa,
     fechaEmision: new Date().toISOString().slice(0, 10), version, avisos,
   })
 

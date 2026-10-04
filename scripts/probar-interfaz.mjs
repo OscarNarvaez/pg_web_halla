@@ -61,8 +61,9 @@ const ok = (c, d, det = '') => {
 
 // ─── Datos simulados ────────────────────────────────────────────────────────
 const perfil = {
-  id: USUARIO, nombre_completo: 'Ana María Rodríguez Peña', cedula: '1085123456', celular: '3001234567', cargo: 'Auditora interna',
-  equipo_auditor_nombre: 'Laura Gómez Ñáñez', equipo_auditor_cargo: 'Profesional de calidad', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
+  id: USUARIO, nombre_completo: 'Ana María Rodríguez Peña', cedula: '1085123456', celular: '3001234567', cargos: ['Auditor médico', 'Coordinadora'],
+  equipo_auditor: [{ nombre: 'Laura Gómez Ñáñez', cargos: ['Enfermera'] }, { nombre: 'Pedro Pérez Ortiz', cargos: ['Médico', 'Tesorera'] }],
+  alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null,
   rol: 'auditor', aprobado: true, aprobado_en: '2026-09-02T10:00:00Z', acepto_tratamiento_datos_en: '2026-09-01T10:00:00Z',
   creado_en: '2026-09-01T10:00:00Z', actualizado_en: '2026-09-01T10:00:00Z',
 }
@@ -266,6 +267,16 @@ async function sinDesborde(pagina, nombre) {
   ok(ancho <= vista, `${nombre}: sin desborde horizontal a ${vista}px`, `scrollWidth ${ancho} · ${culpable}`)
 }
 
+// Elige cargos con el selector (botón → buscador → casillas → Listo)
+async function elegirCargos(pagina, nombreBoton, cargos) {
+  await pagina.getByRole('button', { name: nombreBoton }).click()
+  for (const cargo of cargos) {
+    await pagina.getByRole('searchbox', { name: 'Buscar cargo' }).fill(cargo.slice(0, 7))
+    await pagina.getByRole('checkbox', { name: cargo, exact: true }).check()
+  }
+  await pagina.getByRole('button', { name: 'Listo' }).click()
+}
+
 const errores = []
 const navegador = await chromium.launch({ executablePath: rutaChromium() })
 
@@ -308,12 +319,28 @@ console.log('\n▸ Páginas públicas')
   await p.getByLabel('Nombre completo').fill('Ana María Rodríguez')
   await p.getByLabel('Número de cédula').fill('12.34')
   await p.getByLabel('Número de celular').fill('+57 300 123 4567')
-  await p.getByRole('textbox', { name: 'Cargo', exact: true }).fill('Auditora interna')
+  ok((await p.getByRole('textbox', { name: /^Cargo/ }).count()) === 0, 'el cargo ya no se escribe a mano')
   await p.getByRole('button', { name: 'Continuar' }).click()
   ok(await p.getByText('La cédula debe tener entre 6 y 12 dígitos').isVisible(), 'registro paso 2: rechaza una cédula corta con mensaje en español')
+  ok(await p.getByText('Elige al menos uno de tus cargos').isVisible(), 'registro paso 2: exige al menos un cargo')
+  await p.getByRole('button', { name: /^Cargos Elige uno o varios cargos/ }).click()
+  ok((await p.getByRole('checkbox').count()) === 22, 'el selector ofrece los 22 cargos de líderes')
+  await p.getByRole('searchbox', { name: 'Buscar cargo' }).fill('subgerente')
+  ok((await p.getByRole('checkbox').count()) === 5, 'el buscador filtra los cargos sin importar mayúsculas')
+  await p.getByRole('searchbox', { name: 'Buscar cargo' }).fill('medico')
+  ok(await p.getByRole('checkbox', { name: 'Auditor médico', exact: true }).isVisible(), 'el buscador ignora las tildes («medico» → «Auditor médico»)')
+  await p.getByRole('checkbox', { name: 'Auditor médico', exact: true }).check()
+  await p.getByRole('searchbox', { name: 'Buscar cargo' }).fill('')
+  for (const c of ['Coordinadora', 'Enfermera', 'Nutricionista', 'Líder equipo']) await p.getByRole('checkbox', { name: c, exact: true }).check()
+  ok(await p.getByRole('checkbox', { name: 'Auditor externo', exact: true }).isDisabled() && await p.getByText('Máximo 5: quita uno para elegir otro.').isVisible(), 'como máximo 5 cargos por persona')
+  await p.screenshot({ path: `${CAPTURAS}02a-registro-cargos.png`, fullPage: true })
+  await p.keyboard.press('Escape')
+  ok(await p.getByRole('button', { name: 'Cargos 5 elegidos' }).isVisible() && (await p.getByRole('list', { name: 'Cargos: elegidos' }).getByRole('listitem').count()) === 5, 'varios cargos elegidos, mostrados como etiquetas')
+  for (const c of ['Enfermera', 'Nutricionista', 'Líder equipo']) await p.getByRole('button', { name: `Quitar ${c}` }).click()
+  ok((await p.getByRole('list', { name: 'Cargos: elegidos' }).getByRole('listitem').allTextContents()).join('|') === 'Auditor médico|Coordinadora', 'cada cargo se puede quitar con su botón')
   await p.getByLabel('Número de cédula').fill('1.085.123.456')
   await p.getByRole('button', { name: 'Continuar' }).click()
-  await p.getByLabel('Nombre del equipo auditor').waitFor()
+  await p.getByLabel('Nombre de la persona 1').waitFor()
   ok(true, 'registro paso 2: acepta cédula con puntos y celular con +57 (normalizados)')
   await p.getByText('Sistemas', { exact: true }).click()
   ok(await p.getByRole('combobox', { name: 'Sistema', exact: true }).isVisible() && !(await p.getByRole('combobox', { name: 'Proceso', exact: true }).isVisible()), 'alcance Sistemas: aparece el selector de sistema y no el de proceso')
@@ -322,7 +349,8 @@ console.log('\n▸ Páginas públicas')
   ok(await p.getByRole('combobox', { name: 'Proceso', exact: true }).isVisible() && (await p.getByRole('combobox', { name: 'Sistema', exact: true }).count()) === 0, 'alcance Procesos: el selector de sistema se oculta')
   ok((await p.getByRole('combobox', { name: 'Proceso', exact: true }).locator('option').count()) === 20, 'el selector de procesos ofrece los 19 procesos (+ opción vacía)')
   await p.getByRole('button', { name: 'Crear cuenta' }).click()
-  ok(await p.getByText('Escribe el nombre de la persona del equipo auditor').isVisible() && await p.getByText('Elige el proceso que auditas').isVisible(), 'paso 3: exige equipo auditor y proceso')
+  ok(await p.getByText('Escribe el nombre de la persona del equipo auditor').isVisible() && await p.getByText('Elige al menos un cargo para esta persona').isVisible()
+    && await p.getByText('Elige el proceso que auditas').isVisible(), 'paso 3: exige el nombre y el cargo de cada persona del equipo, y el proceso')
 ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').isVisible(), 'paso 3: exige la autorización de tratamiento de datos (Ley 1581)')
   await p.screenshot({ path: `${CAPTURAS}02-registro-paso3.png`, fullPage: true })
 
@@ -344,8 +372,20 @@ ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').i
     }
     return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
-  await p.getByLabel('Nombre del equipo auditor').fill('Laura Gómez')
-  await p.getByLabel('Cargo del equipo auditor').fill('Profesional de calidad')
+  await p.getByLabel('Nombre de la persona 1').fill('Laura Gómez')
+  await elegirCargos(p, /^Cargos de la persona 1/, ['Enfermera'])
+  await p.getByRole('button', { name: 'Agregar otra persona al equipo' }).click()
+  await p.getByLabel('Nombre de la persona 2').fill('Pedro Pérez')
+  await p.getByRole('button', { name: /^Cargos de la persona 2/ }).click()
+  const listaEquipo = p.getByRole('group', { name: 'Cargos de la persona 2' })
+ok((await listaEquipo.getByRole('checkbox').count()) === 25 && (await listaEquipo.getByRole('checkbox', { name: 'Asesora PAMEC', exact: true }).count()) === 0, 'el equipo auditor tiene su propia lista de 25 cargos')
+  await p.keyboard.press('Escape')
+  await elegirCargos(p, /^Cargos de la persona 2/, ['Médico', 'Tesorera'])
+  await p.getByRole('button', { name: 'Agregar otra persona al equipo' }).click()
+  ok(await p.getByLabel('Nombre de la persona 3').isVisible(), 'se pueden agregar más personas al equipo auditor')
+  await p.screenshot({ path: `${CAPTURAS}02b-registro-equipo.png`, fullPage: true })
+  await p.getByRole('button', { name: 'Quitar a la persona 3 del equipo auditor' }).click()
+  ok((await p.getByLabel('Nombre de la persona 3').count()) === 0, 'y quitar las que sobran')
   await p.getByRole('combobox', { name: 'Proceso', exact: true }).selectOption('Urgencias')
   await p.getByLabel(/Autorizo el tratamiento/).check()
   await p.getByRole('button', { name: 'Crear cuenta' }).click()
@@ -356,6 +396,9 @@ ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').i
   await p.getByRole('heading', { name: 'Revisa tu correo' }).waitFor()
   const signup = authPeticiones.find((x) => x.ruta === 'signup')
   ok(signup?.cuerpo?.data?.acepto_tratamiento_datos === 'true' && signup?.cuerpo?.data?.cedula === '1085123456', 'el registro envía la autorización de datos y la cédula normalizada')
+  ok(JSON.stringify(signup?.cuerpo?.data?.cargos) === '["Auditor médico","Coordinadora"]'
+    && JSON.stringify(signup?.cuerpo?.data?.equipo_auditor) === JSON.stringify([{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }, { nombre: 'Pedro Pérez', cargos: ['Médico', 'Tesorera'] }]),
+    'el registro envía varios cargos y un equipo de varias personas', JSON.stringify(signup?.cuerpo?.data))
   await p.getByRole('button', { name: 'Reenviar correo de confirmación' }).click()
   await p.getByText(/enviamos un nuevo correo/).waitFor()
   ok(authPeticiones.some((x) => x.ruta === 'resend' && x.cuerpo?.type === 'signup'), 'el botón reenvía el correo de confirmación')
@@ -551,6 +594,10 @@ const secciones = await p.locator('article h2[id^="seccion-"]').allTextContents(
 ok(secciones.length === 11 && secciones[0].startsWith('1. ') && secciones[10].startsWith('11. '), 'el informe tiene las 11 secciones', secciones.join(' | '))
 const grupos = await p.locator('article h3').allTextContents()
 ok(/No conformidades/.test(grupos[0]) && /Observaciones/.test(grupos[1]) && /Oportunidades/.test(grupos[2]) && /Fortalezas/.test(grupos[3]), 'hallazgos en orden NC → OBS → OM → FORT', grupos.join(' | '))
+const equipoInforme = await p.locator('#seccion-5').locator('..').innerText()
+ok(/Auditor médico, Coordinadora/.test(equipoInforme) && /Laura Gómez Ñáñez, Enfermera/.test(equipoInforme) && /Pedro Pérez Ortiz, Médico, Tesorera/.test(equipoInforme),
+  'sección 5: el líder con sus cargos y cada persona del equipo con los suyos', equipoInforme)
+ok((await p.locator('#seccion-11').locator('..').getByText('Equipo auditor', { exact: true }).count()) === 2, 'sección 11: una firma por cada persona del equipo auditor (además del líder)')
 await p.screenshot({ path: `${CAPTURAS}07-informe.png`, fullPage: true })
 
 const [descargaPdf] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'PDF' }).click()])
@@ -561,6 +608,8 @@ const textoPdf = execSync(`pdftotext -layout "${rutaPdf}" -`).toString()
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
 ok(/Auditoría/.test(textoPdf) && /Observación|Observaciones/.test(textoPdf) && /Ñáñez/.test(textoPdf) && /Rodríguez Peña/.test(textoPdf), 'el PDF conserva tildes y «ñ» (Ñáñez, Rodríguez, Auditoría)')
 ok(new RegExp(`Página 1 de ${paginasPdf}`).test(textoPdf) && /Generado el/.test(textoPdf), `pie con número de página y fecha (${paginasPdf} páginas)`)
+ok(/Pedro Pérez Ortiz/.test(textoPdf) && /Médico, Tesorera/.test(textoPdf) && (textoPdf.replace('5. EQUIPO AUDITOR', '').match(/EQUIPO AUDITOR/g) ?? []).length === 2 && /AUDITOR LÍDER/.test(textoPdf),
+  'el PDF lista todo el equipo y tiene una firma por persona')
 ok(/AI-2026-001 · Informe de auditoría interna/.test(textoPdf), 'encabezado con el código de la auditoría')
 ok(/(Letter|612 x 792)/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño carta')
 const fuentesPdf = execSync(`pdffonts "${rutaPdf}"`).toString()
@@ -576,9 +625,32 @@ ok(/^Informe_AI-2026-001_\d{8}\.docx$/.test(descargaDocx.suggestedFilename()), `
 const xml = execSync(`unzip -p "${rutaDocx}" word/document.xml`).toString()
 ok(/Observaciones/.test(xml) && /Ñáñez/.test(xml) && /Heading1|Ttulo1|Título 1/.test(xml), 'el Word tiene tildes y encabezados nativos (Heading 1)')
 ok(/instrText[^>]*>TOC [^<]*\\o/.test(xml), 'el Word incluye la tabla de contenido automática')
+ok(/Pedro Pérez Ortiz/.test(xml) && (xml.match(/EQUIPO AUDITOR/g) ?? []).length === 2, 'el Word lista todo el equipo y tiene una firma por persona')
 ok(/w:shd [^>]*w:fill="FEF2F2"/.test(xml), 'filas coloreadas según la clasificación')
 const archivosDocx = execSync(`unzip -l "${rutaDocx}"`).toString()
 ok(/word\/media\/[^\s]+\.png/.test(archivosDocx) && /<w:drawing>/.test(xml) && /<w:drawing>/.test(execSync(`unzip -p "${rutaDocx}" 'word/header*.xml'`).toString()), 'el Word lleva el logo en la portada y en el encabezado')
+
+// Un informe generado antes de la 0009 (un solo acompañante) se sigue mostrando
+{
+  const actual = db.informes.at(-1)
+  const { integrantes, ...resto } = actual.contenido.equipo_auditor
+  const viejo = structuredClone(actual)
+  Object.assign(viejo, { id: crypto.randomUUID(), version: 99 })
+  viejo.contenido.version_estructura = 1
+  viejo.contenido.equipo_auditor = { ...resto, acompanante: { nombre: 'Laura Gómez Ñáñez', cargo: 'Profesional de calidad' } }
+  viejo.contenido.firmas = viejo.contenido.firmas.slice(0, 2)
+  db.informes.push(viejo)
+  await p.goto(`${BASE}/app/auditorias/${A1}/informe`)
+  await p.getByRole('heading', { name: 'Informe de auditoría interna' }).waitFor()
+  ok(/Laura Gómez Ñáñez, Profesional de calidad/.test(await p.locator('#seccion-5').locator('..').innerText()) && integrantes.length === 2,
+    'un informe anterior, con un solo acompañante, se sigue mostrando')
+  db.informes.pop()
+}
+perfil.cargos = []
+await p.goto(`${BASE}/app`)
+await p.getByText(/Completa tu perfil: elige tus cargos/).waitFor()
+ok(true, 'un perfil anterior sin cargos ve el aviso para completarlo en «Mi perfil»')
+perfil.cargos = ['Auditor médico', 'Coordinadora']
 
 // Ruta profunda tras recargar
 await p.goto(`${BASE}/app/auditorias/${A1}/informe`)

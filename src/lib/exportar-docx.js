@@ -5,7 +5,7 @@ import {
 } from 'docx'
 import { saveAs } from 'file-saver'
 import { fechaHora, fechaLarga, formatearCedula } from './formato'
-import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, nombreArchivo, periodoDe, sinNumeral, solidoDe } from './exportar-comun'
+import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, integrantesEquipo, nombreArchivo, periodoDe, sinNumeral, solidoDe } from './exportar-comun'
 
 // ═════════════════════════════════════════════════════════════════════════════
 // WORD
@@ -84,7 +84,12 @@ export async function exportarDocx(informe) {
 
     h1('5. Equipo auditor'),
     dato('Auditor líder', `${c.equipo_auditor.lider.nombre}, ${c.equipo_auditor.lider.cargo}`),
-    dato('Equipo auditor', `${c.equipo_auditor.acompanante.nombre}, ${c.equipo_auditor.acompanante.cargo}`),
+    ...(integrantesEquipo(c).length === 1
+      ? [dato('Equipo auditor', `${integrantesEquipo(c)[0].nombre}, ${integrantesEquipo(c)[0].cargo}`)]
+      : [
+          p([new TextRun({ text: 'Equipo auditor:', font: TITULOS, bold: true, size: 21, color: sinNumeral(TINTA_SUAVE) })]),
+          ...integrantesEquipo(c).map((m) => p(`${m.nombre}, ${m.cargo}`, { bullet: { level: 0 } })),
+        ]),
 
     h1('6. Metodología'),
     ...c.metodologia.map((m) => p(m, { bullet: { level: 0 } })),
@@ -147,10 +152,13 @@ export async function exportarDocx(informe) {
     new Table({
       width: { size: ANCHO, type: WidthType.DXA },
       borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
-      rows: [
+      // Dos firmas por fila (el equipo auditor puede tener varias personas)
+      rows: Array.from({ length: Math.ceil(c.firmas.length / 2) }, (_, n) => c.firmas.slice(2 * n, 2 * n + 2)).map((par) =>
         new TableRow({
-          children: c.firmas.map((f) =>
-            new TableCell({
+          cantSplit: true,
+          children: [...par, null].slice(0, 2).map((f) => !f
+            ? new TableCell({ width: { size: Math.round(ANCHO / 2), type: WidthType.DXA }, borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }, children: [new Paragraph('')] })
+            : new TableCell({
               width: { size: Math.round(ANCHO / 2), type: WidthType.DXA },
               margins: { top: 900, right: 300 },
               borders: { top: { style: BorderStyle.SINGLE, size: 6, color: sinNumeral(TINTA) }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
@@ -161,8 +169,7 @@ export async function exportarDocx(informe) {
                 new Paragraph({ children: [new TextRun({ text: f.rol.toUpperCase(), font: TITULOS, size: 16, color: sinNumeral(TINTA_SUAVE) })] }),
               ],
             })),
-        }),
-      ],
+        })),
     }),
   )
 

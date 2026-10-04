@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import { CLASIFICACIONES, TONOS } from '../../lib/catalogos'
 import { fechaLarga, formatearCedula } from '../../lib/formato'
 import { GraficaClasificaciones } from './GraficaClasificaciones'
+import { integrantesEquipo } from '../../lib/exportar-comun'
 import logo from '../../assets/logo-hila.webp'
 
 function Seccion({ n, titulo, children }) {
@@ -96,7 +97,11 @@ export function VistaInforme({ informe }) {
       <Seccion n={5} titulo="Equipo auditor">
         <dl>
           <Dato etiqueta="Auditor líder">{c.equipo_auditor.lider.nombre}, {c.equipo_auditor.lider.cargo}</Dato>
-          <Dato etiqueta="Equipo auditor">{c.equipo_auditor.acompanante.nombre}, {c.equipo_auditor.acompanante.cargo}</Dato>
+          <Dato etiqueta="Equipo auditor">
+            <ul className="space-y-0.5">
+              {integrantesEquipo(c).map((m, i) => <li key={`${m.nombre}-${i}`}>{m.nombre}, {m.cargo}</li>)}
+            </ul>
+          </Dato>
         </dl>
       </Seccion>
 
@@ -171,8 +176,8 @@ export function VistaInforme({ informe }) {
 
       <Seccion n={11} titulo="Firmas">
         <div className="mt-12 grid gap-12 font-sans text-sm sm:grid-cols-2">
-          {c.firmas.map((f) => (
-            <div key={f.rol}>
+          {c.firmas.map((f, i) => (
+            <div key={`${f.rol}-${i}`} className="break-inside-avoid">
               <div className="border-t border-tinta-900 pt-2">
                 <p className="font-semibold text-tinta-900">{f.nombre}</p>
                 <p className="text-tinta-700">{f.cargo}</p>

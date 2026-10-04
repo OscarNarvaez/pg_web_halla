@@ -4,7 +4,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, MailCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { MINIMO_CLAVE, esquemaRegistro, fuerzaClave } from '../lib/esquemas'
+import { MINIMO_CLAVE, esquemaRegistro, fuerzaClave, integranteVacio } from '../lib/esquemas'
 import { supabaseSinConfigurar } from '../lib/supabase'
 import { cx } from '../lib/cx'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
@@ -16,8 +16,8 @@ import { Boton, Campo, CampoClave } from '../components/ui'
 
 const PASOS = [
   { titulo: 'Cuenta', campos: ['email', 'password', 'confirmacion'] },
-  { titulo: 'Datos del auditor', campos: ['nombre_completo', 'cedula', 'celular', 'cargo'] },
-  { titulo: 'Equipo y alcance', campos: ['equipo_auditor_nombre', 'equipo_auditor_cargo', 'alcance', 'proceso', 'sistema', 'acepto_tratamiento_datos'] },
+  { titulo: 'Datos del auditor', campos: ['nombre_completo', 'cedula', 'celular', 'cargos'] },
+  { titulo: 'Equipo y alcance', campos: ['equipo_auditor', 'alcance', 'proceso', 'sistema', 'acepto_tratamiento_datos'] },
 ]
 
 const NIVELES = [
@@ -75,7 +75,7 @@ export default function Registro() {
   const { register, handleSubmit, trigger, control, setValue, getValues, setError: marcarError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(esquemaRegistro),
     mode: 'onTouched',
-    defaultValues: { alcance: undefined, proceso: '', sistema: '', acepto_tratamiento_datos: false },
+    defaultValues: { cargos: [], equipo_auditor: [integranteVacio()], alcance: undefined, proceso: '', sistema: '', acepto_tratamiento_datos: false },
   })
 
   if (supabaseSinConfigurar) return <AvisoConfiguracion />
@@ -149,10 +149,10 @@ export default function Registro() {
             <CampoClave etiqueta="Confirma la contraseña" autoComplete="new-password" required error={errors.confirmacion?.message} {...register('confirmacion')} />
           </>
         )}
-        {paso === 1 && <CamposAuditor register={register} errors={errors} />}
+        {paso === 1 && <CamposAuditor register={register} errors={errors} control={control} />}
         {paso === 2 && (
           <>
-            <CamposEquipo register={register} errors={errors} />
+            <CamposEquipo register={register} errors={errors} control={control} />
             <CamposAlcance register={register} errors={errors} control={control} setValue={setValue} />
             <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} />
           </>

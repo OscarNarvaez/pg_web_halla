@@ -1,32 +1,88 @@
-import { useWatch } from 'react-hook-form'
-import { Network, Workflow } from 'lucide-react'
-import { PROCESOS, SISTEMAS } from '../../lib/catalogos'
+import { Controller, useFieldArray, useWatch } from 'react-hook-form'
+import { Network, Trash2, UserPlus, Workflow } from 'lucide-react'
+import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS } from '../../lib/catalogos'
+import { integranteVacio } from '../../lib/esquemas'
 import { cx } from '../../lib/cx'
+import { Boton } from '../ui/Boton'
 import { Campo } from '../ui/Campo'
 import { Select } from '../ui/Select'
+import { SelectorMultiple } from '../ui/SelectorMultiple'
 
-/** Nombre, cédula, celular y cargo del auditor. Recibe los métodos de react-hook-form. */
-export function CamposAuditor({ register, errors }) {
+/** Cargos de una lista cerrada (uno o varios) conectados a react-hook-form. */
+function CampoCargos({ control, name, etiqueta, opciones, ayuda }) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <SelectorMultiple
+          ref={field.ref}
+          etiqueta={etiqueta}
+          opciones={opciones}
+          valor={field.value ?? []}
+          // Marcar el campo como tocado al elegir: el error desaparece en cuanto hay un cargo, sin esperar a cerrar la lista
+          alCambiar={(valor) => { field.onChange(valor); field.onBlur() }}
+          alSalir={field.onBlur}
+          maximo={MAX_CARGOS}
+          marcador="Elige uno o varios cargos"
+          nombreOpcion="cargo"
+          ayuda={ayuda}
+          error={fieldState.error?.message}
+          required
+        />
+      )}
+    />
+  )
+}
+
+/** Nombre, cédula, celular y cargos del auditor líder. Recibe los métodos de react-hook-form. */
+export function CamposAuditor({ register, errors, control }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Campo etiqueta="Nombre completo" autoComplete="name" required error={errors.nombre_completo?.message} className="sm:col-span-2" {...register('nombre_completo')} />
       <Campo etiqueta="Número de cédula" inputMode="numeric" autoComplete="off" required ayuda="Solo números; puedes escribirla con puntos." error={errors.cedula?.message} {...register('cedula')} />
       <Campo etiqueta="Número de celular" type="tel" inputMode="tel" autoComplete="tel-national" required ayuda="10 dígitos; el prefijo +57 se quita solo." error={errors.celular?.message} {...register('celular')} />
-      <Campo etiqueta="Cargo" autoComplete="organization-title" required error={errors.cargo?.message} className="sm:col-span-2" {...register('cargo')} />
+      <div className="sm:col-span-2">
+        <CampoCargos control={control} name="cargos" etiqueta="Cargos" opciones={CARGOS_LIDER}
+          ayuda={`Elige uno o varios de la lista de líderes (hasta ${MAX_CARGOS}). Aparecen en tu firma del informe.`} />
+      </div>
     </div>
   )
 }
 
-/** Persona del equipo auditor (siempre una persona adicional). */
-export function CamposEquipo({ register, errors }) {
+/** Equipo auditor: una o varias personas (hasta MAX_EQUIPO), cada una con uno o varios cargos. */
+export function CamposEquipo({ register, errors, control }) {
+  const { fields, append, remove } = useFieldArray({ control, name: 'equipo_auditor' })
+  const errorLista = errors.equipo_auditor?.message ?? errors.equipo_auditor?.root?.message
   return (
     <fieldset>
       <legend className="text-sm font-semibold text-tinta-900">Equipo auditor</legend>
-      <p className="mt-1 text-xs text-tinta-500">El equipo auditor corresponde siempre a una persona adicional.</p>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <Campo etiqueta="Nombre del equipo auditor" required error={errors.equipo_auditor_nombre?.message} {...register('equipo_auditor_nombre')} />
-        <Campo etiqueta="Cargo del equipo auditor" required error={errors.equipo_auditor_cargo?.message} {...register('equipo_auditor_cargo')} />
-      </div>
+      <p className="mt-1 text-xs text-tinta-500">
+        Las personas que te acompañan en la auditoría: al menos una y hasta {MAX_EQUIPO}. Cada una firma el informe.
+      </p>
+      <ol className="mt-3 space-y-3">
+        {fields.map((campo, i) => (
+          <li key={campo.id} className="rounded-lg border border-tinta-100 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-tinta-700">Persona {i + 1}</p>
+              {fields.length > 1 && (
+                <Boton variante="fantasma" tamano="sm" icono={Trash2} onClick={() => remove(i)} aria-label={`Quitar a la persona ${i + 1} del equipo auditor`}>
+                  Quitar
+                </Boton>
+              )}
+            </div>
+            <div className="grid gap-4">
+              <Campo etiqueta={`Nombre de la persona ${i + 1}`} required error={errors.equipo_auditor?.[i]?.nombre?.message} {...register(`equipo_auditor.${i}.nombre`)} />
+              <CampoCargos control={control} name={`equipo_auditor.${i}.cargos`} etiqueta={`Cargos de la persona ${i + 1}`} opciones={CARGOS_EQUIPO} />
+            </div>
+          </li>
+        ))}
+      </ol>
+      {errorLista && <p className="mt-1.5 text-sm font-medium text-nc-texto" role="alert">{errorLista}</p>}
+      <Boton variante="secundario" tamano="sm" icono={UserPlus} className="mt-3" onClick={() => append(integranteVacio())} disabled={fields.length >= MAX_EQUIPO}>
+        Agregar otra persona al equipo
+      </Boton>
+      {fields.length >= MAX_EQUIPO && <p className="mt-1 text-xs text-tinta-500">El equipo auditor admite como máximo {MAX_EQUIPO} personas.</p>}
     </fieldset>
   )
 }

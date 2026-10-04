@@ -2,7 +2,7 @@
 import { jsPDF } from 'jspdf'
 import { autoTable } from 'jspdf-autotable'
 import { fechaHora, fechaLarga, formatearCedula } from './formato'
-import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, hexARgb, nombreArchivo, periodoDe, solidoDe } from './exportar-comun'
+import { LINEA, MARCA, TINTA, TINTA_SUAVE, cargarLogo, fondoDe, hexARgb, integrantesEquipo, nombreArchivo, periodoDe, solidoDe } from './exportar-comun'
 
 // ═════════════════════════════════════════════════════════════════════════════
 // PDF
@@ -195,7 +195,7 @@ export async function exportarPdf(informe) {
 
   seccion(5, 'Equipo auditor')
   dato('Auditor líder', `${c.equipo_auditor.lider.nombre}, ${c.equipo_auditor.lider.cargo}`)
-  dato('Equipo auditor', `${c.equipo_auditor.acompanante.nombre}, ${c.equipo_auditor.acompanante.cargo}`)
+  integrantesEquipo(c).forEach((m, i) => dato(i === 0 ? 'Equipo auditor' : '', `${m.nombre}, ${m.cargo}`))
 
   seccion(6, 'Metodología')
   c.metodologia.forEach((m) => vineta(m))
@@ -277,25 +277,36 @@ export async function exportarPdf(informe) {
   // El título y las firmas van juntos: nunca un «11. Firmas» huérfano al pie de una página
   asegurar(48 + 120)
   seccion(11, 'Firmas')
-  y += 50
+  // Dos firmas por fila; el equipo auditor puede tener varias personas y cada una varios cargos
   const anchoFirma = (ANCHO - 40) / 2
-  c.firmas.forEach((f, i) => {
-    const x = M + i * (anchoFirma + 40)
-    doc.setDrawColor(...hexARgb(TINTA))
-    doc.setLineWidth(0.75)
-    doc.line(x, y, x + anchoFirma, y)
-    doc.setFont('Inter', 'bold')
-    doc.setFontSize(9.5)
-    color(TINTA)
-    doc.text(f.nombre, x, y + 14)
+  for (let i = 0; i < c.firmas.length; i += 2) {
+    const fila = c.firmas.slice(i, i + 2)
     doc.setFont('Inter', 'normal')
     doc.setFontSize(9)
-    color(TINTA_SUAVE)
-    doc.text(f.cargo, x, y + 27)
-    doc.text(`C.C. ${f.cedula ? formatearCedula(f.cedula) : '______________________'}`, x, y + 40)
-    doc.setFontSize(7.5)
-    doc.text(f.rol.toUpperCase(), x, y + 53)
-  })
+    const cargos = fila.map((f) => doc.splitTextToSize(f.cargo || '', anchoFirma))
+    const alto = 14 + Math.max(...cargos.map((l) => l.length)) * 12 + 30
+    asegurar(50 + alto)
+    y += 50
+    fila.forEach((f, j) => {
+      const x = M + j * (anchoFirma + 40)
+      doc.setDrawColor(...hexARgb(TINTA))
+      doc.setLineWidth(0.75)
+      doc.line(x, y, x + anchoFirma, y)
+      doc.setFont('Inter', 'bold')
+      doc.setFontSize(9.5)
+      color(TINTA)
+      doc.text(f.nombre, x, y + 14)
+      doc.setFont('Inter', 'normal')
+      doc.setFontSize(9)
+      color(TINTA_SUAVE)
+      cargos[j].forEach((l, k) => doc.text(l, x, y + 27 + k * 12))
+      const tras = y + 27 + cargos[j].length * 12
+      doc.text(`C.C. ${f.cedula ? formatearCedula(f.cedula) : '______________________'}`, x, tras + 1)
+      doc.setFontSize(7.5)
+      doc.text(f.rol.toUpperCase(), x, tras + 14)
+    })
+    y += alto
+  }
 
   // Encabezado y pie en todas las páginas (se dibujan al final para conocer el total)
   const paginas = doc.internal.getNumberOfPages()

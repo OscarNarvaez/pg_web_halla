@@ -1,21 +1,33 @@
 // Esquemas de validación de formularios. Reflejan las restricciones CHECK de PostgreSQL
 // (supabase/migrations/0001 y 0002) para que el error se muestre antes de llegar al servidor.
 import { z } from 'zod'
-import { PROCESOS, SISTEMAS } from './catalogos'
+import { CARGOS_EQUIPO, CARGOS_LIDER, MAX_CARGOS, MAX_EQUIPO, PROCESOS, SISTEMAS } from './catalogos'
 import { normalizarCedula, normalizarCelular } from './formato'
 
 const texto = (min, mensaje) => z.string().trim().min(min, mensaje)
+
+// Cargos de una lista cerrada (la misma de public.cargos_lider() y public.cargos_equipo(), migración 0009)
+const reglaCargos = (lista, minimo) =>
+  z
+    .array(z.enum(lista, { error: 'Elige cargos de la lista' }))
+    .min(1, minimo)
+    .max(MAX_CARGOS, `Elige como máximo ${MAX_CARGOS} cargos`)
 
 export const camposAuditor = {
   nombre_completo: texto(3, 'Escribe tu nombre completo'),
   cedula: z.preprocess(normalizarCedula, z.string().regex(/^\d{6,12}$/, 'La cédula debe tener entre 6 y 12 dígitos, sin puntos')),
   celular: z.preprocess(normalizarCelular, z.string().regex(/^\d{10}$/, 'El celular debe tener 10 dígitos')),
-  cargo: texto(2, 'Escribe tu cargo'),
+  cargos: reglaCargos(CARGOS_LIDER, 'Elige al menos uno de tus cargos'),
 }
 
 export const camposEquipoYAlcance = {
-  equipo_auditor_nombre: texto(3, 'Escribe el nombre de la persona del equipo auditor'),
-  equipo_auditor_cargo: texto(2, 'Escribe el cargo de la persona del equipo auditor'),
+  equipo_auditor: z
+    .array(z.object({
+      nombre: texto(3, 'Escribe el nombre de la persona del equipo auditor'),
+      cargos: reglaCargos(CARGOS_EQUIPO, 'Elige al menos un cargo para esta persona'),
+    }))
+    .min(1, 'Agrega al menos una persona al equipo auditor')
+    .max(MAX_EQUIPO, `El equipo auditor admite como máximo ${MAX_EQUIPO} personas`),
   alcance: z.enum(['PROCESOS', 'SISTEMAS'], { error: 'Elige si auditas procesos o sistemas' }),
   proceso: z.string().optional().default(''),
   sistema: z.string().optional().default(''),
@@ -94,6 +106,14 @@ export const esquemaAuditoria = z
       ctx.addIssue({ code: 'custom', path: ['fecha_fin'], message: 'La fecha final no puede ser anterior a la inicial' })
     }
   })
+
+/** Un perfil anterior a la 0009 puede no tener cargos o equipo completo: hay que completarlo en «Mi perfil». */
+export function perfilIncompleto(p) {
+  return Boolean(p) && (!p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m?.nombre || !m?.cargos?.length))
+}
+
+/** Integrante vacío del equipo auditor, para el formulario. */
+export const integranteVacio = () => ({ nombre: '', cargos: [] })
 
 /** Convierte los valores del formulario a la fila de profiles/auditorias (proceso XOR sistema). */
 export function aFilaAlcance(d) {

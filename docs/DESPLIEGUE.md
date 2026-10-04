@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las ocho migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles).
+- [ ] `supabase db push` aplicó las nueve migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -317,6 +317,18 @@ git push origin main
 
 La función `clasificar-hallazgo` nueva escribe columnas que crea la 0007: desplegarla antes de la migración
 hace fallar el guardado de los hallazgos.
+
+**Actualización de cargos y equipo auditor (4/10/2026):**
+
+```bash
+supabase db push                                   # 0009
+supabase functions deploy generar-informe          # lee cargos y equipo_auditor
+git push origin main
+```
+
+La 0009 elimina las columnas `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo`: entre el `db push` y el
+`git push`, el frontend anterior no puede guardar perfiles, así que conviene hacer los tres pasos seguidos. Los
+cargos escritos antes que coinciden con la lista se conservan; los demás quedan vacíos y la app pide completarlos.
 
 ## Desarrollo local
 

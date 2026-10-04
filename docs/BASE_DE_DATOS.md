@@ -12,6 +12,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0006_seguridad.sql` | Aprobación de cuentas, autorización de datos (Ley 1581), citas validadas, marcas de tiempo del servidor, sin borrado físico, historial de hallazgos, cuota de IA atómica y mínimo privilegio (ver `docs/SEGURIDAD.md`) |
 | `0007_riesgo_controles_matriz.sql` | Estado `cambios_sugeridos`, riesgo del PR13_GQ (dimensión, probabilidad, impacto), controles validados, huella del PDF de evidencia, umbrales de riesgo por auditoría (retirados en la 0008) y la regla «editar un validado lo devuelve a pendiente» |
 | `0008_escala_riesgo_fija.sql` | Retira `auditorias.umbrales_riesgo`: la escala de niveles de riesgo es fija y no editable (decisión del dueño) |
+| `0009_cargos_y_equipo_auditor.sql` | Cargos de una lista institucional (`cargos text[]`) y equipo auditor de varias personas (`equipo_auditor jsonb`); retira `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo` conservando lo que coincide con la lista |
 
 ## Modelo
 
@@ -29,9 +30,8 @@ erDiagram
     text nombre_completo
     text cedula "6 a 12 dígitos, única"
     text celular "10 dígitos"
-    text cargo
-    text equipo_auditor_nombre "siempre una persona adicional"
-    text equipo_auditor_cargo
+    text_array cargos "1 a 5 de la lista de líderes (0009)"
+    jsonb equipo_auditor "1 a 10 personas: nombre y 1 a 5 cargos (0009)"
     alcance_tipo alcance "PROCESOS | SISTEMAS"
     proceso_tipo proceso "solo si PROCESOS"
     sistema_tipo sistema "solo si SISTEMAS"
@@ -114,6 +114,12 @@ erDiagram
 - **Marca de edición automática:** cambiar `clasificacion`, `justificacion`, `hallazgo_corregido`,
   `criterio_requisito`, `evidencia`, `severidad`, los campos de riesgo o los controles pone
   `editado_por_usuario = true`, lo haga o no el cliente.
+- **Cargos y equipo auditor (0009):** las listas viven en `public.cargos_lider()` (22) y `public.cargos_equipo()`
+  (25), iguales a `CARGOS_LIDER` y `CARGOS_EQUIPO` de los catálogos (la prueba de validación lo comprueba). El
+  trigger `validar_cargos_perfil` exige de 1 a 5 cargos del líder de su lista y de 1 a 10 personas en el equipo,
+  cada una con nombre (3 a 120 caracteres) y de 1 a 5 cargos de la lista del equipo; quita repetidos y deja
+  cada persona como `{nombre, cargos}`. Solo se aplica al crear el perfil o al cambiar esos campos: un perfil
+  anterior sin cargos se puede aprobar, y la app le pide completarlo.
 - **Riesgo (0007):** `riesgo_probabilidad` y `riesgo_impacto` entre 1 y 5; `riesgo_dimension` es una de las
   seis dimensiones del PR13_GQ (las mismas claves que `DIMENSIONES_IMPACTO` en los catálogos). El nivel no se
   guarda: lo calcula la aplicación con la escala fija `UMBRALES_RIESGO` (Bajo 1–4, Moderado 5–9, Alto 10–16,

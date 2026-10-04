@@ -13,9 +13,11 @@ export function AutorizacionDatos({ register, error }) {
         <summary className="cursor-pointer font-medium text-tinta-900">Tratamiento de datos personales</summary>
         <div className="mt-2 space-y-2 text-xs leading-relaxed text-tinta-700">
           <p>
-            El {INSTITUCION.nombre}, como responsable, tratará tu nombre, cédula, celular, cargo y correo, así como la
-            información de las auditorías que registres, con la única finalidad de gestionar las auditorías internas
-            de la institución: identificarte como auditor, firmar los informes y conservar la trazabilidad de los hallazgos.
+            El {INSTITUCION.nombre}, como responsable, tratará tu nombre, cédula, celular, cargos y correo, el nombre y los
+            cargos de las personas de tu equipo auditor, y la información de las auditorías que registres, con la única
+            finalidad de gestionar las auditorías internas de la institución: identificar al equipo auditor, firmar los
+            informes y conservar la trazabilidad de los hallazgos. Registra en tu equipo solo a personas que sepan que
+            aparecerán en los informes.
           </p>
           <p>
             Para clasificar y redactar los hallazgos, el texto que escribes se envía a un servicio de inteligencia

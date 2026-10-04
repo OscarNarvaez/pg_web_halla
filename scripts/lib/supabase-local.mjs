@@ -38,12 +38,13 @@ const ARRANQUE_SUPABASE = `
   grant all on all tables in schema auth to service_role;
 `
 
-/** Crea la base local con las migraciones de supabase/migrations aplicadas en orden. */
-export async function crearBaseLocal({ silencioso = false } = {}) {
-  const db = new PGlite({ extensions: { pg_trgm, unaccent } })
-  await db.exec(ARRANQUE_SUPABASE)
+/**
+ * Aplica en orden las migraciones de supabase/migrations cuyo nombre esté en [desde, hasta).
+ * Con `hasta` se puede simular la base de producción antes de una migración y luego aplicarla.
+ */
+export async function aplicarMigraciones(db, { desde = '', hasta = '\uffff', silencioso = false } = {}) {
   const dir = join(RAIZ, 'supabase', 'migrations')
-  for (const archivo of readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) {
+  for (const archivo of readdirSync(dir).filter((f) => f.endsWith('.sql') && f >= desde && f < hasta).sort()) {
     try {
       await db.exec(readFileSync(join(dir, archivo), 'utf8'))
       if (!silencioso) console.log(`  ✓ migración ${archivo}`)
@@ -51,6 +52,13 @@ export async function crearBaseLocal({ silencioso = false } = {}) {
       throw new Error(`La migración ${archivo} falló: ${e.message}`)
     }
   }
+}
+
+/** Crea la base local con las migraciones aplicadas en orden (todas, o las anteriores a `hasta`). */
+export async function crearBaseLocal({ silencioso = false, hasta } = {}) {
+  const db = new PGlite({ extensions: { pg_trgm, unaccent } })
+  await db.exec(ARRANQUE_SUPABASE)
+  await aplicarMigraciones(db, { hasta, silencioso })
   return db
 }
 

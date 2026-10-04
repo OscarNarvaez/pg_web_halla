@@ -3,9 +3,10 @@ import { supabase, mensajeError } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
-const CAMPOS_PERFIL = [
-  'nombre_completo', 'cedula', 'celular', 'cargo', 'equipo_auditor_nombre', 'equipo_auditor_cargo', 'alcance', 'proceso', 'sistema',
-]
+const CAMPOS_PERFIL = ['nombre_completo', 'cedula', 'celular', 'cargos', 'equipo_auditor', 'alcance', 'proceso', 'sistema']
+// Campos que son listas (migración 0009): nunca se envían como texto ni como null
+const LISTAS_PERFIL = new Set(['cargos', 'equipo_auditor'])
+const valorPerfil = (c, v) => (LISTAS_PERFIL.has(c) ? (Array.isArray(v) ? v : []) : v || null)
 
 // Cierre de sesión por inactividad: en computadores compartidos del hospital una sesión abierta expone
 // datos personales y de auditoría. La marca de actividad se comparte entre pestañas.
@@ -64,7 +65,7 @@ export function AuthProvider({ children }) {
       setPerfil(null)
       return null
     }
-    const fila = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, meta[c] || null]))
+    const fila = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, valorPerfil(c, meta[c])]))
     // La fecha real de la autorización la fija el servidor; sin autorización, el perfil no se crea
     if (meta.acepto_tratamiento_datos === 'true') fila.acepto_tratamiento_datos_en = new Date().toISOString()
     const { data: creado, error: errCrear } = await supabase.from('profiles').insert({ id: usuario.id, ...fila }).select().single()
@@ -130,7 +131,7 @@ export function AuthProvider({ children }) {
   }, [sesion])
 
   const registrar = useCallback(async ({ email, password, acepto_tratamiento_datos, ...datos }) => {
-    const metadatos = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, datos[c] ?? '']))
+    const metadatos = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, LISTAS_PERFIL.has(c) ? valorPerfil(c, datos[c]) : datos[c] ?? '']))
     metadatos.acepto_tratamiento_datos = acepto_tratamiento_datos === true ? 'true' : 'false'
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -183,7 +184,7 @@ export function AuthProvider({ children }) {
   const guardarPerfil = useCallback(async (datos) => {
     const usuario = sesion?.user
     if (!usuario) return { error: 'No hay sesión activa.' }
-    const fila = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, datos[c] ?? null]))
+    const fila = Object.fromEntries(CAMPOS_PERFIL.map((c) => [c, valorPerfil(c, datos[c])]))
     if (!perfil && datos.acepto_tratamiento_datos === true) fila.acepto_tratamiento_datos_en = new Date().toISOString()
     const consulta = perfil
       ? supabase.from('profiles').update(fila).eq('id', usuario.id)

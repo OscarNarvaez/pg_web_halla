@@ -129,3 +129,29 @@ export const DIMENSIONES_IMPACTO: Record<string, { etiqueta: string; niveles: st
 }
 
 export const TIPOS_CONTROL = ['PREVENTIVO', 'CORRECTIVO'] as const
+
+// ─── Cargos (lista institucional, decisión del dueño 4/10/2026) ────────────
+// El auditor líder elige de CARGOS_LIDER y cada integrante del equipo auditor de CARGOS_EQUIPO; cada persona
+// puede tener varios (máximo MAX_CARGOS). Mismas listas que public.cargos_lider() y public.cargos_equipo()
+// de la migración 0009: si cambias una, cambia las tres.
+export const CARGOS_LIDER = [
+  'Asesor control interno', 'Asesor control interno (externo)', 'Asesor sistema integrado de calidad',
+  'Asesora de contratación', 'Asesora de docencia e investigación', 'Asesora PAMEC', 'Auditor externo',
+  'Auditor médico', 'Coordinadora', 'Coordinadora UACAI', 'Enfermera', 'Gestora de enfermería',
+  'Gestora gestión clínica', 'Jefe de activos fijos', 'Jefe de suministro', 'Líder equipo', 'Nutricionista',
+  'Subgerente de ambiente físico', 'Subgerente de cirugía', 'Subgerente de gestión de recursos físicos',
+  'Subgerente de hospitalización no crítica', 'Subgerente gestión financiera',
+]
+
+export const CARGOS_EQUIPO = [
+  'Asesor control interno', 'Auxiliar', 'Auxiliar administrativo', 'Coordinadora auditora de cuentas',
+  'Coordinadora cuidado crítico', 'Coordinadora gestión documental', 'Coordinadora imagenología',
+  'Coordinadora sala de cirugía', 'Coordinadora seguridad y salud en el trabajo', 'Doctor', 'Enfermera',
+  'Enfermería', 'Interventor contratación', 'Interventor contratación equipo', 'Jefe de control de calidad',
+  'Jefe de producción gases medicinales', 'Jefe de suministros', 'Médico', 'Médico especialista pediatra',
+  'Profesional apoyo riesgos', 'Químico farmacéutico', 'Subgerente apoyo', 'Subgerente de gestión humana',
+  'Subgerente servicio farmacéutico', 'Tesorera',
+]
+
+export const MAX_CARGOS = 5
+export const MAX_EQUIPO = 10

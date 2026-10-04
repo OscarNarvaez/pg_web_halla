@@ -217,6 +217,12 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
 - **El nivel de riesgo no lo decide la IA.** La IA propone probabilidad e impacto (validados de 1 a 5, V7);
   el nivel lo calcula el código con una escala fija que nadie edita (Bajo 1–4, Moderado 5–9, Alto 10–16,
   Extremo 17–25).
+- **Cargos de lista cerrada.** Los cargos se validan en la base de datos contra las listas institucionales: no
+  se pueden inyectar textos arbitrarios en las firmas del informe. *Prueba:* `probar-bd` (sección «Cargos y
+  equipo auditor»).
+- **Minimización de datos (Ley 1581).** La 0009 elimina las columnas del cargo escrito a mano y del acompañante
+  único en vez de dejarlas como copia sin uso. La autorización de datos menciona ahora los nombres y cargos de
+  las personas del equipo que registra el auditor.
 - **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
   endpoint de exportación nuevo que proteger.
 
@@ -260,10 +266,10 @@ Ordenadas por importancia. Ninguna se puede hacer desde el código.
 ## Cómo repetir la auditoría
 
 ```bash
-pnpm probar            # sin red: 74 de validación (V1–V7) y anonimización, 14 de cascada,
-                       # 81 de base de datos (RLS, aprobación, ataques de integridad, cuota, riesgo y
-                       # controles) y 8 de búsqueda
-pnpm probar:interfaz   # 101 de extremo a extremo, incluidas CSP, PDF, matriz, cuentas pendientes, admin e iframe
+pnpm probar            # sin red: 76 de validación (V1–V7), anonimización y catálogos, 14 de cascada,
+                       # 96 de base de datos (RLS, aprobación, ataques de integridad, cuota, riesgo,
+                       # controles, cargos y equipo auditor) y 8 de búsqueda
+pnpm probar:interfaz   # 121 de extremo a extremo, incluidas CSP, PDF, matriz, cargos, cuentas pendientes, admin e iframe
 pnpm verificar-rls     # contra el proyecto Supabase real
 pnpm audit             # vulnerabilidades conocidas en dependencias
 ```

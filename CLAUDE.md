@@ -82,6 +82,11 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   (`bloqueRiesgo()` en `motor.ts`), nunca en el prompt del sistema. Colores de zona en `COLORES_ZONA`,
   validados con el skill dataviz para deuteranopía.
 - Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).
+- Cargos (decisión del dueño, 4/10/2026): NO se escriben a mano. El líder elige 1 a 5 de `CARGOS_LIDER` y cada persona
+  del equipo auditor (1 a 10 personas, `profiles.equipo_auditor` jsonb) elige 1 a 5 de `CARGOS_EQUIPO`. Las listas
+  están en `catalogos.js`, `_shared/catalogos.ts` y `public.cargos_lider()`/`cargos_equipo()` (0009): cambia las
+  tres. Selector accesible en `src/components/ui/SelectorMultiple.jsx`. Los informes de estructura 1 (con
+  `acompanante`) se siguen leyendo con `integrantesEquipo()` de `src/lib/exportar-comun.js`.
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`) y `logo-hila.png` en el PDF
   y el Word (jsPDF y docx no leen WebP). Siempre sobre fondo blanco: su texto perimetral es oscuro.
 - Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.

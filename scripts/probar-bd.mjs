@@ -1,7 +1,7 @@
 // Prueba local de las migraciones, las políticas RLS y los controles de seguridad, sin Docker ni
 // proyecto Supabase. Incluye como regresión cada ataque de la auditoría de seguridad (docs/SEGURIDAD.md).
 // Uso: pnpm probar:bd
-import { crearBaseLocal, comoUsuario, registrarUsuario } from './lib/supabase-local.mjs'
+import { aplicarMigraciones, crearBaseLocal, comoUsuario, registrarUsuario } from './lib/supabase-local.mjs'
 
 let fallos = 0
 function ok(condicion, descripcion, detalle = '') {
@@ -21,16 +21,16 @@ const perfil = (nombre, cedula, extra = {}) => ({
   nombre_completo: nombre,
   cedula,
   celular: '3001234567',
-  cargo: 'Auditor interno',
-  equipo_auditor_nombre: 'Laura Gómez',
-  equipo_auditor_cargo: 'Profesional de calidad',
+  cargos: ['Auditor médico'],
+  equipo_auditor: [{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }],
   alcance: 'PROCESOS',
   proceso: 'Urgencias',
   sistema: '',
   acepto_tratamiento_datos: 'true',
   ...extra,
 })
-const columnas = `(id, nombre_completo, cedula, celular, cargo, equipo_auditor_nombre, equipo_auditor_cargo, alcance, proceso`
+const columnas = `(id, nombre_completo, cedula, celular, cargos, equipo_auditor, alcance, proceso`
+const EQUIPO = `'[{"nombre":"Otro Auditor","cargos":["Enfermera"]}]'`
 
 console.log('\n▸ Migraciones')
 const db = await crearBaseLocal()
@@ -58,28 +58,28 @@ ok(sinPerfil.length === 0, 'una cédula inválida no hace fallar el registro: el
 
 const errCruzado = await falla(db.query(
   `insert into public.profiles ${columnas}, sistema, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','3001234567','Auditora','Otro','Cargo','PROCESOS','Urgencias','Sistema de calidad', now())`, [C]))
+   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias','Sistema de calidad', now())`, [C]))
 ok(errCruzado?.includes('alcance_coherente'), 'el alcance obliga a elegir proceso O sistema, nunca ambos', errCruzado)
 const errCelular = await falla(db.query(
   `insert into public.profiles ${columnas}, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','300123','Auditora','Otro','Cargo','PROCESOS','Urgencias', now())`, [C]))
+   values ($1,'Carla Pérez','52123456','300123','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias', now())`, [C]))
 ok(errCelular?.includes('celular_valido'), 'el celular debe tener 10 dígitos', errCelular)
 
 console.log('\n▸ Fallback de perfil desde el cliente')
 const errOtroId = await falla(comoUsuario(db, como(C), (tx) => tx.query(
   `insert into public.profiles ${columnas}, acepto_tratamiento_datos_en)
-   values ($1,'Intruso','52000000','3001234567','X','Otro','Cargo','PROCESOS','Urgencias', now())`, [B])))
+   values ($1,'Intruso','52000000','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias', now())`, [B])))
 ok(Boolean(errOtroId), 'un usuario no puede crear el perfil de otro')
 const errEscalada = await falla(comoUsuario(db, como(C), (tx) => tx.query(
   `insert into public.profiles ${columnas}, rol, aprobado, acepto_tratamiento_datos_en)
-   values ($1,'Carla Pérez','52123456','3001234567','Auditora','Otro','Cargo','PROCESOS','Urgencias','admin', true, '2001-01-01')`, [C])))
+   values ($1,'Carla Pérez','52123456','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias','admin', true, '2001-01-01')`, [C])))
 const { rows: [carla] } = await db.query('select rol, aprobado, extract(year from acepto_tratamiento_datos_en) anio from public.profiles where id = $1', [C])
 ok(errEscalada === null && carla.rol === 'auditor' && carla.aprobado === false,
   'crearse el perfil como admin y ya aprobado: el servidor lo deja como auditor sin aprobar', errEscalada ?? JSON.stringify(carla))
 ok(Number(carla.anio) >= 2026, 'la fecha de autorización la fija el servidor (no se puede antedatar)', JSON.stringify(carla))
 const D = await registrarUsuario(db, 'd@hila.test', perfil('Dario', '99'))
 const errSinDatos = await falla(comoUsuario(db, como(D), (tx) => tx.query(
-  `insert into public.profiles ${columnas}) values ($1,'Dario Díaz','52123457','3001234567','Auditor','Otro','Cargo','PROCESOS','Urgencias')`, [D])))
+  `insert into public.profiles ${columnas}) values ($1,'Dario Díaz','52123457','3001234567','{Auditor médico}',${EQUIPO},'PROCESOS','Urgencias')`, [D])))
 ok(errSinDatos?.includes('Ley 1581'), 'el perfil exige la autorización de tratamiento de datos', errSinDatos)
 
 console.log('\n▸ Cuenta sin aprobar (registro abierto)')
@@ -106,10 +106,46 @@ ok(errAprobar === null && ana.aprobado === true && ana.aprobado_por === B, 'un a
 // B vuelve a ser auditor normal para las pruebas de aislamiento
 await db.query(`update public.profiles set rol = 'auditor' where id = $1`, [B])
 
+console.log('\n▸ Cargos y equipo auditor (0009)')
+const { rows: [perfilA] } = await db.query('select cargos, equipo_auditor from public.profiles where id = $1', [A])
+ok(JSON.stringify(perfilA.cargos) === '["Auditor médico"]' && perfilA.equipo_auditor[0]?.nombre === 'Laura Gómez' && perfilA.equipo_auditor[0]?.cargos[0] === 'Enfermera',
+  'el registro crea el perfil con los cargos y el equipo auditor de options.data', JSON.stringify(perfilA))
+const E = await registrarUsuario(db, 'e@hila.test', perfil('Elena Equipo', '1085777666', {
+  cargos: ['Coordinadora', 'Líder equipo', 'Coordinadora'],
+  equipo_auditor: [{ nombre: ' Laura Gómez ', cargos: ['Médico', 'Tesorera'], extra: 'x' }, { nombre: 'Pedro Pérez', cargos: ['Auxiliar'] }, { nombre: 'Rosa Ruiz', cargos: ['Doctor'] }],
+}))
+const { rows: [perfilE] } = await db.query('select cargos, equipo_auditor from public.profiles where id = $1', [E])
+ok(JSON.stringify(perfilE?.cargos) === '["Coordinadora","Líder equipo"]', 'el líder puede tener varios cargos (sin repetidos)', JSON.stringify(perfilE?.cargos))
+const lauraE = perfilE?.equipo_auditor[0]
+ok(perfilE?.equipo_auditor.length === 3 && lauraE.nombre === 'Laura Gómez' && JSON.stringify(lauraE.cargos) === '["Médico","Tesorera"]' && !('extra' in lauraE),
+  'el equipo auditor admite varias personas, cada una con varios cargos (y se normaliza)', JSON.stringify(perfilE?.equipo_auditor))
+const F = await registrarUsuario(db, 'f@hila.test', perfil('Fabio Falso', '1085444333', { cargos: ['Gerente general'] }))
+const { rows: sinPerfilF } = await db.query('select 1 from public.profiles where id = $1', [F])
+ok(sinPerfilF.length === 0, 'un cargo que no está en la lista de líderes no se acepta')
+const actualizarPerfilA = (cambio) => falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.profiles set ${cambio} where id = $1`, [A])))
+let errCargo = await actualizarPerfilA(`cargos = '{Tesorera}'`)
+ok(errCargo?.includes('Cargo no permitido'), 'un cargo del equipo no sirve como cargo del líder', errCargo)
+errCargo = await actualizarPerfilA(`cargos = '{}'`)
+ok(errCargo?.includes('al menos un cargo'), 'el líder debe tener al menos un cargo', errCargo)
+errCargo = await actualizarPerfilA(`cargos = '{Coordinadora,Enfermera,Nutricionista,Auditor médico,Auditor externo,Líder equipo}'`)
+ok(errCargo?.includes('entre 1 y 5'), 'como máximo 5 cargos por persona', errCargo)
+errCargo = await actualizarPerfilA(`equipo_auditor = '[{"nombre":"Laura Gómez","cargos":["Asesora PAMEC"]}]'`)
+ok(errCargo?.includes('Cargo no permitido para el equipo'), 'un integrante del equipo solo puede tener cargos de la lista del equipo', errCargo)
+errCargo = await actualizarPerfilA(`equipo_auditor = '[]'`)
+ok(errCargo?.includes('entre 1 y 10'), 'el equipo auditor tiene al menos una persona', errCargo)
+errCargo = await actualizarPerfilA(`equipo_auditor = $2`.replace('$2', `'${JSON.stringify(Array.from({ length: 11 }, (_, i) => ({ nombre: `Persona ${i + 1}`, cargos: ['Auxiliar'] })))}'`))
+ok(errCargo?.includes('entre 1 y 10'), 'como máximo 10 personas en el equipo auditor', errCargo)
+errCargo = await actualizarPerfilA(`equipo_auditor = '[{"nombre":"Laura Gómez","cargos":[]}]'`)
+ok(errCargo?.includes('al menos un cargo'), 'cada integrante del equipo tiene al menos un cargo', errCargo)
+errCargo = await actualizarPerfilA(`equipo_auditor = '[{"nombre":"Lu","cargos":["Auxiliar"]}]'`)
+ok(errCargo?.includes('nombre de 3 a 120'), 'cada integrante del equipo tiene nombre', errCargo)
+const { rows: columnasViejas } = await db.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name in ('cargo', 'equipo_auditor_nombre', 'equipo_auditor_cargo')`)
+ok(columnasViejas.length === 0, 'ya no existen el cargo escrito a mano ni el equipo de una sola persona')
+
 console.log('\n▸ Escalada de privilegios')
 const errRol = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.profiles set rol = 'admin' where id = $1`, [A])))
 ok(Boolean(errRol), 'un usuario autenticado NO puede cambiar su propio rol a admin')
-const errNombre = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.profiles set cargo = 'Auditora líder' where id = $1`, [A])))
+const errNombre = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.profiles set cargos = '{Coordinadora,Auditor médico}' where id = $1`, [A])))
 ok(errNombre === null, 'sí puede editar los demás campos de su perfil', errNombre)
 const errConsent = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.profiles set acepto_tratamiento_datos_en = '2001-01-01' where id = $1`, [A])))
 ok(Boolean(errConsent), 'no puede alterar la fecha de su autorización de datos')
@@ -305,6 +341,28 @@ ok(updAdmin.affectedRows === 0, 'un admin lee pero no modifica hallazgos ajenos'
 await db.query(`update public.profiles set aprobado = false where id = $1`, [B])
 const { rows: adminInactivo } = await comoUsuario(db, como(B), (tx) => tx.query('select id from public.hallazgos'))
 ok(adminInactivo.length === 0, 'un admin desactivado pierde el acceso')
+
+console.log('\n▸ Perfiles existentes al aplicar la 0009 (cargo escrito a mano → lista)')
+{
+  const vieja = await crearBaseLocal({ hasta: '0009', silencioso: true })
+  const meta = (nombre, cedula, cargo, equipoNombre, equipoCargo) => ({
+    nombre_completo: nombre, cedula, celular: '3001234567', cargo, equipo_auditor_nombre: equipoNombre, equipo_auditor_cargo: equipoCargo,
+    alcance: 'PROCESOS', proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
+  })
+  const coincide = await registrarUsuario(vieja, 'v1@hila.test', meta('Vera Vieja', '1085000001', '  auditor MEDICO ', 'Laura Gómez', 'enfermeria'))
+  const libre = await registrarUsuario(vieja, 'v2@hila.test', meta('Victor Viejo', '1085000002', 'Auditor interno', 'Pedro Pérez', 'Profesional de calidad'))
+  await aplicarMigraciones(vieja, { desde: '0009', silencioso: true })
+  const { rows } = await vieja.query('select id, cargos, equipo_auditor from public.profiles')
+  const v1 = rows.find((r) => r.id === coincide)
+  const v2 = rows.find((r) => r.id === libre)
+  ok(JSON.stringify(v1?.cargos) === '["Auditor médico"]' && v1?.equipo_auditor[0]?.nombre === 'Laura Gómez' && JSON.stringify(v1?.equipo_auditor[0]?.cargos) === '["Enfermería"]',
+    'un cargo escrito que coincide con la lista (sin importar mayúsculas ni tildes) se conserva', JSON.stringify(v1))
+  ok(JSON.stringify(v2?.cargos) === '[]' && v2?.equipo_auditor[0]?.nombre === 'Pedro Pérez' && JSON.stringify(v2?.equipo_auditor[0]?.cargos) === '[]',
+    'si no coincide, el perfil queda sin cargos (la app pide completarlo) y conserva el nombre del compañero', JSON.stringify(v2))
+  const errAprobarViejo = await falla(vieja.query('update public.profiles set aprobado = true where id = $1', [libre]))
+  ok(errAprobarViejo === null, 'un perfil anterior sin cargos se puede seguir aprobando', errAprobarViejo)
+  await vieja.close()
+}
 
 console.log(fallos ? `\n✗ ${fallos} prueba(s) fallaron\n` : '\n✓ Todas las pruebas de base de datos pasaron\n')
 process.exit(fallos ? 1 : 0)

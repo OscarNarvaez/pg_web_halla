@@ -16,18 +16,26 @@ de guardarlo.
 Entre a **halla.ink → Crear cuenta**. Son tres pasos:
 
 1. **Cuenta:** correo y contraseña (mínimo 10 caracteres, con mayúscula, minúscula y número).
-2. **Datos del auditor:** nombre completo, cédula, celular y cargo. Puede escribir la cédula con puntos
-   (1.085.123.456) y el celular con +57: el sistema los normaliza.
-3. **Equipo auditor y alcance:** el nombre y el cargo de la persona que lo acompaña (el equipo auditor
-   es siempre una persona adicional) y si usted audita **procesos** o **sistemas**, con cuál. Al final debe
-   **autorizar el tratamiento de sus datos personales** (Ley 1581 de 2012).
+2. **Datos del auditor:** nombre completo, cédula, celular y **cargos**. Puede escribir la cédula con puntos
+   (1.085.123.456) y el celular con +57: el sistema los normaliza. Los cargos no se escriben: pulse **Cargos**,
+   busque en la lista de líderes (no importan las tildes) y marque uno o varios, hasta 5. Cada cargo elegido
+   aparece como una etiqueta con una × para quitarlo.
+3. **Equipo auditor y alcance:** las personas que lo acompañan en la auditoría, al menos una y hasta 10. Para
+   cada una escriba el nombre y elija uno o varios cargos de la lista del equipo auditor. Con **Agregar otra
+   persona al equipo** suma más personas y con **Quitar** retira las que sobran. Indique también si usted
+   audita **procesos** o **sistemas**, y con cuál. Al final debe **autorizar el tratamiento de sus datos
+   personales** (Ley 1581 de 2012). Registre en el equipo solo a personas que sepan que aparecerán en los informes.
 
 Abra el enlace de confirmación que le llega al correo (revise también el correo no deseado). Después, **un
 administrador debe aprobar su cuenta**: hasta entonces verá el aviso «Tu cuenta está pendiente de
 aprobación». Avísele al administrador de la plataforma.
 
-Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en el informe, en la sección de equipo auditor y en las firmas; puede
-cambiarlos en **Mi perfil**.
+Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en el informe,
+en la sección de equipo auditor y en las firmas (una por cada persona del equipo); puede cambiarlos en **Mi perfil**.
+
+**Si su cuenta es anterior al 4 de octubre de 2026**, antes el cargo se escribía a mano. Si lo que escribió
+coincide con un cargo de la lista, se conservó; si no, verá el aviso «Completa tu perfil»: entre a **Mi
+perfil**, elija sus cargos y los de su equipo, y guarde. Sin eso no se puede generar el informe.
 
 ## 2. Crear una auditoría
 

@@ -28,7 +28,7 @@ export default function AdminAuditores() {
     () =>
       supabase
         .from('profiles')
-        .select('id, nombre_completo, cedula, cargo, alcance, proceso, sistema, rol, aprobado, aprobado_en, creado_en, acepto_tratamiento_datos_en')
+        .select('id, nombre_completo, cedula, cargos, alcance, proceso, sistema, rol, aprobado, aprobado_en, creado_en, acepto_tratamiento_datos_en')
         .order('creado_en', { ascending: false }),
     [],
     { inicial: [] },
@@ -70,7 +70,7 @@ export default function AdminAuditores() {
               if (col.clave === 'nombre') return (
                 <div>
                   <p className="font-medium text-tinta-900">{p.nombre_completo}</p>
-                  <p className="text-xs text-tinta-500">C.C. {formatearCedula(p.cedula)} · {p.cargo}</p>
+                  <p className="text-xs text-tinta-500">C.C. {formatearCedula(p.cedula)}{p.cargos?.length ? ` · ${p.cargos.join(', ')}` : ''}</p>
                 </div>
               )
               if (col.clave === 'alcance') return <span className="text-tinta-700">{objetoAuditado(p)}</span>

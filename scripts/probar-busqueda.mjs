@@ -14,8 +14,8 @@ const DIR_NORMAS = join(dirname(fileURLToPath(import.meta.url)), '..', 'normas')
 export async function baseConNormas() {
   const db = await crearBaseLocal({ silencioso: true })
   const auditorId = await registrarUsuario(db, 'auditor@prueba.halla.ink', {
-    nombre_completo: 'Auditor de prueba', cedula: '1000000001', celular: '3000000001', cargo: 'Auditor',
-    equipo_auditor_nombre: 'Equipo de prueba', equipo_auditor_cargo: 'Profesional', alcance: 'PROCESOS',
+    nombre_completo: 'Auditor de prueba', cedula: '1000000001', celular: '3000000001', cargos: ['Auditor médico'],
+    equipo_auditor: [{ nombre: 'Equipo de prueba', cargos: ['Auxiliar'] }], alcance: 'PROCESOS',
     proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
   })
   await db.query('update public.profiles set aprobado = true where id = $1', [auditorId])

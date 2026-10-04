@@ -35,10 +35,16 @@ export interface AuditoriaInforme {
 export interface PerfilInforme {
   nombre_completo: string
   cedula: string
-  cargo: string
-  equipo_auditor_nombre: string
-  equipo_auditor_cargo: string
+  cargos: string[]
+  equipo_auditor: Array<{ nombre: string; cargos: string[] }>
 }
+
+/** «Coordinadora, Líder equipo»: varios cargos de una persona en una sola línea. */
+export const unirCargos = (cargos?: string[] | null) => (cargos ?? []).join(', ')
+
+/** Un perfil sin cargos o sin equipo auditor completo no puede firmar un informe. */
+export const perfilIncompletoInforme = (p: PerfilInforme) =>
+  !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m.nombre || !m.cargos?.length)
 
 export interface Narrativa {
   resumen_ejecutivo: string
@@ -215,8 +221,11 @@ export function construirContenido(opciones: {
   avisos: string[]
 }) {
   const { auditoria: a, perfil: p, hallazgos, estadisticas: e, narrativa: n } = opciones
+  const lider = { nombre: p.nombre_completo, cargo: unirCargos(p.cargos), cedula: p.cedula }
+  const integrantes = (p.equipo_auditor ?? []).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) }))
   return {
-    version_estructura: 1,
+    // 2: el equipo auditor es una lista (integrantes) y cada persona puede tener varios cargos
+    version_estructura: 2,
     identificacion: {
       codigo: a.codigo,
       titulo: a.titulo,
@@ -234,10 +243,7 @@ export function construirContenido(opciones: {
       auditado: { nombre: a.auditado_nombre ?? '', cargo: a.auditado_cargo ?? '' },
     },
     criterios: criteriosAplicados(hallazgos),
-    equipo_auditor: {
-      lider: { nombre: p.nombre_completo, cargo: p.cargo, cedula: p.cedula },
-      acompanante: { nombre: p.equipo_auditor_nombre, cargo: p.equipo_auditor_cargo },
-    },
+    equipo_auditor: { lider, integrantes },
     metodologia: [
       'Revisión documental de registros, procedimientos e información documentada del proceso.',
       'Entrevistas con el personal responsable y los auditados.',
@@ -267,8 +273,8 @@ export function construirContenido(opciones: {
     conclusiones: n.conclusiones,
     recomendaciones: n.recomendaciones,
     firmas: [
-      { rol: 'Auditor líder', nombre: p.nombre_completo, cargo: p.cargo, cedula: p.cedula },
-      { rol: 'Equipo auditor', nombre: p.equipo_auditor_nombre, cargo: p.equipo_auditor_cargo, cedula: null },
+      { rol: 'Auditor líder', ...lider },
+      ...integrantes.map((m) => ({ rol: 'Equipo auditor', ...m, cedula: null })),
     ],
     avisos: opciones.avisos,
   }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, Menu, ShieldCheck, UserRound, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { cx } from '../../lib/cx'
 import { objetoAuditado } from '../../lib/catalogos'
+import { perfilIncompleto } from '../../lib/esquemas'
 import { Marca } from './Marca'
 
 const NAVEGACION = [
@@ -60,6 +61,7 @@ function PieUsuario() {
 
 export function AppShell() {
   const location = useLocation()
+  const { perfil } = useAuth()
   // El cajón móvil queda abierto solo en la ruta donde se abrió: al navegar se cierra solo
   const [abiertoEn, setAbiertoEn] = useState(null)
   const menuAbierto = abiertoEn === location.pathname
@@ -122,6 +124,12 @@ export function AppShell() {
       )}
 
       <main id="contenido" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        {perfilIncompleto(perfil) && location.pathname !== '/app/perfil' && (
+          <p role="status" className="no-imprimir mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
+            Completa tu perfil: elige tus cargos y los de tu equipo auditor de la lista institucional. Aparecen en las
+            firmas y sin ellos no se puede generar el informe. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
+          </p>
+        )}
         <Outlet />
       </main>
     </div>

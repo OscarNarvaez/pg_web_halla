@@ -40,6 +40,10 @@ export function mensajeError(error) {
     [/alcance_coherente|alcance_auditoria_coherente/i, 'Elige un proceso o un sistema, según el alcance.'],
     [/fechas_coherentes/i, 'La fecha final no puede ser anterior a la inicial.'],
     [/Ley 1581/i, 'Debes autorizar el tratamiento de tus datos personales.'],
+    // Cargos y equipo auditor (migración 0009)
+    [/Cargo no permitido/i, 'Uno de los cargos elegidos no está en la lista institucional. Elígelos de nuevo.'],
+    [/entre 1 y 5 cargos/i, 'Cada persona debe tener entre 1 y 5 cargos de la lista.'],
+    [/equipo auditor/i, 'Revisa el equipo auditor: de 1 a 10 personas, cada una con su nombre y al menos un cargo.'],
     [/no verificable/i, 'Una de las citas normativas no corresponde a un criterio cargado.'],
     [/no se pueden modificar/i, 'La entrada original del auditor y la trazabilidad de la IA no se pueden modificar.'],
     [/jwt expired|invalid jwt|session.*(expired|missing)/i, 'Tu sesión expiró. Vuelve a ingresar.'],

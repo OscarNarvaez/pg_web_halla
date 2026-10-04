@@ -162,6 +162,13 @@ ok(['ESCALA_PROBABILIDAD', 'NIVELES_IMPACTO', 'DIMENSIONES_IMPACTO', 'TIPOS_CONT
 const migracion0007 = readFileSync(new URL('../supabase/migrations/0007_riesgo_controles_matriz.sql', import.meta.url), 'utf8')
 const dimensionesSql = [...migracion0007.match(/riesgo_dimension in \(([^)]*)\)/)[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]).sort()
 ok(JSON.stringify(dimensionesSql) === JSON.stringify(Object.keys(catalogosServidor.DIMENSIONES_IMPACTO).sort()), 'las dimensiones de impacto coinciden con el check de PostgreSQL', dimensionesSql.join(', '))
+const migracion0009 = readFileSync(new URL('../supabase/migrations/0009_cargos_y_equipo_auditor.sql', import.meta.url), 'utf8')
+const cargosSql = (funcion) => [...migracion0009.match(new RegExp(`function public\\.${funcion}\\(\\)[\\s\\S]*?array\\[([\\s\\S]*?)\\]::text\\[\\]`))[1].matchAll(/'([^']+)'/g)].map((m) => m[1])
+for (const [nombre, funcion] of [['CARGOS_LIDER', 'cargos_lider'], ['CARGOS_EQUIPO', 'cargos_equipo']]) {
+  const sql = cargosSql(funcion)
+  ok(JSON.stringify(catalogosServidor[nombre]) === JSON.stringify(catalogosCliente[nombre]) && JSON.stringify(sql) === JSON.stringify(catalogosCliente[nombre]),
+    `la lista ${nombre} (${sql.length} cargos) coincide en el frontend, las Edge Functions y public.${funcion}()`, `${sql.length} en SQL, ${catalogosCliente[nombre].length} en el cliente`)
+}
 
 console.log('\n▸ Content Security Policy')
 const REAL = 'https://obqkaegizxtbmdvcscdl.supabase.co'

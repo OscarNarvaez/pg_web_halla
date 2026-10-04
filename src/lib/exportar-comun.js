@@ -21,6 +21,16 @@ export function nombreArchivo(informe, extension) {
   return `Informe_${codigo}_${fechaArchivo()}.${extension}`
 }
 
+/**
+ * Integrantes del equipo auditor. Los informes de la estructura 1 (antes de la 0009) tenían una sola persona
+ * en `acompanante`; desde la 2 son una lista en `integrantes`. Los informes viejos se siguen mostrando igual.
+ */
+export function integrantesEquipo(c) {
+  const e = c.equipo_auditor ?? {}
+  if (Array.isArray(e.integrantes)) return e.integrantes
+  return e.acompanante ? [e.acompanante] : []
+}
+
 export function periodoDe(c) {
   const { inicio, fin } = c.alcance.periodo
   if (!inicio) return 'No informado'

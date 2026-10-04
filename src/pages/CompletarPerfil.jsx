@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../contexts/AuthContext'
-import { esquemaCompletarPerfil, aFilaAlcance } from '../lib/esquemas'
+import { esquemaCompletarPerfil, aFilaAlcance, integranteVacio } from '../lib/esquemas'
 import { LayoutPublico } from '../components/layout/LayoutPublico'
 import { CamposAlcance, CamposAuditor, CamposEquipo } from '../components/perfil/CamposPerfil'
 import { AutorizacionDatos } from '../components/perfil/AutorizacionDatos'
@@ -16,8 +16,9 @@ export default function CompletarPerfil() {
   const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(esquemaCompletarPerfil),
     defaultValues: {
-      nombre_completo: meta.nombre_completo ?? '', cedula: meta.cedula ?? '', celular: meta.celular ?? '', cargo: meta.cargo ?? '',
-      equipo_auditor_nombre: meta.equipo_auditor_nombre ?? '', equipo_auditor_cargo: meta.equipo_auditor_cargo ?? '',
+      nombre_completo: meta.nombre_completo ?? '', cedula: meta.cedula ?? '', celular: meta.celular ?? '',
+      cargos: Array.isArray(meta.cargos) ? meta.cargos : [],
+      equipo_auditor: Array.isArray(meta.equipo_auditor) && meta.equipo_auditor.length ? meta.equipo_auditor : [integranteVacio()],
       alcance: meta.alcance || undefined, proceso: meta.proceso ?? '', sistema: meta.sistema ?? '',
       acepto_tratamiento_datos: meta.acepto_tratamiento_datos === 'true',
     },
@@ -35,8 +36,8 @@ export default function CompletarPerfil() {
         {(error || errorPerfil) && (
           <p role="alert" className="rounded-md border border-nc-borde bg-nc-bg px-3 py-2 text-sm text-nc-texto">{error || errorPerfil}</p>
         )}
-        <CamposAuditor register={register} errors={errors} />
-        <CamposEquipo register={register} errors={errors} />
+        <CamposAuditor register={register} errors={errors} control={control} />
+        <CamposEquipo register={register} errors={errors} control={control} />
         <CamposAlcance register={register} errors={errors} control={control} setValue={setValue} />
         <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} />
         <div className="flex flex-wrap justify-between gap-3">
