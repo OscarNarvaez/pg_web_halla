@@ -83,6 +83,10 @@ for (const caso of CASOS.filter((c) => !soloCasos || soloCasos.includes(c.n))) {
     verificaciones.push([r.hallazgos.every((h) => !/\b\d+\.\d+/.test(h.hallazgo_corregido) || h.criterios_citados.length > 0), 'el hallazgo corregido no menciona numerales sin verificar'])
   }
   verificaciones.push([r.hallazgos.every((h) => h.problemas.length === 0), 'estructura de redacción verificada (V3) en todos los hallazgos'])
+  const riesgoCompleto = (x) => x && x.descripcion && x.dimension && x.probabilidad && x.impacto
+  verificaciones.push([r.hallazgos.every((h) => (h.clasificacion === 'FORTALEZA'
+    ? h.riesgo === null && h.controles.length === 0
+    : riesgoCompleto(h.riesgo) && h.controles.length >= 1)), 'riesgo PR13 completo y al menos un control (la FORTALEZA no lleva ninguno)'])
   const okCaso = verificaciones.every(([v]) => v)
   if (!okCaso) fallos++
 
@@ -96,6 +100,8 @@ for (const caso of CASOS.filter((c) => !soloCasos || soloCasos.includes(c.n))) {
     if (h.registro.citas_descartadas.length) console.log(`      Citas descartadas por V1: ${h.registro.citas_descartadas.map((c) => `${c.documento} ${c.numeral} (${c.motivo})`).join('; ')}`)
     if (h.registro.referencias_eliminadas.length) console.log(`      Referencias retiradas por V2: ${h.registro.referencias_eliminadas.join('; ')}`)
     if (h.registro.datos_reemplazados.length) console.log(`      Datos reemplazados por V6: ${h.registro.datos_reemplazados.join('; ')}`)
+    if (h.riesgo) console.log(`      Riesgo: ${h.riesgo.descripcion} · ${h.riesgo.dimension} · P${h.riesgo.probabilidad} × I${h.riesgo.impacto}\n        ${h.riesgo.justificacion}`)
+    for (const c of h.controles) console.log(`      Control ${c.tipo.toLowerCase()}: ${c.descripcion}${c.criterio_id ? ' (con criterio)' : ''}`)
     if (h.avisos.length) console.log(`      Avisos: ${h.avisos.join(' | ')}`)
   }
   console.log()

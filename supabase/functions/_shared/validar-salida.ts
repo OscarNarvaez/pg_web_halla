@@ -2,7 +2,7 @@
 // Este módulo es la diferencia entre una herramienta de auditoría y un generador de texto bonito.
 // Funciones puras: se prueban sin red ni base de datos (scripts/probar-validacion.mjs).
 
-import { MARCADOR_PENDIENTE, CLASIFICACIONES, type Clasificacion } from './catalogos.ts'
+import { MARCADOR_PENDIENTE, CLASIFICACIONES, DIMENSIONES_IMPACTO, TIPOS_CONTROL, type Clasificacion } from './catalogos.ts'
 import { quitarTildes, type Criterio } from './recuperar-criterios.ts'
 
 export interface CitaIA {
@@ -19,6 +19,38 @@ export interface HallazgoIA {
   evidencia: string
   severidad?: 'alta' | 'media' | 'baja' | null
   criterios_citados: CitaIA[]
+  riesgo?: RiesgoIA | null
+  controles?: ControlIA[] | null
+}
+
+export interface RiesgoIA {
+  descripcion: string
+  dimension: string
+  probabilidad: number | string
+  impacto: number | string
+  justificacion: string
+}
+
+export interface ControlIA {
+  descripcion: string
+  tipo: string
+  criterio_id?: string | null
+}
+
+export interface RiesgoValidado {
+  descripcion: string | null
+  dimension: string | null
+  probabilidad: number | null
+  impacto: number | null
+  justificacion: string | null
+}
+
+export interface ControlValidado {
+  descripcion: string
+  tipo: 'PREVENTIVO' | 'CORRECTIVO'
+  origen: 'ia'
+  adoptado: false
+  criterio_id: string | null
 }
 
 export interface CitaVerificada {
@@ -304,6 +336,8 @@ export interface HallazgoValidado {
   evidencia: string
   severidad: 'alta' | 'media' | 'baja' | null
   criterios_citados: CitaVerificada[]
+  riesgo: RiesgoValidado | null
+  controles: ControlValidado[]
   avisos: string[]
   problemas: string[]
   registro: {
@@ -311,6 +345,7 @@ export interface HallazgoValidado {
     referencias_eliminadas: string[]
     datos_reemplazados: string[]
     justificacion_recortada: boolean
+    controles_sin_criterio_valido: string[]
   }
 }
 
@@ -371,6 +406,12 @@ export function validarHallazgo(h: HallazgoIA, entrada: string, entregados: Crit
   }
   if (datos.length) avisos.push('Se marcaron fechas o cifras que no aparecen en tu texto: complétalas o confírmalas.')
 
+  // V7 · riesgo y controles
+  const v7 = validarRiesgoYControles(h, entrada, entregados, verificadas)
+  avisos.push(...v7.avisos)
+  referencias.push(...v7.referencias)
+  datos.push(...v7.datos)
+
   return {
     clasificacion: h.clasificacion,
     justificacion,
@@ -379,6 +420,8 @@ export function validarHallazgo(h: HallazgoIA, entrada: string, entregados: Crit
     evidencia,
     severidad: h.severidad && ['alta', 'media', 'baja'].includes(h.severidad) ? h.severidad : null,
     criterios_citados: verificadas,
+    riesgo: v7.riesgo,
+    controles: v7.controles,
     avisos,
     problemas: verificarEstructura(h.clasificacion, hallazgo, verificadas), // V3
     registro: {
@@ -386,6 +429,77 @@ export function validarHallazgo(h: HallazgoIA, entrada: string, entregados: Crit
       referencias_eliminadas: referencias,
       datos_reemplazados: datos,
       justificacion_recortada: recortada,
+      controles_sin_criterio_valido: v7.controlesSinCriterio,
     },
   }
+}
+
+// ─── V7 · Riesgo y controles (PR13_GQ) ─────────────────────────────────────
+
+export const AVISO_RIESGO_INCOMPLETO = 'Completa el riesgo: la IA no propuso una probabilidad, un impacto o una dimensión válidos según el PR13.'
+export const MAX_CONTROLES_IA = 4
+const LIMITES_RIESGO = { descripcion: { min: 15, max: 1000 }, justificacion: { max: 900 }, control: { min: 10, max: 600 } }
+
+/** Entero de 1 a 5 (la IA a veces lo devuelve como texto); cualquier otro valor es null. */
+export function escala15(valor: unknown): number | null {
+  const n = typeof valor === 'string' ? Number(valor.trim()) : valor
+  return typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5 ? n : null
+}
+
+/**
+ * Valida el riesgo y los controles propuestos. La FORTALEZA no lleva ni lo uno ni lo otro. El nivel del
+ * riesgo NO lo decide la IA: lo calcula la aplicación con probabilidad × impacto y los umbrales.
+ */
+export function validarRiesgoYControles(h: HallazgoIA, entrada: string, entregados: Criterio[], verificadas: CitaVerificada[]) {
+  const avisos: string[] = []
+  const referencias: string[] = []
+  const datos: string[] = []
+  const controlesSinCriterio: string[] = []
+  if (h.clasificacion === 'FORTALEZA') return { riesgo: null, controles: [] as ControlValidado[], avisos, referencias, datos, controlesSinCriterio }
+
+  // Las escalas del PR13 se entregan en el mensaje: mencionarlo no es una referencia inventada
+  const conPr13: CitaVerificada[] = [...verificadas, { criterio_id: '', numeral: null, documento: 'PR13-GQ', titulo: '', verificado: true }]
+  const depurar = (texto: string, max: number) => {
+    let t = limpiarTexto(texto)
+    const r = depurarReferencias(t, conPr13, entrada, entregados)
+    referencias.push(...r.eliminadas)
+    const d = quitarDatosInventados(r.texto, entrada, entregados)
+    datos.push(...d.reemplazos)
+    t = d.texto
+    return recortarEnOracion(t, max)
+  }
+
+  const crudo = h.riesgo && typeof h.riesgo === 'object' ? h.riesgo : null
+  const descripcion = crudo && typeof crudo.descripcion === 'string' ? depurar(crudo.descripcion, LIMITES_RIESGO.descripcion.max) : ''
+  const riesgo: RiesgoValidado = {
+    descripcion: descripcion.length >= LIMITES_RIESGO.descripcion.min ? descripcion : null,
+    dimension: crudo && Object.hasOwn(DIMENSIONES_IMPACTO, crudo.dimension) ? crudo.dimension : null,
+    probabilidad: escala15(crudo?.probabilidad),
+    impacto: escala15(crudo?.impacto),
+    justificacion: crudo && typeof crudo.justificacion === 'string' ? depurar(crudo.justificacion, LIMITES_RIESGO.justificacion.max) || null : null,
+  }
+  if (!riesgo.descripcion || !riesgo.dimension || !riesgo.probabilidad || !riesgo.impacto) avisos.push(AVISO_RIESGO_INCOMPLETO)
+
+  const idsEntregados = new Set(entregados.map((c) => c.id))
+  const vistos = new Set<string>()
+  const controles: ControlValidado[] = []
+  for (const c of Array.isArray(h.controles) ? h.controles : []) {
+    if (!c || typeof c.descripcion !== 'string') continue
+    const texto = depurar(c.descripcion, LIMITES_RIESGO.control.max)
+    const clave = normal(texto)
+    if (texto.length < LIMITES_RIESGO.control.min || vistos.has(clave)) continue
+    vistos.add(clave)
+    let criterio = typeof c.criterio_id === 'string' && c.criterio_id.trim() ? c.criterio_id.trim() : null
+    // V1 aplicado a los controles: solo un criterio entregado puede sustentarlos
+    if (criterio && !idsEntregados.has(criterio)) {
+      controlesSinCriterio.push(criterio)
+      criterio = null
+    }
+    const tipo = (TIPOS_CONTROL as readonly string[]).includes(c.tipo) ? (c.tipo as ControlValidado['tipo'])
+      : h.clasificacion === 'NO_CONFORMIDAD' ? 'CORRECTIVO' : 'PREVENTIVO'
+    controles.push({ descripcion: texto, tipo, origen: 'ia', adoptado: false, criterio_id: criterio })
+    if (controles.length === MAX_CONTROLES_IA) break
+  }
+  if (!controles.length) avisos.push('La IA no propuso controles: agrega al menos uno propio.')
+  return { riesgo, controles, avisos, referencias, datos, controlesSinCriterio }
 }

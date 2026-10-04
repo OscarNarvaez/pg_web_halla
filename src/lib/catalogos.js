@@ -108,12 +108,22 @@ export const ESTADOS_AUDITORIA = {
   cerrada: 'Cerrada',
 }
 
+// En la matriz consolidada: generado/editado = Pendiente · confirmado = Validado (enum de PostgreSQL)
 export const ESTADOS_HALLAZGO = {
-  generado: 'Generado',
-  editado: 'Editado',
-  confirmado: 'Confirmado',
+  generado: 'Pendiente',
+  editado: 'Pendiente (editado)',
+  confirmado: 'Validado',
+  cambios_sugeridos: 'Se sugiere hacer cambios',
   descartado: 'Descartado',
 }
+
+/** Estados que el auditor elige en la matriz. «Pendiente» se guarda como editado si el hallazgo ya se editó. */
+export const ESTADOS_MATRIZ = [
+  { valor: 'pendiente', etiqueta: 'Pendiente' },
+  { valor: 'confirmado', etiqueta: 'Validado' },
+  { valor: 'cambios_sugeridos', etiqueta: 'Se sugiere hacer cambios' },
+]
+export const estadoMatriz = (estado) => (estado === 'generado' || estado === 'editado' ? 'pendiente' : estado)
 
 export const DOCUMENTOS = [
   { codigo: 'NTC-ISO 9001:2015', titulo: 'Sistemas de gestión de la calidad. Requisitos' },
@@ -145,4 +155,99 @@ export function documentosParaAlcance({ alcance, sistema }) {
 /** Nombre del proceso o sistema según el alcance. */
 export function objetoAuditado({ alcance, proceso, sistema }) {
   return alcance === 'SISTEMAS' ? sistema : proceso
+}
+
+// ─── Riesgo (PR13_GQ V4 · Gestión de riesgos, numeral 5) ───────────────────
+// Transcripción limpia de las escalas del documento (el original es OCR de tablas). Duplicado en
+// supabase/functions/_shared/catalogos.ts; las claves de DIMENSIONES_IMPACTO = check riesgo_dimension_valida (0007).
+
+export const FUENTE_RIESGO = 'PR13_GQ V4 · Gestión de riesgos (análisis y valoración, evaluación del riesgo inherente y tratamiento)'
+
+export const ESCALA_PROBABILIDAD = [
+  { valor: 1, categoria: 'Raro', descripcion: 'El evento ocurre únicamente en circunstancias excepcionales. Se ha presentado una vez en los últimos tres años.' },
+  { valor: 2, categoria: 'Improbable', descripcion: 'El evento es poco frecuente, pero podría presentarse. Se ha presentado una vez en el último año.' },
+  { valor: 3, categoria: 'Posible', descripcion: 'El evento podría presentarse en algún momento. Se ha presentado una vez en los últimos seis meses.' },
+  { valor: 4, categoria: 'Probable', descripcion: 'El evento es esperado en muchas circunstancias. Se ha presentado una vez en el último mes.' },
+  { valor: 5, categoria: 'Casi seguro', descripcion: 'El evento ocurre en la mayoría de las circunstancias. Se ha presentado más de una vez en el último mes.' },
+]
+
+export const NIVELES_IMPACTO = ['Insignificante', 'Menor', 'Moderado', 'Mayor', 'Catastrófico']
+
+export const DIMENSIONES_IMPACTO = {
+  CALIDAD_SEGURIDAD_PACIENTE: {
+    etiqueta: 'Calidad en la atención y seguridad del paciente',
+    niveles: [
+      'Puede llevar a lesiones transitorias leves. La intervención necesaria es mínima.',
+      'El resultado para el paciente es sintomático con síntomas leves. La pérdida funcional o el daño son mínimos y de corta duración.',
+      'El resultado sintomático para el paciente es una pérdida o un daño de severidad moderada y de corta duración.',
+      'Pudo llevar a la muerte o a un deterioro serio de la salud, pero por azar o por una barrera no generó un daño permanente; requiere intervención médica o quirúrgica.',
+      'Causa al paciente un daño o una pérdida funcional importante, permanente o de larga duración. Acorta la esperanza de vida o causa la muerte.',
+    ],
+  },
+  PRESTACION_SERVICIO: {
+    etiqueta: 'Prestación del servicio',
+    niveles: [
+      'No afecta la prestación del servicio.',
+      'Se podrían generar reprocesos sin afectar la prestación del servicio.',
+      'Se pueden generar reprocesos que afectan la prestación del servicio sin impactar la atención a los pacientes.',
+      'La prestación del servicio se afecta de manera considerable, impactando la atención a los pacientes.',
+      'La prestación del servicio se afecta de manera total y no se puede atender a los pacientes.',
+    ],
+  },
+  LEGAL: {
+    etiqueta: 'Legal',
+    niveles: [
+      'No se generan sanciones o multas.',
+      'Podrían generarse multas o sanciones, pero no afectan la prestación del servicio.',
+      'Pueden generarse multas o sanciones que podrían afectar la prestación del servicio.',
+      'Se generan multas o sanciones que afectan la prestación del servicio y pueden ocasionar pérdidas financieras.',
+      'Se generan multas o sanciones altas que afectan la prestación del servicio y generan pérdidas financieras.',
+    ],
+  },
+  FINANCIERO: {
+    etiqueta: 'Financiero',
+    niveles: [
+      'No se afectan los ingresos ni la rentabilidad del Hospital.',
+      'Se afectan levemente los ingresos y la rentabilidad del Hospital.',
+      'Se afectan los ingresos y la rentabilidad, sin impactar la prestación del servicio.',
+      'Se afectan considerablemente los ingresos y la rentabilidad, pudiendo comprometer la prestación del servicio.',
+      'Se afectan gravemente los ingresos y la rentabilidad, con pérdidas financieras que comprometen la prestación del servicio.',
+    ],
+  },
+  REPUTACIONAL: {
+    etiqueta: 'Reputacional (imagen)',
+    niveles: [
+      'No se afecta la imagen del Hospital.',
+      'Se afecta levemente la imagen, pero se puede manejar sin generar impacto.',
+      'Tendría medianas consecuencias o efectos sobre la entidad o el paciente.',
+      'Se genera un impacto mayor en la imagen que trasciende en redes sociales.',
+      'La afectación de la imagen es crítica y trasciende en redes sociales y medios de comunicación.',
+    ],
+  },
+  AMBIENTAL: {
+    etiqueta: 'Ambiental',
+    niveles: [
+      'Impacto ambiental mínimo, sin comprometer la operación hospitalaria ni los recursos naturales. No requiere intervención correctiva.',
+      'Bajo impacto ambiental, con afectaciones leves y fácilmente controlables que requieren acciones correctivas simples.',
+      'Impacto ambiental medio que podría alterar temporalmente algún componente (aire, agua, suelo, residuos). Requiere plan de mitigación y seguimiento.',
+      'Impacto ambiental alto, con afectaciones significativas a los recursos naturales, la salud pública o el entorno hospitalario. Requiere medidas urgentes.',
+      'Impacto ambiental grave e irreversible, con consecuencias críticas para el ecosistema, la comunidad y la operación hospitalaria.',
+    ],
+  },
+}
+
+export const TIPOS_CONTROL = ['PREVENTIVO', 'CORRECTIVO']
+
+export const ETIQUETAS_CONTROL = { PREVENTIVO: 'Preventivo', CORRECTIVO: 'Correctivo' }
+
+/** Valores de referencia editables por auditoría (columna auditorias.umbrales_riesgo). */
+export const UMBRALES_RIESGO = { bajo: 4, moderado: 9, alto: 16 }
+
+// Zonas del PR13_GQ y la acción a tomar en cada una. La nota del PR13 («no puede haber aceptación de riesgos
+// sobre situaciones que conlleven a incumplimientos normativos») la aplica tratamientoPara() en src/lib/riesgo.js.
+export const ZONAS_RIESGO = {
+  BAJA: { etiqueta: 'Bajo', tratamiento: 'Asumir el riesgo' },
+  MODERADA: { etiqueta: 'Moderado', tratamiento: 'Asumir el riesgo o reducirlo' },
+  ALTA: { etiqueta: 'Alto', tratamiento: 'Reducir el riesgo, evitarlo, compartirlo o transferirlo' },
+  EXTREMA: { etiqueta: 'Extremo', tratamiento: 'Reducir el riesgo, evitarlo, compartirlo o transferirlo' },
 }

@@ -22,6 +22,18 @@ interface Cuerpo {
   entrada_auditor?: string
   contexto?: { notas?: string }
   persistir?: boolean
+  /** Huella del PDF del que salió el texto. El archivo nunca llega al servidor: se lee en el navegador. */
+  evidencia_archivo?: { nombre?: unknown; paginas?: unknown; sha256?: unknown }
+}
+
+/** Nombre, páginas y SHA-256 del PDF de evidencia; null si no viene o no es válido. */
+function leerArchivo(a: Cuerpo['evidencia_archivo']): { nombre: string; paginas: number; sha256: string } | null | 'invalido' {
+  if (a === undefined || a === null) return null
+  const nombre = typeof a.nombre === 'string' ? a.nombre.replace(/[\u0000-\u001f\u007f/\\]/g, '').trim().slice(0, 200) : ''
+  const paginas = typeof a.paginas === 'number' && Number.isInteger(a.paginas) ? a.paginas : 0
+  const sha256 = typeof a.sha256 === 'string' ? a.sha256.toLowerCase() : ''
+  if (!nombre || paginas < 1 || paginas > 500 || !/^[0-9a-f]{64}$/.test(sha256)) return 'invalido'
+  return { nombre, paginas, sha256 }
 }
 
 Deno.serve(async (req) => {
@@ -47,6 +59,8 @@ Deno.serve(async (req) => {
   if (entrada.length < MIN_CARACTERES) return respuestaError(req, `Describe el hallazgo con al menos ${MIN_CARACTERES} caracteres.`, 400, 'entrada_corta')
   if (entrada.length > MAX_CARACTERES) return respuestaError(req, `El texto supera los ${MAX_CARACTERES} caracteres. Divide la observación en varios hallazgos.`, 400, 'entrada_larga')
   if (notas && notas.length > MAX_NOTAS) return respuestaError(req, `Las notas superan los ${MAX_NOTAS} caracteres.`, 400, 'notas_largas')
+  const archivo = leerArchivo(cuerpo.evidencia_archivo)
+  if (archivo === 'invalido') return respuestaError(req, 'Los datos del PDF de evidencia no son válidos. Vuelve a cargarlo.', 400, 'datos_invalidos')
 
   // 2. Autorización: la auditoría debe pertenecer al usuario
   const { data: auditoria } = await admin
@@ -153,8 +167,15 @@ Deno.serve(async (req) => {
           },
           criterios_citados: h.criterios_citados,
           avisos: h.avisos,
+          riesgo_descripcion: h.riesgo?.descripcion ?? null,
+          riesgo_dimension: h.riesgo?.dimension ?? null,
+          riesgo_probabilidad: h.riesgo?.probabilidad ?? null,
+          riesgo_impacto: h.riesgo?.impacto ?? null,
+          riesgo_justificacion: h.riesgo?.justificacion ?? null,
+          controles: h.controles,
+          evidencia_archivo: archivo,
         })
-        .select('id')
+        .select('id, controles')
         .single()
       if (error) {
         console.error('persistencia:', error.message)
@@ -162,6 +183,7 @@ Deno.serve(async (req) => {
         return respuestaError(req, 'La IA respondió, pero no se pudo guardar el hallazgo. Inténtalo de nuevo.', 500, 'persistencia')
       }
       ids.push(data.id)
+      h.controles = data.controles // normalizados por la base de datos (documento y numeral del criterio)
     }
     if (auditoria.estado === 'borrador') await admin.from('auditorias').update({ estado: 'en_curso' }).eq('id', auditoria.id)
   }
@@ -181,6 +203,8 @@ Deno.serve(async (req) => {
       modelos_descartados: llamadaPrincipal.descartados,
       citas_descartadas: resultado.hallazgos.flatMap((h) => h.registro.citas_descartadas),
       referencias_eliminadas: resultado.hallazgos.flatMap((h) => h.registro.referencias_eliminadas),
+      controles_sin_criterio_valido: resultado.hallazgos.flatMap((h) => h.registro.controles_sin_criterio_valido),
+      pdf: archivo ? { paginas: archivo.paginas } : null,
       datos_reemplazados: resultado.hallazgos.flatMap((h) => h.registro.datos_reemplazados),
       estructura_sin_verificar: resultado.hallazgos.filter((h) => h.problemas.length).map((h) => h.problemas),
     },
@@ -198,6 +222,12 @@ Deno.serve(async (req) => {
       severidad: h.severidad,
       criterios_citados: h.criterios_citados,
       avisos: h.avisos,
+      riesgo_descripcion: h.riesgo?.descripcion ?? null,
+      riesgo_dimension: h.riesgo?.dimension ?? null,
+      riesgo_probabilidad: h.riesgo?.probabilidad ?? null,
+      riesgo_impacto: h.riesgo?.impacto ?? null,
+      riesgo_justificacion: h.riesgo?.justificacion ?? null,
+      controles: h.controles,
     })),
     meta: {
       modelo: modeloUsado,

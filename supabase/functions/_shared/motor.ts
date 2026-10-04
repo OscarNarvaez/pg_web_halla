@@ -1,7 +1,7 @@
 // Motor de clasificación: arma el mensaje, llama a la IA, valida y repara una sola vez (V4).
 // No conoce Deno ni Supabase: recibe la función que llama al modelo, así se prueba en local.
 
-import { ETIQUETAS, MARCADOR_PENDIENTE } from './catalogos.ts'
+import { DIMENSIONES_IMPACTO, ESCALA_PROBABILIDAD, ETIQUETAS, MARCADOR_PENDIENTE, NIVELES_IMPACTO } from './catalogos.ts'
 import type { Criterio } from './recuperar-criterios.ts'
 import type { RespuestaGemini } from './gemini.ts'
 import {
@@ -52,10 +52,39 @@ export function construirMensaje(ctx: ContextoAuditoria, criterios: Criterio[], 
     const idioma = c.idioma === 'en' ? ' | texto en inglés: cita el numeral tal cual y redacta en español' : ''
     lineas.push(`[C${i + 1}] id=${c.id} | ${c.documento_codigo} | ${numeral} | ${c.titulo}${idioma}`, c.contenido.trim(), '')
   })
+  lineas.push(...bloqueRiesgo())
   lineas.push('## HALLAZGO REPORTADO POR EL AUDITOR', '"""', entrada, '"""', '')
   if (notas?.trim()) lineas.push('## NOTAS O CONTEXTO ADICIONAL DEL AUDITOR', notas.trim(), '')
   lineas.push('Responde ÚNICAMENTE con el JSON definido en el esquema.')
   return lineas.join('\n')
+}
+
+/**
+ * Metodología de riesgo del hospital (PR13_GQ V4) para los campos `riesgo` y `controles`. Va en el mensaje
+ * de usuario: el prompt del sistema es el ANEXO A literal y no se toca.
+ */
+export function bloqueRiesgo(): string[] {
+  return [
+    '## METODOLOGÍA DE RIESGO DEL HOSPITAL (PR13_GQ V4, Gestión de riesgos)',
+    'Para cada hallazgo que NO sea FORTALEZA completa "riesgo" y "controles". En una FORTALEZA: riesgo = null y controles = [].',
+    '- riesgo.descripcion: el riesgo al que expone la situación, como evento potencial: «Posibilidad de <evento> debido a <causa observada>, lo que podría <consecuencia>». Solo con hechos del hallazgo: sin nombres, fechas ni cifras que el auditor no haya dado.',
+    '- riesgo.dimension: la dimensión de impacto más afectada (clave exacta de la lista de abajo).',
+    '- riesgo.probabilidad: entero de 1 a 5 según la escala de probabilidad. Si el auditor no informa la frecuencia histórica, estímala con la evidencia y dilo en la justificación.',
+    '- riesgo.impacto: entero de 1 a 5 según la escala de la dimensión elegida.',
+    '- riesgo.justificacion: por qué esa probabilidad y ese impacto, en una a tres oraciones.',
+    '- No calcules el nivel ni la zona del riesgo: los calcula la aplicación (riesgo inherente = probabilidad × impacto).',
+    '- controles: de 1 a 3 medidas concretas y verificables que reduzcan la probabilidad o el impacto. tipo PREVENTIVO si evita que la causa se repita; CORRECTIVO si corrige lo ya ocurrido. Indica qué se hace, quién lo hace (cargo o área, nunca un nombre) y con qué frecuencia o evidencia. Si un control se apoya en un criterio de la lista, pon su id en criterio_id; si no, déjalo vacío. No cites normas que no estén en la lista.',
+    '',
+    'Escala de probabilidad:',
+    ...ESCALA_PROBABILIDAD.map((p) => `${p.valor} ${p.categoria}: ${p.descripcion}`),
+    '',
+    `Escala de impacto por dimensión (1 = ${NIVELES_IMPACTO[0]} … 5 = ${NIVELES_IMPACTO[4]}):`,
+    ...Object.entries(DIMENSIONES_IMPACTO).flatMap(([clave, d]) => [
+      `${clave} (${d.etiqueta}):`,
+      ...d.niveles.map((texto, i) => `  ${i + 1} ${NIVELES_IMPACTO[i]}: ${texto}`),
+    ]),
+    '',
+  ]
 }
 
 /** Texto de reparación del §9.3 V4, uno por cada hallazgo que no cumplió la estructura. */

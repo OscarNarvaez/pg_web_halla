@@ -2,7 +2,10 @@
 // Uso: pnpm probar:validacion
 import {
   verificarCitas, depurarReferencias, quitarDatosInventados, verificarEstructura, limpiarTexto, validarHallazgo,
+  validarRiesgoYControles, escala15, AVISO_RIESGO_INCOMPLETO,
 } from '../supabase/functions/_shared/validar-salida.ts'
+import { construirMensaje } from '../supabase/functions/_shared/motor.ts'
+import { readFileSync } from 'node:fs'
 import { construirConsulta } from '../supabase/functions/_shared/recuperar-criterios.ts'
 import { MARCADOR_PENDIENTE } from '../supabase/functions/_shared/catalogos.ts'
 import { anonimizar } from '../supabase/functions/_shared/anonimizar.ts'
@@ -127,11 +130,38 @@ ok(anon('CC 1.085.123.456 y cédula de ciudadanía No. 52123456') === 'CC [núme
 const legitimo = 'Se revisaron 20 historias clínicas del servicio de Urgencias del Hospital Infantil Los Ángeles; facturas por $1.500.000; NTC-ISO 9001:2015 numeral 9.3.3; Resolución 3100 de 2019; el auxiliar de Enfermería.'
 ok(anon(legitimo) === legitimo, 'no altera el contenido de auditoría: cifras, montos, normas, servicios y la institución', anon(legitimo))
 
+console.log('\n▸ V7 · riesgo y controles (PR13_GQ)')
+const ENTRADA_NC = 'Se revisaron 20 historias clínicas de Hospitalización y en 5 no se encontró la valoración de enfermería al ingreso.'
+const baseNC = { clasificacion: 'NO_CONFORMIDAD', justificacion: 'j', hallazgo_corregido: 'h', criterio_requisito: 'c', evidencia: 'e', criterios_citados: [] }
+const riesgoBueno = { descripcion: 'Posibilidad de omitir la valoración inicial del paciente debido a la falta de registro, lo que podría retrasar su atención.', dimension: 'CALIDAD_SEGURIDAD_PACIENTE', probabilidad: 4, impacto: '3', justificacion: 'Se presentó en 5 de 20 historias revisadas.' }
+let v7 = validarRiesgoYControles({ ...baseNC, riesgo: riesgoBueno, controles: [{ descripcion: 'Verificar diariamente el registro de la valoración al ingreso por la jefe de servicio.', tipo: 'PREVENTIVO', criterio_id: 'c-933' }] }, ENTRADA_NC, entregados, [])
+ok(v7.riesgo.probabilidad === 4 && v7.riesgo.impacto === 3 && v7.riesgo.dimension === 'CALIDAD_SEGURIDAD_PACIENTE' && v7.avisos.length === 0,
+  'acepta un riesgo completo (y el impacto «3» como texto)', JSON.stringify(v7))
+ok(v7.controles[0].criterio_id === 'c-933' && v7.controles[0].origen === 'ia' && v7.controles[0].adoptado === false, 'el control propuesto conserva su criterio entregado y llega sin adoptar')
+v7 = validarRiesgoYControles({ ...baseNC, clasificacion: 'FORTALEZA', riesgo: riesgoBueno, controles: [{ descripcion: 'Un control que no aplica a una fortaleza', tipo: 'PREVENTIVO' }] }, ENTRADA_NC, entregados, [])
+ok(v7.riesgo === null && v7.controles.length === 0, 'una FORTALEZA no lleva riesgo ni controles')
+v7 = validarRiesgoYControles({ ...baseNC, riesgo: { ...riesgoBueno, probabilidad: 7, dimension: 'INVENTADA' }, controles: [] }, ENTRADA_NC, entregados, [])
+ok(v7.riesgo.probabilidad === null && v7.riesgo.dimension === null && v7.avisos.includes(AVISO_RIESGO_INCOMPLETO), 'una probabilidad fuera de 1 a 5 o una dimensión inventada quedan vacías con aviso')
+ok(escala15(2.5) === null && escala15('5') === 5 && escala15(0) === null, 'la escala solo admite enteros de 1 a 5')
+v7 = validarRiesgoYControles({ ...baseNC, riesgo: riesgoBueno, controles: [{ descripcion: 'Auditar el registro según la NTC-ISO 9001:2015 numeral 7.5.3 cada 15 días.', tipo: 'OTRO', criterio_id: 'inventado' }] }, ENTRADA_NC, entregados, [])
+ok(v7.controles[0].criterio_id === null && v7.controlesSinCriterio.includes('inventado'), 'un control con un criterio que no se entregó pierde la cita (V1)')
+ok(v7.controles[0].tipo === 'CORRECTIVO' && v7.controles[0].descripcion.includes('[cantidad por confirmar]'), 'tipo inválido → correctivo en una NC; cifras inventadas en el control se marcan (V6)', v7.controles[0].descripcion)
+v7 = validarRiesgoYControles({ ...baseNC, riesgo: { ...riesgoBueno, justificacion: 'Según la escala del PR13_GQ, es probable.' }, controles: [] }, ENTRADA_NC, entregados, [])
+ok(v7.riesgo.justificacion.includes('PR13_GQ') && v7.avisos.some((a) => /no propuso controles/.test(a)), 'mencionar el PR13 en el riesgo no es una referencia inventada; sin controles hay aviso', v7.riesgo.justificacion)
+const mensajeRiesgo = construirMensaje({ alcance: 'PROCESOS', proceso: 'Urgencias', codigo: 'AI-1', titulo: 'T' }, entregados, ENTRADA_NC)
+ok(/METODOLOGÍA DE RIESGO/.test(mensajeRiesgo) && /5 Casi seguro/.test(mensajeRiesgo) && /CALIDAD_SEGURIDAD_PACIENTE/.test(mensajeRiesgo) && mensajeRiesgo.indexOf('METODOLOGÍA') < mensajeRiesgo.indexOf('HALLAZGO REPORTADO'),
+  'el mensaje entrega las escalas del PR13 antes del hallazgo (el prompt del sistema no cambia)')
+
 console.log('\n▸ Catálogos del cliente y del servidor')
 ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosCliente.PROCESOS), 'los 19 procesos coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.DOCUMENTOS_POR_ALCANCE) === JSON.stringify(catalogosCliente.DOCUMENTOS_POR_ALCANCE), 'el mapa de documentos por alcance coincide')
 ok(catalogosServidor.MARCADOR_PENDIENTE === catalogosCliente.MARCADOR_PENDIENTE, 'el marcador de requisito pendiente es idéntico')
+ok(['ESCALA_PROBABILIDAD', 'NIVELES_IMPACTO', 'DIMENSIONES_IMPACTO', 'TIPOS_CONTROL', 'FUENTE_RIESGO'].every((k) =>
+  JSON.stringify(catalogosServidor[k]) === JSON.stringify(catalogosCliente[k])), 'las escalas de riesgo del PR13 coinciden entre el frontend y las Edge Functions')
+const migracion0007 = readFileSync(new URL('../supabase/migrations/0007_riesgo_controles_matriz.sql', import.meta.url), 'utf8')
+const dimensionesSql = [...migracion0007.match(/riesgo_dimension in \(([^)]*)\)/)[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]).sort()
+ok(JSON.stringify(dimensionesSql) === JSON.stringify(Object.keys(catalogosServidor.DIMENSIONES_IMPACTO).sort()), 'las dimensiones de impacto coinciden con el check de PostgreSQL', dimensionesSql.join(', '))
 
 console.log('\n▸ Content Security Policy')
 const REAL = 'https://obqkaegizxtbmdvcscdl.supabase.co'
