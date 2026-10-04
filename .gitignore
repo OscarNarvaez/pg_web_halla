@@ -1,0 +1,28 @@
+# Dependencias y build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Entorno y secretos — NUNCA al repositorio
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+*service_role*
+*.pem
+
+# Editores y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Lockfiles que no usamos (el proyecto usa pnpm)
+package-lock.json
+yarn.lock
