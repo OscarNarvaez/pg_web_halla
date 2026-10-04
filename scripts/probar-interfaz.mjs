@@ -286,9 +286,14 @@ ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').i
 
   // Registro completo → «Revisa tu correo» con reenvío (Supabase Auth simulado)
   const authPeticiones = []
+  let registroDesactivado = true
   await ctx.route('https://demo.supabase.co/auth/v1/**', async (r) => {
     const ruta = new URL(r.request().url()).pathname.replace('/auth/v1/', '')
     authPeticiones.push({ ruta, cuerpo: r.request().postData() ? JSON.parse(r.request().postData()) : null })
+    if (ruta === 'signup' && registroDesactivado) {
+      // Respuesta real de Supabase cuando el proveedor de correo está apagado
+      return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 400, error_code: 'email_provider_disabled', msg: 'Email signups are disabled' }) })
+    }
     if (ruta === 'signup') {
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: crypto.randomUUID(), email: 'nueva@hila.test', identities: [{ id: 'i1' }], user_metadata: {} }) })
     }
@@ -301,6 +306,10 @@ ok(await p.getByText('Debes autorizar el tratamiento de tus datos personales').i
   await p.getByLabel('Cargo del equipo auditor').fill('Profesional de calidad')
   await p.getByRole('combobox', { name: 'Proceso', exact: true }).selectOption('Urgencias')
   await p.getByLabel(/Autorizo el tratamiento/).check()
+  await p.getByRole('button', { name: 'Crear cuenta' }).click()
+  await p.getByText('El registro de cuentas está desactivado en este momento').waitFor()
+  ok(true, 'con el registro desactivado en Supabase, el mensaje lo explica (no un error genérico)')
+  registroDesactivado = false
   await p.getByRole('button', { name: 'Crear cuenta' }).click()
   await p.getByRole('heading', { name: 'Revisa tu correo' }).waitFor()
   const signup = authPeticiones.find((x) => x.ruta === 'signup')

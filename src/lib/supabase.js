@@ -26,6 +26,9 @@ export function mensajeError(error) {
   const mapa = [
     [/user already registered|already been registered/i, 'No se pudo completar el registro. Si ya tienes cuenta, ingresa o recupera tu contraseña.'],
     [/invalid login credentials/i, 'Correo o contraseña incorrectos.'],
+    // Proveedor de correo o registro desactivado en Supabase (Authentication → Sign In / Providers)
+    [/signups? (are |is )?(disabled|not allowed)|email_provider_disabled|signup_disabled/i, 'El registro de cuentas está desactivado en este momento. Avísale al administrador de la plataforma.'],
+    [/email logins? (are |is )?disabled|logins? (are |is )?disabled/i, 'El ingreso con correo está desactivado en este momento. Avísale al administrador de la plataforma.'],
     [/email not confirmed/i, 'Debes confirmar tu correo antes de ingresar. Revisa tu bandeja de entrada.'],
     [/password should be at least|password is too short|weak.?password|password.*(characters|contain)/i, 'La contraseña no cumple la política: al menos 10 caracteres, con mayúscula, minúscula y número.'],
     [/new password should be different/i, 'La contraseña nueva debe ser distinta de la anterior.'],
