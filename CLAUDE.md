@@ -69,8 +69,11 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
 ## Decisiones tomadas (no re-litigar sin el dueño)
 
 - Alcance: el prompt maestro **más** (decisión del dueño, 4/10/2026) el asistente de 7 pasos, el PDF de evidencia,
-  el riesgo PR13, los controles y la matriz consolidada. Siguen en Fase 8: lista de verificación y conclusión
+  el riesgo PR13, los controles, la matriz consolidada y la lista de verificación. Sigue en Fase 8 la conclusión
   integrada ISO 19011 (`docs/RECONOCIMIENTO.md`).
+- Lista de verificación (formato del dueño, 0011, `src/pages/ListaVerificacion.jsx`): hoja de trabajo del auditor,
+  una por auditoría, con guardado automático y PDF (`exportar-lista.js`). NO pasa por la IA ni alimenta hallazgos,
+  matriz ni informe. Textos del formato en `src/lib/lista-verificacion.js`.
 - PDF de evidencia: se lee en el navegador (`src/lib/pdf-evidencia.js`) y NUNCA se sube; solo viajan su texto
   y su huella `{nombre, paginas, sha256}`.
 - Matriz: «Validado» = estado `confirmado`. Se descarga (Excel) solo con TODOS los vigentes validados; validar

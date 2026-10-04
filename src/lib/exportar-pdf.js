@@ -8,36 +8,7 @@ import { jsPDF } from 'jspdf'
 import { logoDePlantilla } from './plantilla-informe'
 import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria } from './formato-informe'
 import { hexARgb, nombreArchivo } from './exportar-comun'
-
-const FUENTES = [
-  { archivo: 'LiberationSans-Regular.ttf', familia: 'LiberationSans', estilo: 'normal' },
-  { archivo: 'LiberationSans-Bold.ttf', familia: 'LiberationSans', estilo: 'bold' },
-]
-let fuentesCache = null
-
-function aBase64(buffer) {
-  const bytes = new Uint8Array(buffer)
-  let binario = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) binario += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(binario)
-}
-
-/** Descarga (una sola vez) las fuentes Unicode: la Helvetica de jsPDF rompe tildes en algunos visores. */
-async function cargarFuentes() {
-  if (!fuentesCache) {
-    fuentesCache = Promise.all(
-      FUENTES.map(async (f) => {
-        const r = await fetch(`/fonts/${f.archivo}`)
-        if (!r.ok) throw new Error(`No se pudo cargar la fuente ${f.archivo}`)
-        return { ...f, base64: aBase64(await r.arrayBuffer()) }
-      }),
-    ).catch((e) => {
-      fuentesCache = null
-      throw e
-    })
-  }
-  return fuentesCache
-}
+import { registrarFuentes } from './fuentes-pdf'
 
 const PULGADA = 72
 const pt = (pulgadas) => pulgadas * PULGADA
@@ -63,11 +34,7 @@ const VACIOS_TRAS = {
 export async function exportarPdf(informe) {
   const c = informe.contenido
   const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true, putOnlyUsedFonts: true })
-  const [fuentes, logo] = await Promise.all([cargarFuentes(), logoDePlantilla().catch(() => null)])
-  for (const f of fuentes) {
-    doc.addFileToVFS(f.archivo, f.base64)
-    doc.addFont(f.archivo, f.familia, f.estilo)
-  }
+  const [, logo] = await Promise.all([registrarFuentes(doc), logoDePlantilla().catch(() => null)])
   doc.setProperties({ title: tituloAuditoria(c), subject: c.identificacion.titulo, author: c.generado.por, creator: 'halla.ink' })
 
   const W = doc.internal.pageSize.getWidth()

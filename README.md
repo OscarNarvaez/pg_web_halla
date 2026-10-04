@@ -3,6 +3,7 @@
 Sistema experto de clasificación y redacción de hallazgos de auditoría interna del
 **Hospital Infantil Los Ángeles** (Pasto, Nariño) · [halla.ink](https://halla.ink)
 
+Antes de la visita, el auditor prepara su lista de verificación (el formato del hospital, para anotar en sitio).
 Un asistente de 7 pasos guía al auditor: describe lo que observó (o carga un PDF, que se lee en su navegador
 y no se sube), y la IA identifica la norma, el numeral y el requisito en los documentos cargados **sin
 inventar numerales**, clasifica el hallazgo (no conformidad, observación, oportunidad de mejora o

@@ -284,3 +284,12 @@ export const TIPOS_EVALUADOR = {
   AUDITORES_INTERNOS: 'Auditores Internos',
   AUDITORES_EXTERNOS: 'Auditores Externos',
 }
+
+// ─── Lista de verificación (migración 0011) ────────────────────────────────
+// Columnas de marca del formato, en su orden (NC, O, OB, F); la leyenda del formato las nombra así.
+export const MARCAS_VERIFICACION = [
+  { valor: 'NC', etiqueta: 'No Conforme' },
+  { valor: 'O', etiqueta: 'Oportunidad' },
+  { valor: 'OB', etiqueta: 'Observación' },
+  { valor: 'F', etiqueta: 'Fortalezas' },
+]

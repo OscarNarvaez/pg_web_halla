@@ -168,9 +168,11 @@ Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder re
 
 > **Actualización del 4/10/2026:** el dueño pidió el flujo guiado de 7 pasos. Quedaron **implementados** el
 > riesgo por hallazgo, los controles y la matriz consolidada (en Excel, con validación por hallazgo en vez de
-> CSV), además de la carga de un PDF de evidencia. Ver la migración `0007`, `docs/MANUAL_AUDITOR.md` §3 y §6,
-> y `docs/SEGURIDAD.md` (ampliación). Siguen pendientes la lista de verificación, la conclusión integrada
-> ISO 19011 y `pgvector`.
+> CSV), además de la carga de un PDF de evidencia. Ver la migración `0007`, `docs/MANUAL_AUDITOR.md` §4 y §7,
+> y `docs/SEGURIDAD.md` (ampliación). Siguen pendientes la conclusión integrada ISO 19011 y `pgvector`.
+>
+> **Lista de verificación (4/10/2026):** implementada con el formato que entregó el dueño (migración `0011`,
+> `docs/MANUAL_AUDITOR.md` §3). Es solo la hoja de trabajo del auditor: no pasa por la IA.
 >
 > **Informe final (4/10/2026):** el dueño entregó el formato oficial (`src/formato_de_informe_final/Auditoria_interna.odt`)
 > y pidió seguirlo tal cual. Reemplaza la estructura de 11 secciones (ISO 19011) que proponía el prompt maestro: portada,

@@ -243,6 +243,38 @@ ok(Boolean(errHallAjeno), 'B no puede insertar hallazgos en la auditoría de A')
 const { rows: histB } = await comoUsuario(db, como(B), (tx) => tx.query('select * from public.hallazgos_historial'))
 ok(histB.length === 0, 'B no puede leer el historial de A')
 
+console.log('\n▸ Lista de verificación (0011)')
+{
+  const guardarLista = (quien, auditoria, encabezado, secciones) => falla(comoUsuario(db, como(quien), (tx) => tx.query(
+    `insert into public.listas_verificacion (auditoria_id, user_id, encabezado, secciones) values ($1, $2, $3, $4)
+     on conflict (auditoria_id) do update set encabezado = excluded.encabezado, secciones = excluded.secciones`,
+    [auditoria, quien, JSON.stringify(encabezado), JSON.stringify(secciones)])))
+  const fila = (extra = {}) => ({ requisito: 'NTC-ISO 9001:2015 7.1.3', pregunta: '¿Hay plan de mantenimiento?', documentos: 'Plan 2026', marca: 'NC', anotaciones: 'Sin cronograma', ...extra })
+  const errLista = await guardarLista(A, audA.id, { elaborada_por: ' Ana Auditora ', lugar: 'Urgencias', otro: 'x' }, [{ titulo: ' GESTION DE RECURSOS FISICOS ', filas: [fila({ extra: 'x' }), fila({ marca: null })] }])
+  const { rows: [lista] } = await db.query('select encabezado, secciones from public.listas_verificacion where auditoria_id = $1', [audA.id])
+  ok(errLista === null && lista?.encabezado.elaborada_por === 'Ana Auditora' && !('otro' in lista.encabezado) && lista.secciones[0].titulo === 'GESTION DE RECURSOS FISICOS'
+    && !('extra' in lista.secciones[0].filas[0]) && lista.secciones[0].filas[1].marca === null, 'el auditor guarda su lista de verificación (y se normaliza)', errLista ?? JSON.stringify(lista))
+  const errActualizar = await guardarLista(A, audA.id, {}, [{ titulo: 'S', filas: [fila({ marca: 'OB' })] }])
+  const { rows: [lista2] } = await db.query('select secciones from public.listas_verificacion where auditoria_id = $1', [audA.id])
+  ok(errActualizar === null && lista2.secciones[0].filas[0].marca === 'OB', 'la lista se actualiza al volver a guardarla', errActualizar)
+  let errValidar = await guardarLista(A, audA.id, {}, [{ titulo: 'S', filas: [fila({ marca: 'X' })] }])
+  ok(errValidar?.includes('NC, O, OB o F'), 'la marca solo puede ser NC, O, OB o F', errValidar)
+  errValidar = await guardarLista(A, audA.id, {}, [{ titulo: 'S', filas: Array.from({ length: 201 }, () => fila()) }])
+  ok(errValidar?.includes('200 filas'), 'una sección admite hasta 200 filas', errValidar)
+  errValidar = await guardarLista(A, audA.id, {}, [{ titulo: 'S', filas: [fila({ anotaciones: 'x'.repeat(2001) })] }])
+  ok(errValidar?.includes('2000 caracteres'), 'cada texto admite hasta 2000 caracteres', errValidar)
+  const { rows: verListaB } = await comoUsuario(db, como(B), (tx) => tx.query('select * from public.listas_verificacion'))
+  ok(verListaB.length === 0, 'B no puede leer la lista de verificación de A')
+  const errListaAjena = await guardarLista(B, audA.id, {}, [])
+  ok(Boolean(errListaAjena), 'B no puede crear ni cambiar la lista de la auditoría de A')
+  const borrarLista = await falla(comoUsuario(db, como(A), (tx) => tx.query('delete from public.listas_verificacion where auditoria_id = $1', [audA.id])))
+  ok(Boolean(borrarLista), 'la lista no se borra físicamente')
+  await comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set estado = 'cerrada' where id = $1`, [audA.id]))
+  const errCerradaLista = await guardarLista(A, audA.id, {}, [])
+  ok(Boolean(errCerradaLista), 'con la auditoría cerrada la lista queda en solo lectura')
+  await comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set estado = 'en_curso' where id = $1`, [audA.id]))
+}
+
 console.log('\n▸ Trazabilidad')
 const errEntrada = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.hallazgos set entrada_auditor = 'otra cosa' where id = $1`, [h1.id])))
 ok(errEntrada?.includes('no se pueden modificar'), 'la entrada original del auditor no se puede sobrescribir', errEntrada)

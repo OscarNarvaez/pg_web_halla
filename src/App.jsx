@@ -19,6 +19,7 @@ const AuditoriaDetalle = lazy(() => import('./pages/AuditoriaDetalle'))
 const HallazgoNuevo = lazy(() => import('./pages/HallazgoNuevo'))
 const Informe = lazy(() => import('./pages/Informe'))
 const MatrizConsolidada = lazy(() => import('./pages/MatrizConsolidada'))
+const ListaVerificacion = lazy(() => import('./pages/ListaVerificacion'))
 const Normas = lazy(() => import('./pages/Normas'))
 const AdminAuditores = lazy(() => import('./pages/AdminAuditores'))
 
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="auditorias/:id" element={<AuditoriaDetalle />} />
               <Route path="auditorias/:id/hallazgos/nuevo" element={<HallazgoNuevo />} />
               <Route path="auditorias/:id/matriz" element={<MatrizConsolidada />} />
+              <Route path="auditorias/:id/lista" element={<ListaVerificacion />} />
               <Route path="auditorias/:id/informe" element={<Informe />} />
               <Route path="normas" element={<Normas />} />
               <Route path="admin/auditores" element={<AdminAuditores />} />

@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las diez migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales).
+- [ ] `supabase db push` aplicó las once migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -342,6 +342,9 @@ git push origin main
 La plantilla `src/formato_de_informe_final/Auditoria_interna.odt` se publica con el sitio (Vite la copia a
 `dist/assets/`). Si el dueño la reemplaza, basta con un `git push`; si cambia algún título o rótulo, hay que
 cambiarlo también en `src/lib/formato-informe.js` (la prueba `pnpm probar:interfaz` avisa si no coincide).
+
+**Lista de verificación (4/10/2026):** `supabase db push` (0011) y luego `git push origin main`. No cambia ninguna
+Edge Function.
 
 ## Desarrollo local
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FilePlus2, FileText, Lock, LockOpen, Search, Table2 } from 'lucide-react'
+import { ClipboardCheck, FilePlus2, FileText, Lock, LockOpen, Search, Table2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuditoria } from '../hooks/useAuditorias'
@@ -104,6 +104,7 @@ export default function AuditoriaDetalle() {
         acciones={
           <>
             <BotonEnlace a={`/app/auditorias/${id}/hallazgos/nuevo`} icono={FilePlus2} deshabilitado={cerrada}>Nuevo hallazgo</BotonEnlace>
+            <BotonEnlace a={`/app/auditorias/${id}/lista`} icono={ClipboardCheck} variante="secundario">Lista de verificación</BotonEnlace>
             <BotonEnlace a={`/app/auditorias/${id}/matriz`} icono={Table2} variante="secundario">Matriz consolidada</BotonEnlace>
             <BotonEnlace a={`/app/auditorias/${id}/informe`} icono={FileText} variante="secundario" deshabilitado={confirmados === 0}
               title={confirmados === 0 ? 'Valida al menos un hallazgo para generar el informe' : undefined}>

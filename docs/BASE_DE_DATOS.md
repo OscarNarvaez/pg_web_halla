@@ -14,6 +14,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0008_escala_riesgo_fija.sql` | Retira `auditorias.umbrales_riesgo`: la escala de niveles de riesgo es fija y no editable (decisión del dueño) |
 | `0009_cargos_y_equipo_auditor.sql` | Cargos de una lista institucional (`cargos text[]`) y equipo auditor de varias personas (`equipo_auditor jsonb`); retira `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo` conservando lo que coincide con la lista |
 | `0010_evaluador_y_fechas_reales.sql` | `profiles.tipo_evaluador` (Auditores Internos o Externos, obligatorio al crear o cambiar el perfil) y `auditorias.fecha_inicio_real`/`fecha_fin_real` para la Ficha Técnica del formato oficial |
+| `0011_lista_verificacion.sql` | `listas_verificacion`: la hoja de trabajo del auditor (una por auditoría), validada por trigger, con RLS del dueño, sin borrado y en solo lectura si la auditoría está cerrada |
 
 ## Modelo
 
@@ -23,6 +24,7 @@ erDiagram
   AUTH_USERS ||--o{ AUDITORIAS : crea
   AUDITORIAS ||--o{ HALLAZGOS : contiene
   AUDITORIAS ||--o{ INFORMES : "versiones"
+  AUDITORIAS ||--o| LISTAS_VERIFICACION : "hoja de trabajo (0011)"
   AUTH_USERS ||--o{ IA_EVENTOS : "llamadas a la IA"
   CRITERIOS_NORMATIVOS ||..o{ HALLAZGOS : "citados en criterios_citados (jsonb)"
 
@@ -108,6 +110,12 @@ erDiagram
 ```
 
 ## Reglas que impone la base de datos
+
+- **Lista de verificación (0011):** `encabezado` (elaborada por, proceso, auditados, fechas y lugar; textos de hasta
+  300 caracteres) y `secciones` (hasta 30, cada una con título y hasta 200 filas de requisito, pregunta, documentos,
+  marca `NC|O|OB|F` o vacía y anotaciones de hasta 2 000 caracteres). El trigger `validar_lista_verificacion` las
+  normaliza y fija las fechas. Una por auditoría (`auditoria_id` es la llave); no se borra y, con la auditoría
+  cerrada, no se edita.
 
 - **Alcance coherente:** `PROCESOS` exige `proceso` y prohíbe `sistema`; `SISTEMAS`, al revés. Vale para
   perfiles y auditorías.

@@ -264,9 +264,9 @@ pnpm probar          # todo lo siguiente, en orden
 | `pnpm verificar:prompt` | El prompt del sistema es el ANEXO A literal | ✓ 15 600 caracteres idénticos |
 | `pnpm probar:validacion` | V1–V7, anonimización antes de la IA y coherencia de catálogos (cargos, evaluador y escala de riesgo) y contenido del informe oficial | ✓ 87 comprobaciones |
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
-| `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador y fechas reales (incluida la conversión de perfiles existentes) | ✓ 103 comprobaciones |
+| `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador, fechas reales y lista de verificación (incluida la conversión de perfiles existentes) | ✓ 112 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |
-| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia, matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), CSP, cuentas pendientes, admin, 360 px | ✓ 124 comprobaciones |
+| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia, matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), lista de verificación, CSP, cuentas pendientes, admin, 360 px | ✓ 133 comprobaciones |
 
 ## Pendiente: contra la función desplegada
 

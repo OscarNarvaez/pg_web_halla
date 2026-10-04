@@ -79,6 +79,7 @@ const db = {
   }],
   hallazgos: [],
   informes: [],
+  listas_verificacion: [],
   criterios_normativos: [],
 }
 // Criterios citados por el motor real, para el modal
@@ -173,6 +174,18 @@ async function postgrest(route) {
   }
   if (metodo === 'GET') return responder(embeber(tabla, filtrar(filas, url.searchParams), url.searchParams.get('select') ?? ''))
   if (metodo === 'POST') {
+    // upsert de PostgREST (on_conflict + resolution=merge-duplicates): actualiza la fila si ya existe
+    const conflicto = url.searchParams.get('on_conflict')
+    if (conflicto && (req.headers().prefer ?? '').includes('merge-duplicates')) {
+      const fusionados = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).map((f) => {
+        const existente = filas.find((x) => x[conflicto] === f[conflicto])
+        if (existente) return Object.assign(existente, f, { actualizado_en: new Date().toISOString() })
+        const nueva = { creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(), ...f }
+        filas.push(nueva)
+        return nueva
+      })
+      return responder(fusionados, { status: 201 })
+    }
     const nuevos = (Array.isArray(cuerpo) ? cuerpo : [cuerpo]).map((f) => ({
       id: crypto.randomUUID(), creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
       ...(tabla === 'hallazgos' ? { consecutivo: ++consecutivo, avisos: [], criterios_citados: [], modelo_ia: null, prompt_version: null } : {}),
@@ -720,6 +733,48 @@ await p.getByText(/Completa tu perfil: elige tu grupo de auditores/).waitFor()
 ok(true, 'un perfil anterior incompleto ve el aviso para completarlo en «Mi perfil»')
 perfil.cargos = ['Auditor médico', 'Coordinadora']
 
+// Lista de verificación: la hoja de trabajo del auditor (sin IA)
+await p.goto(`${BASE}/app/auditorias/${A1}`)
+await p.getByRole('link', { name: 'Lista de verificación' }).click()
+await p.getByRole('heading', { name: 'Lista de verificación', exact: true }).waitFor()
+const antesLista = peticiones.length
+ok(await p.getByLabel('ELABORADA POR:').inputValue() === 'Ana María Rodríguez Peña' && await p.getByLabel('PROCESO A AUDITAR').inputValue() === 'Urgencias'
+  && await p.getByLabel('CARGO Y NOMBRE DE LOS AUDITADOS:').inputValue() === 'Coordinador de Urgencias - Jorge Muñoz' && await p.getByLabel('LUGAR DE EJECUCIÓN:').inputValue() === 'Servicio de Urgencias',
+  'la lista arranca con la información general de la auditoría y del auditor')
+ok(await p.getByLabel('Título de la sección 1').inputValue() === 'URGENCIAS' && (await p.getByRole('group', { name: /^Marca de la fila/ }).count()) === 5,
+  'trae una sección con el proceso y cinco filas para llenar')
+await p.getByLabel(`${'Normatividad/requisito/ componente por auditar'} (fila 1)`).fill('NTC-ISO 9001:2015 7.1.3 Infraestructura')
+await p.getByLabel('Pregunta (fila 1)').fill('¿Existe un plan de mantenimiento de equipos con cronograma?')
+await p.getByLabel('Documentos – evidencia (fila 1)').fill('Plan de mantenimiento 2026')
+await p.getByRole('group', { name: 'Marca de la fila 1' }).getByRole('button', { name: 'NC: No Conforme' }).click()
+await p.getByLabel('Hallazgos o anotaciones (fila 1)').fill('El cronograma no incluye los extintores de Urgencias.')
+await p.getByRole('group', { name: 'Marca de la fila 2' }).getByRole('button', { name: 'F: Fortalezas' }).click()
+await p.getByRole('group', { name: 'Marca de la fila 2' }).getByRole('button', { name: 'OB: Observación' }).click()
+ok((await p.getByRole('group', { name: 'Marca de la fila 2' }).getByRole('button', { pressed: true }).count()) === 1, 'cada fila admite una sola marca (NC, O, OB o F)')
+await p.getByRole('button', { name: 'Agregar sección' }).click()
+await p.getByLabel('Título de la sección 2').fill('GESTION DE RECURSOS FISICOS (MANTENIMIENTO)')
+await p.getByRole('button', { name: 'Agregar fila a la sección 2' }).click()
+await p.getByRole('status').filter({ hasText: 'Guardado' }).waitFor({ timeout: 10000 })
+const guardadoLista = db.listas_verificacion.find((l) => l.auditoria_id === A1)
+ok(guardadoLista?.secciones.length === 2 && guardadoLista.secciones[0].filas[0].marca === 'NC' && guardadoLista.secciones[0].filas[1].marca === 'OB'
+  && guardadoLista.secciones[1].filas.length === 6 && guardadoLista.user_id === USUARIO, 'la lista se guarda sola tras los cambios', JSON.stringify(guardadoLista?.secciones?.map((x) => x.filas.length)))
+ok(!peticiones.slice(antesLista).some((x) => x.metodo === 'FUNC'), 'la lista de verificación no pasa por la IA')
+await p.screenshot({ path: `${CAPTURAS}12-lista-verificacion.png`, fullPage: true })
+await p.reload()
+await p.getByLabel('Título de la sección 2').waitFor()
+ok(await p.getByLabel('Hallazgos o anotaciones (fila 1)').first().inputValue() === 'El cronograma no incluye los extintores de Urgencias.', 'al volver, la lista está como se dejó')
+const [descargaLista] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Descargar PDF' }).click()])
+const rutaLista = `${CAPTURAS}${descargaLista.suggestedFilename()}`
+await descargaLista.saveAs(rutaLista)
+const textoLista = execSync(`pdftotext -layout "${rutaLista}" -`).toString()
+ok(/^Lista_verificacion_AI-2026-001_\d{8}\.pdf$/.test(descargaLista.suggestedFilename()) && /landscape|792 x 612/.test(execSync(`pdfinfo "${rutaLista}"`).toString()),
+  `PDF de la lista en carta horizontal: ${descargaLista.suggestedFilename()}`)
+const faltaLista = enOrden(textoLista.replace(/\s+/g, ' '), ['Auditoría No', 'Fecha', 'AI-2026-001', 'INFORMACION GENERAL', 'ELABORADA POR:', 'Ana María Rodríguez Peña', 'PROCESO A AUDITAR', 'CARGO Y NOMBRE DE LOS AUDITADOS:',
+  'FECHA DE EJECUCIÓN:', 'LUGAR DE EJECUCIÓN:', 'O = Oportunidad NC = No Conforme OB = Observación F= Fortalezas', 'LISTA DE VERIFICACIÓN', 'Pregunta', 'NC', 'O', 'OB', 'F', 'Hallazgos o anotaciones',
+  'URGENCIAS', 'Plan de mantenimiento 2026', 'X', 'El cronograma no incluye', 'GESTION DE RECURSOS FISICOS (MANTENIMIENTO)'])
+ok(!faltaLista, 'el PDF reproduce el formato de la lista con lo anotado', faltaLista)
+execSync(`pdftoppm -r 60 -png "${rutaLista}" "${CAPTURAS}lista-pagina"`)
+
 // Ruta profunda tras recargar
 await p.goto(`${BASE}/app/auditorias/${A1}/informe`)
 await p.getByRole('heading', { name: 'Informe de auditoría' }).first().waitFor()
@@ -810,6 +865,7 @@ console.log('\n▸ Móvil (360 px)')
     ['/app/normas', 'normas', 'Normas'],
     ['/app/perfil', 'perfil', 'Mi perfil'],
     ['/app/auditorias/nueva', 'nueva auditoría', 'Nueva auditoría'],
+    [`/app/auditorias/${A1}/lista`, 'lista de verificación', 'Lista de verificación'],
     [`/app/auditorias/${A1}/matriz`, 'matriz consolidada', 'Matriz consolidada'],
   ]) {
     await m.goto(`${BASE}${ruta}`)

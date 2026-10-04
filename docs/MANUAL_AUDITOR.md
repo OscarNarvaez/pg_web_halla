@@ -51,7 +51,26 @@ en un informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
   ajuste lo que haga falta antes de guardar.
 
-## 3. Registrar un hallazgo: el asistente de 7 pasos
+## 3. Preparar la lista de verificación
+
+Antes de ir al lugar de la auditoría, entre a la auditoría y pulse **Lista de verificación**. Es su hoja de trabajo,
+con el formato del hospital: organice ahí lo que va a verificar y anote durante la visita. **No pasa por la IA** ni
+cambia los hallazgos, la matriz o el informe.
+
+- **Auditoría No y Fecha:** el código de la auditoría y la fecha de la lista.
+- **INFORMACION GENERAL:** quién la elabora, el proceso, el cargo y nombre de los auditados, la fecha y el lugar de
+  ejecución. Se llenan con los datos de la auditoría y de su perfil; puede cambiarlos.
+- **LISTA DE VERIFICACIÓN:** secciones (por ejemplo, «GESTION DE RECURSOS FISICOS (MANTENIMIENTO)») con filas de
+  normatividad o requisito, pregunta, documentos o evidencia, la marca **NC** (No Conforme), **O** (Oportunidad),
+  **OB** (Observación) o **F** (Fortaleza) y sus anotaciones. Cada fila admite una sola marca; púlsela otra vez para
+  quitarla. Use **Agregar fila** y **Agregar sección** para ampliarla.
+- **Se guarda sola** unos segundos después de cada cambio (verá «Guardado»).
+- **Descargar PDF** la entrega en carta horizontal, para llevarla impresa.
+- Con la auditoría cerrada, la lista queda en solo lectura.
+
+Lo que encuentre en la visita lo registra después como hallazgo con el asistente (§4).
+
+## 4. Registrar un hallazgo: el asistente de 7 pasos
 
 Dentro de la auditoría: **Nuevo hallazgo**. La plataforma lo guía paso a paso; arriba verá los 7 pasos y
 puede volver a cualquiera de ellos. Lo que cambie se guarda al pasar de un paso a otro.
@@ -128,7 +147,7 @@ coincide, use **Corregir clasificación**: quedará registrado que usted la camb
 
 ### Paso 4 · Redacción
 
-El hallazgo reescrito con la fórmula obligatoria de su categoría (ver §4) y la evidencia. Haga clic sobre
+El hallazgo reescrito con la fórmula obligatoria de su categoría (ver §5) y la evidencia. Haga clic sobre
 cualquier texto para corregirlo. Su texto original **siempre se conserva** tal como lo escribió («Ver texto
 original del auditor») y no se puede modificar: es la evidencia de lo que usted reportó.
 
@@ -192,7 +211,7 @@ En el paso 1, después del análisis:
 - **Reanalizar:** descarta este resultado y vuelve a analizar el mismo texto.
 - **Descartar:** descarta el resultado; su texto sigue en la caja por si quiere reescribirlo.
 
-## 4. Las cuatro fórmulas de redacción
+## 5. Las cuatro fórmulas de redacción
 
 | Categoría | Fórmula | Ejemplo |
 |---|---|---|
@@ -204,7 +223,7 @@ En el paso 1, después del análisis:
 Una no conformidad sin requisito identificado **sigue siendo no conformidad**: el criterio queda como
 pendiente para que usted lo complete.
 
-## 5. Gestionar los hallazgos de una auditoría
+## 6. Gestionar los hallazgos de una auditoría
 
 En el detalle de la auditoría verá los contadores por categoría (haga clic en uno para filtrar), un
 buscador y la lista de hallazgos. Cada uno tiene un número (H-01, H-02…), su nivel de riesgo y un estado:
@@ -223,7 +242,7 @@ Para validar un hallazgo (que no sea fortaleza) debe tener el riesgo completo (d
 probabilidad e impacto) y al menos un control adoptado. **Si edita un hallazgo ya validado, vuelve a
 Pendiente**: la validación corresponde a lo que usted revisó, no a una versión posterior.
 
-## 6. La matriz consolidada
+## 7. La matriz consolidada
 
 **Matriz consolidada** (en el detalle de la auditoría, o al terminar el paso 7) reúne todos los hallazgos
 vigentes en una tabla con estas columnas: **ID, Clasificación, Norma y numeral, Evidencia, Riesgo,
@@ -247,7 +266,7 @@ Para corregir un hallazgo, haga clic en su ID (H-01…): se abre con todos sus p
 El archivo se llama `Matriz_<código>_<AAAAMMDD>.xlsx` e incluye las mismas columnas, el color del nivel de
 riesgo y la escala de niveles.
 
-## 7. Generar el informe
+## 8. Generar el informe
 
 El informe final sigue **exactamente** el formato oficial del hospital (el documento
 `Auditoria_interna.odt` que entregó la oficina de calidad). Con al menos un hallazgo validado:
@@ -274,7 +293,7 @@ El informe tiene, en este orden:
   **PDF**, que reproduce el mismo formato.
 - Un informe generado antes de adoptar el formato oficial no se descarga: genere una nueva versión.
 
-## 8. Consultar las normas
+## 9. Consultar las normas
 
 **Normas** permite buscar en los documentos que el sistema puede citar: NTC-ISO 9001:2015, ISO 45001:2018,
 NTC-ISO 14001:2015, ISO 19011 y el procedimiento PR13-GQ de gestión de riesgos. Si un numeral no aparece
@@ -283,7 +302,7 @@ ahí, el sistema no lo usa.
 Use las palabras de la norma: «información documentada» encuentra más que «registros». La ISO 19011 está
 en inglés, así que se encuentra con términos en inglés («audit findings»).
 
-## 9. Preguntas frecuentes
+## 10. Preguntas frecuentes
 
 **El análisis dice que se agotó la cuota de la IA.** El servicio gratuito tiene un número limitado de
 análisis por día para todo el hospital. Su texto no se pierde: inténtelo más tarde o avise al
