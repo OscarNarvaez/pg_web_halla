@@ -519,6 +519,7 @@ await p.getByRole('button', { name: /^Hallazgo corregido: Durante la/ }).click()
 await p.getByRole('textbox', { name: 'Hallazgo corregido' }).fill(nuevoTexto)
 await p.getByRole('button', { name: 'Aplicar' }).click()
 ok(await p.getByText(nuevoTexto).isVisible(), 'edición en el sitio del hallazgo corregido')
+ok(await p.getByText('Sigue la fórmula de la no conformidad:').isVisible(), 'la redacción editada se verifica en vivo contra la fórmula de su categoría')
 // PDF de evidencia también al editar: el ya analizado no se repite; uno escaneado se registra al aplicar
 ok(await p.getByText('analizado con la IA').isVisible(), 'el paso 4 muestra el PDF que analizó la IA')
 await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
@@ -539,7 +540,7 @@ ok((await p.locator('details[open] p').first().innerText()).replace(/\s+/g, ' ')
 // Paso 5 · riesgo
 await p.getByRole('button', { name: 'Siguiente: riesgo' }).click()
 await p.getByRole('heading', { name: '5. Riesgo' }).waitFor()
-ok(await p.getByText('Alto (12)').first().isVisible(), 'paso 5: la IA propone P3 × I4 y la aplicación calcula el nivel (Alto, 12)')
+ok(await p.getByText('Moderado (8)').first().isVisible(), 'paso 5: la IA propone P2 × I4 y la aplicación calcula el nivel (Moderado, 8)')
 ok(await p.getByText('Mapa de calor 5 × 5').isVisible() && (await p.locator('figure table td').count()) === 25 + 1, 'mapa de calor 5 × 5 con su escala')
 const escalaFija = async () => (await p.getByText(/Escala de niveles/).count()) === 0 && (await p.locator('input[type="number"]').count()) === 0
   && /Bajo 1–4 .*Moderado 5–9 .*Alto 10–16 .*Extremo 17–25/.test((await p.getByRole('list', { name: 'Niveles de riesgo' }).innerText()).replace(/\s+/g, ' '))
@@ -637,6 +638,21 @@ await modalH01.getByText(/agregado el \d\d\/\d\d\/\d{4}/).waitFor()
 const h01 = db.hallazgos.find((h) => h.consecutivo === 1)
 ok(h01.evidencia_anexos[0]?.nombre === 'evidencia.pdf' && h01.evidencia.includes('extintor vencido') && h01.estado === 'editado',
   'al aplicar se guardan la evidencia y la huella del PDF; el hallazgo validado vuelve a Pendiente', JSON.stringify({ estado: h01.estado, anexos: h01.evidencia_anexos }))
+// Si el auditor corrige la clasificación, la redacción debe pasar a la fórmula de la nueva categoría
+ok(await modalH01.getByText('Sigue la fórmula de la fortaleza:').isVisible(), 'la fortaleza real sigue la fórmula del dueño (qué es relevante + porque + beneficio)')
+const corregirA = async (valor) => {
+  await modalH01.getByRole('button', { name: 'Corregir clasificación' }).click()
+  await modalH01.getByRole('combobox', { name: 'Clasificación', exact: true }).selectOption(valor)
+}
+await corregirA('OPORTUNIDAD_DE_MEJORA')
+await modalH01.getByText(/Ajusta la redacción a la fórmula de la oportunidad de mejora/).waitFor()
+ok(await modalH01.getByText(/La redacción del hallazgo no sigue la fórmula de la oportunidad de mejora/).isVisible()
+  && await modalH01.getByText(/No usa la fórmula «es susceptible de mejorar»/).isVisible(),
+  'al corregir la clasificación, se avisa que la redacción no sigue la fórmula de la nueva categoría y qué le falta')
+await p.screenshot({ path: `${CAPTURAS}06f-formula-tras-corregir.png` })
+await corregirA('FORTALEZA')
+await modalH01.getByText('Sigue la fórmula de la fortaleza:').waitFor()
+ok((await modalH01.getByText(/Ajusta la redacción/).count()) === 0, 'con la clasificación y la redacción coherentes, el aviso desaparece')
 await modalH01.getByRole('button', { name: 'Validar hallazgo' }).click()
 await p.getByText('Hallazgo validado').waitFor()
 await p.keyboard.press('Escape')

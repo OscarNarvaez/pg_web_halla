@@ -104,6 +104,12 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el ODT usan la imagen de la
   propia plantilla. Siempre sobre fondo blanco: su texto perimetral es oscuro.
+- Redacción (guía del dueño, 5/10/2026): fórmula por categoría en `GUIA_REDACCION` (`_shared/motor.ts`, va en el MENSAJE
+  de usuario con `bloqueRedaccion()`; nunca en el prompt del sistema). Fortaleza = qué es relevante + «porque» + beneficio
+  presente; OM = susceptible de mejorar + «para lo cual»/«lo cual» + beneficio futuro; NC = evidencia + incumplimiento
+  (también «no se…») + requisito; Observación = debilidad + impacto potencial. V3 (`verificarEstructura`) y la app
+  (`src/lib/estructura.js`, aviso en vivo al editar o corregir la clasificación, sin bloquear) usan las MISMAS reglas:
+  `probar:validacion` las compara. `ESTRUCTURAS` (catalogos.js) = mismas fórmulas y ejemplos.
 - Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.
 - Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
 - V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).

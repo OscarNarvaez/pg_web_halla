@@ -72,27 +72,32 @@ export const TONOS = {
   om: { badge: 'bg-om-bg text-om-texto border-om-borde', solido: '#1f5fa8', barra: 'bg-om-solido' },
 }
 
-// Estructura obligatoria de redacción por categoría (ANEXO A del prompt maestro).
+// Estructura obligatoria de redacción por categoría: ANEXO A y guía de redacción del dueño (5/10/2026). La fórmula y el
+// ejemplo coinciden con `GUIA_REDACCION` (supabase/functions/_shared/motor.ts), que va en el mensaje a la IA.
 export const ESTRUCTURAS = {
   NO_CONFORMIDAD: {
+    cuando: 'Se evidencia el incumplimiento de un requisito, norma o procedimiento.',
     formula: 'Evidencia + incumplimiento + requisito incumplido.',
     ejemplo:
-      'En la Revisión por la Dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.',
+      'En la Revisión por la dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.',
   },
   OBSERVACION: {
-    formula: 'Aspecto a mejorar o debilidad + impacto potencial.',
+    cuando: 'Existe una situación que requiere atención o seguimiento, pero no constituye un incumplimiento comprobado.',
+    formula: 'Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia.',
     ejemplo:
-      'Se evidencia falta de planificación de los cambios relacionados con la reposición e incorporación de tecnología biomédica, situación que podría incrementar el riesgo de ocurrencia de eventos adversos.',
+      'Se evidencia falta de planificación de los cambios relacionados con la reposición e incursión de tecnología biomédica, que podría impactar en la ocurrencia de posibles eventos adversos.',
   },
   FORTALEZA: {
-    formula: 'Aspecto relevante o fortaleza + beneficio obtenido, en tiempo presente.',
+    cuando: 'Se identifica una práctica positiva y destacable que genera beneficios al proceso o al sistema.',
+    formula: 'Qué es relevante + porque + beneficio obtenido en el presente.',
     ejemplo:
-      'Se evidencia liderazgo de la alta dirección en el sistema de gestión, favoreciendo la mejora de los procesos y el fortalecimiento de las competencias del personal.',
+      'El liderazgo de la alta dirección del sistema de gestión, porque permite la mejora de los procesos y la competencia de su personal.',
   },
   OPORTUNIDAD_DE_MEJORA: {
-    formula: 'Aspecto susceptible de mejorar + para lo cual + beneficio futuro.',
+    cuando: 'El proceso cumple con los requisitos, pero existe la posibilidad de optimizarlo para obtener mejores resultados.',
+    formula: 'Qué es susceptible de mejorar + para lo cual + beneficio en el futuro.',
     ejemplo:
-      'La infraestructura para la prestación de los servicios es susceptible de mejorar, para lo cual se podrían fortalecer los espacios destinados a la atención, lo que permitirá contar con ambientes más agradables y confortables para el cliente.',
+      'La infraestructura para la prestación de los servicios es susceptible de mejorar, lo cual permitirá contar con espacios agradables y de confort para el cliente.',
   },
 }
 

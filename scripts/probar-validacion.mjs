@@ -4,7 +4,8 @@ import {
   verificarCitas, depurarReferencias, quitarDatosInventados, verificarEstructura, limpiarTexto, validarHallazgo,
   validarRiesgoYControles, escala15, AVISO_RIESGO_INCOMPLETO,
 } from '../supabase/functions/_shared/validar-salida.ts'
-import { construirMensaje } from '../supabase/functions/_shared/motor.ts'
+import { construirMensaje, construirReparacion, GUIA_REDACCION } from '../supabase/functions/_shared/motor.ts'
+import { problemasDeEstructura } from '../src/lib/estructura.js'
 import { readFileSync } from 'node:fs'
 import { construirConsulta } from '../supabase/functions/_shared/recuperar-criterios.ts'
 import { MARCADOR_PENDIENTE } from '../supabase/functions/_shared/catalogos.ts'
@@ -80,11 +81,41 @@ ok(verificarEstructura('NO_CONFORMIDAD', 'Se evidencia que el registro de la val
 ok(verificarEstructura('NO_CONFORMIDAD', `En 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo ${MARCADOR_PENDIENTE}.`, []).length === 0, 'NC con el marcador pendiente cuenta como requisito identificado')
 ok(verificarEstructura('OBSERVACION', 'Se evidencia baja legibilidad en algunas firmas de los registros revisados, situación que podría afectar la trazabilidad de la información en el proceso.', []).length === 0, 'Observación bien formada pasa')
 ok(verificarEstructura('OBSERVACION', 'Se evidencia baja legibilidad en algunas firmas de los registros revisados, incumpliendo lo establecido en el procedimiento de gestión documental institucional.', []).some((p) => p.includes('incumplimiento')), 'Observación que afirma incumplimiento falla')
-ok(verificarEstructura('FORTALEZA', 'Se evidencia seguimiento mensual sistemático a los indicadores del proceso y uso de sus resultados para definir acciones, favoreciendo la toma de decisiones basada en datos.', []).length === 0, 'Fortaleza con gerundio de beneficio («favoreciendo», como el ejemplo del Anexo A) pasa')
+ok(JSON.stringify(verificarEstructura('FORTALEZA', 'Se evidencia seguimiento mensual sistemático a los indicadores del proceso y uso de sus resultados para definir acciones, favoreciendo la toma de decisiones basada en datos.', [])).includes('porque'),
+  'Fortaleza sin «porque» falla: la guía del dueño pide qué es relevante + porque + beneficio en el presente')
+ok(verificarEstructura('FORTALEZA', 'Se evidencia seguimiento mensual sistemático a los indicadores del proceso y uso de sus resultados para definir acciones, porque favorece la toma de decisiones basada en datos.', []).length === 0, 'Fortaleza con «porque» y beneficio en presente pasa')
 ok(verificarEstructura('FORTALEZA', 'El equipo tiene un excelente seguimiento de los indicadores del proceso, lo que permitirá mejorar la toma de decisiones del servicio en los próximos meses.', []).length >= 2, 'Fortaleza con «excelente» y beneficio futuro falla')
 ok(verificarEstructura('OPORTUNIDAD_DE_MEJORA', 'El registro de asistencia en formato físico es susceptible de mejorar mediante su digitalización, lo cual permitirá agilizar la consolidación de la información y facilitar su análisis.', []).length === 0, 'Oportunidad de mejora bien formada pasa')
 ok(verificarEstructura('OPORTUNIDAD_DE_MEJORA', 'El registro de asistencia se realiza correctamente en formato físico y podría digitalizarse para agilizar la consolidación de la información del proceso auditado.', []).length >= 1, 'Oportunidad de mejora sin «susceptible de mejorar» ni futuro falla')
 ok(verificarEstructura('OBSERVACION', 'Firmas poco legibles.', []).some((p) => p.includes('breve')), 'redacción demasiado breve falla (V5)')
+ok(verificarEstructura('OPORTUNIDAD_DE_MEJORA', 'El registro de asistencia en formato físico es susceptible de mejorar mediante su digitalización y así se agilizará la consolidación; esto permitirá facilitar su análisis.', [])
+  .some((p) => p.includes('para lo cual')), 'Oportunidad de mejora sin «para lo cual» (o «lo cual») falla')
+ok(verificarEstructura('NO_CONFORMIDAD', 'En la Revisión por la dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones frente a las oportunidades de mejora. NTC-ISO 9001:2015, numeral 9.3.3.', v933).length === 0,
+  'NC al estilo del dueño («no se incluyó…» + requisito, sin la palabra «incumpliendo») pasa')
+
+console.log('\n▸ Guía de redacción del dueño (fórmulas por categoría)')
+const v933Guia = [{ criterio_id: 'x', numeral: '9.3.3', documento: 'NTC-ISO 9001:2015', titulo: 'Salidas de la revisión por la dirección' }]
+const malosEjemplos = Object.entries(GUIA_REDACCION).flatMap(([c, g]) => g.ejemplos.map((e) => [c, e, verificarEstructura(c, e, v933Guia)])).filter(([, , p]) => p.length)
+ok(!malosEjemplos.length, 'cada ejemplo de la guía cumple la fórmula de su categoría', JSON.stringify(malosEjemplos))
+ok(Object.entries(GUIA_REDACCION).every(([c, g]) => catalogosCliente.ESTRUCTURAS[c]?.formula === g.formula && catalogosCliente.ESTRUCTURAS[c]?.ejemplo === g.ejemplos[0]),
+  'la pantalla muestra las mismas fórmulas y ejemplos que recibe la IA')
+const mensajeGuia = construirMensaje({ alcance: 'PROCESOS', proceso: 'Urgencias', codigo: 'AI-1', titulo: 'T' }, [], 'Texto del auditor')
+ok(mensajeGuia.includes('## GUÍA DE REDACCIÓN DEL HOSPITAL') && mensajeGuia.indexOf('## GUÍA DE REDACCIÓN') < mensajeGuia.indexOf('## HALLAZGO REPORTADO')
+  && Object.values(GUIA_REDACCION).every((g) => mensajeGuia.includes(g.formula)) && mensajeGuia.includes('porque permite') && mensajeGuia.includes('Se establece una NO CONFORMIDAD cuando'),
+  'la guía de redacción va en el mensaje de usuario, antes del hallazgo (el prompt del sistema sigue siendo el ANEXO A literal)')
+const reparacion = construirReparacion('M', '{}', [{ indice: 0, h: { clasificacion: 'FORTALEZA', problemas: ['no dice por qué es relevante con «porque»'] } }])
+ok(reparacion.includes(`Fórmula de la categoría: ${GUIA_REDACCION.FORTALEZA.formula}`), 'la reparación recuerda la fórmula y un ejemplo de la categoría')
+// La app verifica lo que edita el auditor con las mismas reglas que el servidor aplica a la IA
+const motorCasos = JSON.parse(readFileSync(new URL('./fixtures/motor-casos.json', import.meta.url), 'utf8'))
+const corpus = [
+  ...Object.values(GUIA_REDACCION).flatMap((g) => g.ejemplos),
+  ...motorCasos.resultados.flatMap((r) => r.resultado.hallazgos.map((h) => h.hallazgo_corregido)),
+  'Firmas poco legibles.', `En 5 de 20 historias no se encontró la valoración, incumpliendo ${MARCADOR_PENDIENTE}.`,
+  'El equipo tiene un excelente seguimiento de los indicadores, lo que permitirá mejorar la toma de decisiones del servicio en los próximos meses del año.',
+]
+const distintos = corpus.flatMap((texto) => Object.keys(GUIA_REDACCION).map((c) => [c, texto]))
+  .filter(([c, texto]) => JSON.stringify(verificarEstructura(c, texto, v933Guia)) !== JSON.stringify(problemasDeEstructura(c, texto, v933Guia)))
+ok(!distintos.length, `la verificación de la app (src/lib/estructura.js) coincide con la del servidor en ${corpus.length * 4} casos`, JSON.stringify(distintos[0]))
 
 console.log('\n▸ V5 · limpieza')
 ok(limpiarTexto('**Hallazgo corregido:** "Se evidencia algo."') === 'Se evidencia algo.', 'quita rótulos, negritas y comillas envolventes', limpiarTexto('**Hallazgo corregido:** "Se evidencia algo."'))

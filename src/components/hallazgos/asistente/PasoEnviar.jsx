@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { MARCADOR_PENDIENTE } from '../../../lib/catalogos'
+import { CLASIFICACIONES, MARCADOR_PENDIENTE } from '../../../lib/catalogos'
+import { problemasDeEstructura } from '../../../lib/estructura'
 import { COLORES_ZONA, controlesAdoptados, evaluarRiesgo, faltantesParaValidar, requiereRiesgo } from '../../../lib/riesgo'
 import { extracto } from '../../../lib/formato'
 import { BadgeClasificacion } from '../BadgeClasificacion'
@@ -19,6 +20,7 @@ export function PasoEnviar({ hallazgos, alCorregir }) {
         {hallazgos.map((h, i) => {
           const e = evaluarRiesgo(h)
           const faltan = faltantesParaValidar(h)
+          const sinFormula = problemasDeEstructura(h.clasificacion, h.hallazgo_corregido, h.criterios_citados ?? []).length > 0
           return (
             <li key={h.id ?? i} className="rounded-lg border border-tinta-100 bg-white p-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -42,6 +44,15 @@ export function PasoEnviar({ hallazgos, alCorregir }) {
                   </>
                 )}
               </dl>
+              {sinFormula && (
+                <p className="mt-3 flex gap-2 rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>
+                    La redacción no sigue la fórmula de la {CLASIFICACIONES[h.clasificacion]?.etiqueta.toLowerCase()}.{' '}
+                    <button type="button" className="font-semibold underline" onClick={() => alCorregir(i, 4)}>Revisar redacción</button>
+                  </span>
+                </p>
+              )}
               {faltan.length > 0 ? (
                 <p className="mt-3 flex gap-2 rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

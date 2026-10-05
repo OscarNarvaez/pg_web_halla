@@ -228,15 +228,28 @@ En el paso 1, después del análisis:
 
 ## 5. Las cuatro fórmulas de redacción
 
-| Categoría | Fórmula | Ejemplo |
-|---|---|---|
-| **No conformidad** | Evidencia + incumplimiento + requisito incumplido | En la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3. |
-| **Observación** | Debilidad + impacto potencial | Se evidencia falta de planificación de los cambios en tecnología biomédica, situación que podría incrementar el riesgo de eventos adversos. |
-| **Oportunidad de mejora** | Susceptible de mejorar + beneficio futuro | El registro de asistencia es susceptible de mejorar mediante su digitalización, lo cual permitirá agilizar la consolidación de la información. |
-| **Fortaleza** | Aspecto positivo + beneficio actual (en presente) | Se evidencia seguimiento sistemático a los indicadores, favoreciendo la toma de decisiones basada en datos. |
+Una vez clasificado, cada hallazgo se redacta con la fórmula de su categoría (guía del hospital):
+
+| Categoría | Cuándo | Fórmula | Ejemplo |
+|---|---|---|---|
+| **No conformidad** | Se evidencia el incumplimiento de un requisito, norma o procedimiento | Evidencia + incumplimiento + requisito incumplido | En la Revisión por la dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3. |
+| **Fortaleza** | Se identifica una práctica positiva y destacable que genera beneficios al proceso o al sistema | Qué es relevante + **porque** + beneficio obtenido en el presente | El liderazgo de la alta dirección del sistema de gestión, porque permite la mejora de los procesos y la competencia de su personal. |
+| **Observación** | Hay una situación que requiere atención o seguimiento, pero no es un incumplimiento comprobado | Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia | Se evidencia falta de planificación de los cambios relacionados con la reposición e incursión de tecnología biomédica, que podría impactar en la ocurrencia de posibles eventos adversos. |
+| **Oportunidad de mejora** | El proceso cumple, pero puede optimizarse para obtener mejores resultados | Qué es susceptible de mejorar + **para lo cual** + beneficio en el futuro | La infraestructura para la prestación de los servicios es susceptible de mejorar, lo cual permitirá contar con espacios agradables y de confort para el cliente. |
+
+Se establece una **no conformidad** cuando el hallazgo incumple requisitos del cliente, legales, de la organización o
+de ISO 9001; se repite durante la recolección de la información; genera un alto impacto para la entidad; la
+documentación es diferente a lo que sucede en la realidad; el auditado no conoce las disposiciones documentadas
+aplicables; hay contradicciones en procedimientos, formatos o guías; faltan las evidencias objetivas (registros); o
+falta consignar información en los registros.
 
 Una no conformidad sin requisito identificado **sigue siendo no conformidad**: el criterio queda como
 pendiente para que usted lo complete.
+
+**La plataforma revisa la fórmula mientras usted edita.** Debajo del hallazgo corregido verá «Sigue la fórmula de…»
+o, si no la cumple, «Ajusta la redacción a la fórmula de…» con lo que falta (por ejemplo, el «porque» de una
+fortaleza) y un ejemplo. **Si corrige la clasificación**, el texto conserva la fórmula de la categoría anterior: la
+plataforma se lo avisa para que lo ajuste. Es una guía: no le impide guardar ni validar.
 
 ## 6. Gestionar los hallazgos de una auditoría
 

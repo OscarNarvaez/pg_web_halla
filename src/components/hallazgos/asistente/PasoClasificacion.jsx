@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { CLASIFICACIONES, SEVERIDADES } from '../../../lib/catalogos'
+import { CLASIFICACIONES, ESTRUCTURAS, SEVERIDADES } from '../../../lib/catalogos'
+import { problemasDeEstructura } from '../../../lib/estructura'
 import { cx } from '../../../lib/cx'
 import { BadgeClasificacion } from '../BadgeClasificacion'
 import { CampoEditable } from '../CampoEditable'
@@ -13,6 +14,8 @@ export function PasoClasificacion({ hallazgo, alCambiar, deshabilitado = false }
   const [corrigiendo, setCorrigiendo] = useState(false)
   const idSeveridad = useId()
   const idClasificacion = useId()
+  // Cada categoría tiene su fórmula de redacción: si el auditor corrige la clasificación, el texto debe ajustarse
+  const sinFormula = problemasDeEstructura(hallazgo.clasificacion, hallazgo.hallazgo_corregido, hallazgo.criterios_citados ?? []).length > 0
 
   return (
     <div className="space-y-5">
@@ -49,6 +52,13 @@ export function PasoClasificacion({ hallazgo, alCambiar, deshabilitado = false }
             ))}
           </select>
         </div>
+      )}
+
+      {sinFormula && (
+        <p role="status" className="rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
+          La redacción del hallazgo no sigue la fórmula de la {CLASIFICACIONES[hallazgo.clasificacion]?.etiqueta.toLowerCase()}
+          {' '}({ESTRUCTURAS[hallazgo.clasificacion]?.formula.replace(/\.$/, '')}). Ajústala en «Redacción».
+        </p>
       )}
 
       <CampoEditable etiqueta="Justificación de la clasificación" valor={hallazgo.justificacion} deshabilitado={deshabilitado} minimo={10}
