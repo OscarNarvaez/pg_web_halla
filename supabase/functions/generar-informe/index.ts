@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   const { data: hallazgos, error } = await admin
     .from('hallazgos')
-    .select('id, consecutivo, clasificacion, hallazgo_corregido, criterio_requisito, evidencia, severidad, estado, editado_por_usuario, criterios_citados, riesgo_descripcion, riesgo_dimension, riesgo_probabilidad, riesgo_impacto, controles, evidencia_archivo')
+    .select('id, consecutivo, clasificacion, hallazgo_corregido, criterio_requisito, evidencia, severidad, estado, editado_por_usuario, criterios_citados, riesgo_descripcion, riesgo_dimension, riesgo_probabilidad, riesgo_impacto, controles, evidencia_archivo, evidencia_anexos')
     .eq('auditoria_id', auditoria.id)
     .neq('estado', 'descartado')
     .order('consecutivo')

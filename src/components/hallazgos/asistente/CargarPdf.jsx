@@ -11,8 +11,10 @@ import { Boton } from '../../ui/Boton'
  * @param {{ nombre: string, paginas: number } | null} props.archivo PDF adjunto actualmente.
  * @param {number} props.maximo Máximo de caracteres de la evidencia.
  * @param {boolean} [props.deshabilitado]
+ * @param {'analisis'|'edicion'} [props.momento='analisis'] Antes del análisis (paso 1) o al editar la evidencia de un hallazgo.
  */
-export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false }) {
+export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, momento = 'analisis' }) {
+  const enEdicion = momento === 'edicion'
   const entrada = useRef(null)
   const id = useId()
   const [estado, setEstado] = useState({ fase: 'inactivo', pdf: null, mensaje: '' })
@@ -74,25 +76,28 @@ export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false }
           cargando={estado.fase === 'leyendo'}
           onClick={() => entrada.current?.click()}
           disabled={deshabilitado}
-          className="w-full border-dashed"
+          tamano={enEdicion ? 'sm' : 'md'}
+          className={enEdicion ? 'border-dashed' : 'w-full border-dashed'}
         >
           {estado.fase === 'leyendo' ? 'Leyendo el PDF…' : 'Cargar un PDF de evidencia'}
         </Boton>
       )}
       <p className="text-xs text-tinta-500">
         Cargue un PDF de evidencia (máximo {MAX_MB_PDF} MB). Si contiene texto legible se extrae; si es escaneado, describa su contenido.
-        El archivo no sale de tu computador: se lee aquí y solo su texto se analiza.
+        El archivo no sale de tu computador: se lee aquí y {enEdicion ? 'solo su texto pasa a la evidencia.' : 'solo su texto se analiza.'}
       </p>
 
       <div aria-live="polite">
         {estado.fase === 'importado' && (
           <p className="rounded-md border border-fort-borde bg-fort-bg px-3 py-2 text-sm text-fort-texto">
-            Se importó el texto de {pdf.paginas === 1 ? 'la página' : `las ${pdf.paginas} páginas`} del PDF. Revísalo abajo y quita lo que no sea evidencia.
+            Se importó el texto de {pdf.paginas === 1 ? 'la página' : `las ${pdf.paginas} páginas`} del PDF.{' '}
+            {enEdicion ? 'Se agregó al cuadro de evidencia: revísalo, quita lo que no sea evidencia y pulsa «Aplicar».' : 'Revísalo abajo y quita lo que no sea evidencia.'}
           </p>
         )}
         {estado.fase === 'escaneado' && (
           <p role="alert" className="rounded-md border border-obs-borde bg-obs-bg px-3 py-2 text-sm text-obs-texto">
-            El PDF parece escaneado: no tiene texto legible. Describe su contenido en el cuadro de evidencia; el PDF queda registrado en el hallazgo.
+            El PDF parece escaneado: no tiene texto legible. Describe su contenido en el cuadro de evidencia;{' '}
+            {enEdicion ? 'al pulsar «Aplicar» el PDF queda registrado en el hallazgo.' : 'el PDF queda registrado en el hallazgo.'}
           </p>
         )}
         {estado.fase === 'error' && (
@@ -101,8 +106,10 @@ export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false }
         {estado.fase === 'rango' && (
           <div className="space-y-2 rounded-md border border-obs-borde bg-obs-bg p-3 text-sm text-obs-texto">
             <p>
-              El PDF tiene {textoDeRango(pdf.textos, 1, pdf.paginas).length.toLocaleString('es-CO')} caracteres y el máximo por análisis es{' '}
-              {maximo.toLocaleString('es-CO')}. Elige qué páginas importar; el resto lo puedes analizar después como otro hallazgo.
+              El PDF tiene {textoDeRango(pdf.textos, 1, pdf.paginas).length.toLocaleString('es-CO')} caracteres y el máximo{' '}
+              {enEdicion ? 'que se puede agregar a la evidencia' : 'por análisis'} es{' '}
+              {maximo.toLocaleString('es-CO')}. Elige qué páginas importar
+              {enEdicion ? ' a la evidencia.' : '; el resto lo puedes analizar después como otro hallazgo.'}
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <label className="text-xs font-semibold">

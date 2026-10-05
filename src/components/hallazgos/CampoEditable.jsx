@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { Check, Pencil, X } from 'lucide-react'
 import { cx } from '../../lib/cx'
 import { claseControl } from '../ui/Campo'
@@ -14,12 +14,42 @@ import { claseControl } from '../ui/Campo'
  * @param {number} [props.minimo] Mínimo de caracteres para aceptar el cambio.
  * @param {number} [props.maximo] Máximo de caracteres.
  * @param {string} [props.marcador] Texto que se muestra cuando el campo está vacío.
+ * @param {boolean} [props.cambioExtra] Hay algo más por aplicar (p. ej. un PDF): «Aplicar» guarda aunque el texto no cambie.
+ * @param {() => void} [props.alCancelar]
+ * El `ref` expone `agregar(texto)` (abre la edición con el texto añadido al final) y `quitar(texto)`.
  */
-export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = false, destacado = false, minimo = 1, maximo, marcador = 'Sin definir' }) {
+export const CampoEditable = forwardRef(function CampoEditable(
+  { etiqueta, valor, alGuardar, deshabilitado = false, destacado = false, minimo = 1, maximo, marcador = 'Sin definir', cambioExtra = false, alCancelar },
+  ref,
+) {
   const [editando, setEditando] = useState(false)
   const [borrador, setBorrador] = useState(valor ?? '')
+  const [alFinal, setAlFinal] = useState(0) // tras agregar texto, el cursor va al final y se ve lo agregado
   const area = useRef(null)
   const id = useId()
+
+  useEffect(() => {
+    const a = area.current
+    if (!alFinal || !a) return
+    a.focus()
+    a.setSelectionRange(a.value.length, a.value.length)
+    a.scrollTop = a.scrollHeight
+    a.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [alFinal])
+
+  useImperativeHandle(ref, () => ({
+    agregar(texto) {
+      const extra = String(texto ?? '').trim()
+      const base = (editando ? borrador : valor ?? '').trim()
+      setBorrador(extra ? (base ? `${base}\n\n${extra}` : extra) : base)
+      setEditando(true)
+      setAlFinal((n) => n + 1)
+    },
+    quitar(texto) {
+      const extra = String(texto ?? '').trim()
+      if (extra) setBorrador((b) => b.replace(extra, '').replace(/\n{3,}/g, '\n\n').trim())
+    },
+  }), [editando, borrador, valor])
 
   const empezar = () => {
     setBorrador(valor ?? '')
@@ -32,8 +62,12 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
   const guardar = () => {
     const limpio = borrador.trim()
     if (limpio.length < minimo) return
-    if (limpio !== valor) alGuardar(limpio)
+    if (limpio !== valor || cambioExtra) alGuardar(limpio)
     setEditando(false)
+  }
+  const cancelar = () => {
+    setEditando(false)
+    alCancelar?.()
   }
 
   return (
@@ -50,7 +84,10 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
             value={borrador}
             onChange={(e) => setBorrador(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') setEditando(false)
+              if (e.key === 'Escape') {
+                e.preventDefault() // dentro de un modal, Esc cancela la edición sin cerrar el modal
+                cancelar()
+              }
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) guardar()
             }}
             rows={Math.min(12, Math.max(3, Math.ceil(borrador.length / 80)))}
@@ -63,7 +100,7 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
               className="inline-flex min-h-9 items-center gap-1 rounded-md bg-halla-700 px-3 text-sm font-semibold text-white hover:bg-halla-600 disabled:bg-tinta-300">
               <Check className="size-4" aria-hidden="true" /> Aplicar
             </button>
-            <button type="button" onClick={() => setEditando(false)}
+            <button type="button" onClick={cancelar}
               className="inline-flex min-h-9 items-center gap-1 rounded-md px-3 text-sm font-medium text-tinta-700 hover:bg-tinta-50">
               <X className="size-4" aria-hidden="true" /> Cancelar
             </button>
@@ -90,4 +127,4 @@ export function CampoEditable({ etiqueta, valor, alGuardar, deshabilitado = fals
       )}
     </div>
   )
-}
+})

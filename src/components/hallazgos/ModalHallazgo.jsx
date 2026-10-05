@@ -43,7 +43,6 @@ export function ModalHallazgo({ hallazgo, alCerrar, alCambiar, alValidar, guarda
           <p className="mt-3 text-xs text-tinta-500">
             {hallazgo.modelo_ia ? `Generado con ${hallazgo.modelo_ia} · prompt ${hallazgo.prompt_version}` : 'Copia creada por el auditor'} · creado {fechaHora(hallazgo.creado_en)}
             {hallazgo.editado_por_usuario && ' · editado por el auditor'}
-            {hallazgo.evidencia_archivo && ` · PDF de evidencia: ${hallazgo.evidencia_archivo.nombre} (${hallazgo.evidencia_archivo.paginas} pág., SHA-256 ${hallazgo.evidencia_archivo.sha256.slice(0, 12)}…)`}
           </p>
         </section>
       </div>

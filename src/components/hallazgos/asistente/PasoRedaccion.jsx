@@ -1,9 +1,10 @@
 import { ESTRUCTURAS } from '../../../lib/catalogos'
 import { CampoEditable } from '../CampoEditable'
+import { EvidenciaEditable } from '../EvidenciaEditable'
 import { AvisosHallazgo } from '../AvisosHallazgo'
 import { AVISOS_DEL_PASO } from './pasos'
 
-/** Paso 4: el hallazgo reescrito con la estructura obligatoria de su categoría, y la evidencia. */
+/** Paso 4: el hallazgo reescrito con la estructura obligatoria de su categoría, y la evidencia (con carga de PDF). */
 export function PasoRedaccion({ hallazgo, alCambiar, deshabilitado = false }) {
   const estructura = ESTRUCTURAS[hallazgo.clasificacion]
   return (
@@ -18,8 +19,7 @@ export function PasoRedaccion({ hallazgo, alCambiar, deshabilitado = false }) {
           </p>
         )}
       </div>
-      <CampoEditable etiqueta="Evidencia" valor={hallazgo.evidencia} deshabilitado={deshabilitado} minimo={5}
-        alGuardar={(v) => alCambiar({ evidencia: v })} />
+      <EvidenciaEditable hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} />
     </div>
   )
 }

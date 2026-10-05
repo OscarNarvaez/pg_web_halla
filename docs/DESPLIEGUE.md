@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las once migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación).
+- [ ] `supabase db push` aplicó las doce migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -345,6 +345,14 @@ cambiarlo también en `src/lib/formato-informe.js` (la prueba `pnpm probar:inter
 
 **Lista de verificación (4/10/2026):** `supabase db push` (0011) y luego `git push origin main`. No cambia ninguna
 Edge Function.
+
+**PDF de evidencia al editar (5/10/2026):**
+
+```bash
+supabase db push                                   # 0012
+supabase functions deploy generar-informe          # «Archivos adjuntos» incluye los PDF agregados al editar
+git push origin main
+```
 
 ## Desarrollo local
 

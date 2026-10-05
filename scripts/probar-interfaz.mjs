@@ -99,7 +99,7 @@ const nuevoHallazgo = (h, entrada, estado = 'generado') => ({
   riesgo_impacto: h.riesgo?.impacto ?? null, riesgo_justificacion: h.riesgo?.justificacion ?? null,
   // Los hallazgos ya validados tienen adoptado su primer control (como exige la matriz)
   controles: (h.controles ?? []).map((c, i) => ({ ...c, adoptado: estado === 'confirmado' && i === 0 })),
-  evidencia_archivo: null, nota_validacion: null,
+  evidencia_archivo: null, evidencia_anexos: [], nota_validacion: null,
   creado_en: new Date(Date.now() - (10 - consecutivo) * 3600e3).toISOString(), actualizado_en: ahora,
 })
 for (const n of [2, 3, 4]) {
@@ -199,8 +199,10 @@ async function postgrest(route) {
     const objetivo = filtrar(filas, url.searchParams)
     for (const f of objetivo) {
       Object.assign(f, cuerpo, { actualizado_en: new Date().toISOString() })
+      // el trigger de la 0012 fecha los PDF agregados al editar
+      if (Array.isArray(cuerpo.evidencia_anexos)) f.evidencia_anexos = cuerpo.evidencia_anexos.map((a) => ({ ...a, agregado_en: a.agregado_en ?? new Date().toISOString() }))
       // el trigger de la BD marca editado_por_usuario
-      const contenido = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'severidad', 'riesgo_descripcion',
+      const contenido = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_anexos', 'severidad', 'riesgo_descripcion',
         'riesgo_dimension', 'riesgo_probabilidad', 'riesgo_impacto', 'riesgo_justificacion', 'controles']
       if (tabla === 'hallazgos' && contenido.some((c) => c in cuerpo)) {
         f.editado_por_usuario = true
@@ -517,6 +519,20 @@ await p.getByRole('button', { name: /^Hallazgo corregido: Durante la/ }).click()
 await p.getByRole('textbox', { name: 'Hallazgo corregido' }).fill(nuevoTexto)
 await p.getByRole('button', { name: 'Aplicar' }).click()
 ok(await p.getByText(nuevoTexto).isVisible(), 'edición en el sitio del hallazgo corregido')
+// PDF de evidencia también al editar: el ya analizado no se repite; uno escaneado se registra al aplicar
+ok(await p.getByText('analizado con la IA').isVisible(), 'el paso 4 muestra el PDF que analizó la IA')
+await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
+await p.getByText('El PDF evidencia.pdf ya está registrado en este hallazgo.').waitFor()
+ok(true, 'el PDF que ya analizó la IA no se registra dos veces')
+await p.locator('input[type="file"]').setInputFiles(PDF_ESCANEADO)
+await p.getByText(/El PDF parece escaneado/).waitFor()
+const cuadroEvidencia = p.getByRole('textbox', { name: 'Evidencia', exact: true })
+ok(await cuadroEvidencia.isVisible(), 'al cargar un PDF en el paso 4 se abre el cuadro de evidencia para describirlo')
+const descripcionPdf = 'Fotografía del extintor (PDF escaneado): la etiqueta muestra la recarga vencida.'
+await cuadroEvidencia.fill(`${await cuadroEvidencia.inputValue()}\n\n${descripcionPdf}`)
+await p.getByRole('button', { name: 'Aplicar' }).click()
+await p.getByText('agregado al editar').waitFor()
+ok(await p.getByText('escaneado.pdf').isVisible() && await p.getByText(descripcionPdf).isVisible(), 'al aplicar, el PDF escaneado queda registrado y la evidencia lo describe')
 await p.getByText('Ver texto original del auditor').click()
 ok((await p.locator('details[open] p').first().innerText()).replace(/\s+/g, ' ').includes('extintor vencido'), 'el texto original del auditor sigue disponible')
 
@@ -556,6 +572,9 @@ ok(parches.some((x) => x.cuerpo.hallazgo_corregido === nuevoTexto) && parches.fi
 ok(parches.some((x) => x.cuerpo.riesgo_probabilidad === 4 && !('riesgo_impacto' in x.cuerpo)), 'se guarda el riesgo ajustado (solo la probabilidad: el impacto 4 ya lo había propuesto la IA)')
 ok(parches.some((x) => x.cuerpo.controles?.some((c) => c.origen === 'ia' && c.adoptado) && x.cuerpo.controles?.some((c) => c.origen === 'auditor')), 'se guardan el control adoptado y el propio')
 ok(!parches.some((x) => 'entrada_auditor' in x.cuerpo) && !parches.some((x) => x.cuerpo.estado === 'confirmado'), 'nunca se envía la entrada original, y enviar a la matriz no valida: los hallazgos quedan pendientes')
+ok(parches.some((x) => x.cuerpo.evidencia_anexos?.length === 1 && x.cuerpo.evidencia_anexos[0].nombre === 'escaneado.pdf' && /^[0-9a-f]{64}$/.test(x.cuerpo.evidencia_anexos[0].sha256)
+  && x.cuerpo.evidencia?.includes(descripcionPdf)), 'el PDF agregado en el paso 4 se guarda (solo su huella) junto con la evidencia')
+ok(!peticiones.some((x) => JSON.stringify(x.cuerpo ?? '').includes('%PDF')), 'tampoco al editar se envía el archivo PDF')
 
 // Matriz consolidada: solo se descarga con todo validado
 await p.getByRole('heading', { name: 'Matriz consolidada' }).waitFor()
@@ -597,6 +616,32 @@ await p.locator('article[aria-label^="Hallazgo"]').nth(4).waitFor()
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 5, 'el detalle muestra ahora 5 hallazgos')
 ok(await p.getByText('editado por el auditor').first().isVisible(), 'el hallazgo editado queda marcado')
 
+// PDF de evidencia al editar desde «Ver y editar» (el mismo modal del detalle y de la matriz)
+await p.locator('article[aria-label="Hallazgo 1"]').getByRole('button', { name: 'Ver y editar' }).click()
+const modalH01 = p.getByRole('dialog', { name: /^Hallazgo H-01/ })
+await modalH01.waitFor()
+ok(await modalH01.getByRole('button', { name: 'Cargar un PDF de evidencia' }).isVisible(), '«Ver y editar» ofrece cargar un PDF de evidencia')
+await modalH01.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
+await modalH01.getByText(/Se agregó al cuadro de evidencia/).waitFor()
+const cuadroH01 = modalH01.getByRole('textbox', { name: 'Evidencia', exact: true })
+ok((await cuadroH01.inputValue()).replace(/\s+/g, ' ').includes('extintor vencido en el área de urgencias'), 'el texto del PDF se agrega al cuadro de evidencia para revisarlo antes de aplicar')
+await p.screenshot({ path: `${CAPTURAS}06e-pdf-al-editar.png` })
+await cuadroH01.press('Escape')
+await p.waitForTimeout(300)
+ok(await modalH01.isVisible() && (await modalH01.getByText('evidencia.pdf').count()) === 0 && !db.hallazgos.find((h) => h.consecutivo === 1).evidencia_anexos.length,
+  'Esc cancela la edición sin cerrar el modal y descarta el PDF cargado')
+await modalH01.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
+await modalH01.getByText(/Se agregó al cuadro de evidencia/).waitFor()
+await modalH01.getByRole('button', { name: 'Aplicar' }).click()
+await modalH01.getByText(/agregado el \d\d\/\d\d\/\d{4}/).waitFor()
+const h01 = db.hallazgos.find((h) => h.consecutivo === 1)
+ok(h01.evidencia_anexos[0]?.nombre === 'evidencia.pdf' && h01.evidencia.includes('extintor vencido') && h01.estado === 'editado',
+  'al aplicar se guardan la evidencia y la huella del PDF; el hallazgo validado vuelve a Pendiente', JSON.stringify({ estado: h01.estado, anexos: h01.evidencia_anexos }))
+await modalH01.getByRole('button', { name: 'Validar hallazgo' }).click()
+await p.getByText('Hallazgo validado').waitFor()
+await p.keyboard.press('Escape')
+await modalH01.waitFor({ state: 'hidden' })
+
 // Filtro por clasificación desde los contadores
 await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 1, 'el contador de no conformidades filtra la lista')
@@ -616,7 +661,7 @@ const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
 const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
   'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
   'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora',
-  'Archivos adjuntos evidencia.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Oportunidades', 'Observaciones',
   'Conclusiones', 'RECOMENDACIONES:', 'Generado por Ana María Rodríguez Peña - ']
@@ -661,7 +706,7 @@ ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su ord
 const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
   'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
   'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
-  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
+  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
   'Indicadores', '• Hallazgos registrados: 5', 'Oportunidades', 'Observaciones', 'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia', 'RECOMENDACIONES:', '1. ']

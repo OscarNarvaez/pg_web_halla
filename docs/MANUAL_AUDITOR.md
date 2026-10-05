@@ -94,7 +94,7 @@ puede volver a cualquiera de ellos. Lo que cambie se guarda al pasar de un paso 
 | 1. Evidencia | Escribe lo que encontró o carga un PDF | — |
 | 2. Requisito | Revisa la norma, el numeral y el requisito | Los busca en las normas cargadas |
 | 3. Clasificación | Revisa la categoría y su justificación | Decide la categoría |
-| 4. Redacción | Revisa el hallazgo redactado | Lo reescribe con la fórmula de la categoría |
+| 4. Redacción | Revisa el hallazgo redactado y la evidencia; puede cargar otro PDF de evidencia | Lo reescribe con la fórmula de la categoría |
 | 5. Riesgo | Confirma o ajusta el riesgo | Lo identifica y lo evalúa con el PR13_GQ |
 | 6. Controles | Adopta controles o escribe los suyos | Propone controles |
 | 7. Matriz | Envía todo a la matriz consolidada | — |
@@ -131,6 +131,7 @@ Ejemplo pobre (le falta evidencia):
 - Si el texto pasa de 6 000 caracteres, elija qué páginas importar y analice el resto como otro hallazgo.
 - **El PDF no sale de su computador**: se lee en el navegador. En el hallazgo solo quedan el nombre del
   archivo, el número de páginas y una huella digital (SHA-256) que permite comprobar después cuál archivo fue.
+- **También puede cargar un PDF al editar el hallazgo** (paso 4 o **Ver y editar**, ver §6).
 
 Pulse **Analizar con IA**. Tarda normalmente entre 5 y 20 segundos. **Usted no elige la categoría**: la
 determina el sistema con este orden de preguntas:
@@ -252,6 +253,17 @@ buscador y la lista de hallazgos. Cada uno tiene un número (H-01, H-02…), su 
 Acciones: **Ver y editar**, **Validar**, **Duplicar** (útil para dos situaciones parecidas) y
 **Descartar**. Cuando termine, puede **Cerrar la auditoría** para que no admita hallazgos nuevos.
 
+**Cargar un PDF de evidencia al editar.** En el paso 4 del asistente y en **Ver y editar** (desde el detalle o
+la matriz), debajo de la evidencia está **Cargar un PDF de evidencia**:
+
+- Si el PDF tiene texto, se agrega al final del cuadro de evidencia, que se abre para que lo revise. Borre lo que no
+  sea evidencia y pulse **Aplicar**: se guardan la evidencia y el PDF. **Cancelar** (o Esc) descarta los dos.
+- Si es escaneado, describa su contenido en el cuadro y pulse **Aplicar** para registrarlo.
+- Debajo aparecen los **PDF de evidencia registrados**: el que analizó la IA (no se puede quitar) y los que agregó
+  al editar, con su fecha; estos se pueden quitar. Un mismo PDF no se registra dos veces.
+- Todos aparecen en «Archivos adjuntos» de la Ficha Técnica del informe. Como cualquier edición, agregar o quitar
+  un PDF devuelve a Pendiente un hallazgo validado.
+
 Para validar un hallazgo (que no sea fortaleza) debe tener el riesgo completo (descripción, dimensión,
 probabilidad e impacto) y al menos un control adoptado. **Si edita un hallazgo ya validado, vuelve a
 Pendiente**: la validación corresponde a lo que usted revisó, no a una versión posterior.
@@ -336,7 +348,8 @@ la clasificación fue ajustada por usted.
 Si estaba validado, vuelve a Pendiente.
 
 **¿El PDF que cargo queda guardado en la plataforma?** No. Se lee en su navegador y solo se usa su texto.
-El hallazgo guarda el nombre del archivo, sus páginas y su huella digital, para comprobar después cuál fue.
+El hallazgo guarda el nombre del archivo, sus páginas y su huella digital, para comprobar después cuál fue. Es
+igual si lo carga antes del análisis o al editar el hallazgo.
 
 **Me salió «Tu cuenta está pendiente de aprobación».** Un administrador debe aprobarla. Cuando lo haga,
 pulse «Ya me aprobaron» o vuelva a ingresar.

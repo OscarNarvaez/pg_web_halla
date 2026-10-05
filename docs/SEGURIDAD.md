@@ -230,6 +230,10 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
 - **Lista de verificación (0011).** Las anotaciones del auditor pueden traer datos sensibles de la visita: se
   guardan solo en la base propia (no pasan por la IA), con RLS del dueño, sin borrado físico y en solo lectura al
   cerrar la auditoría. *Prueba:* `probar-bd` (sección «Lista de verificación»).
+- **PDF de evidencia al editar (0012).** Sigue la misma regla que en el paso 1: el archivo se lee en el navegador
+  y nunca se sube; al servidor llegan su texto (dentro de la evidencia que edita el auditor) y su huella. El
+  trigger solo guarda nombre saneado, páginas, SHA-256 y fecha del servidor, y la huella del PDF que analizó la IA
+  sigue siendo inmutable. *Prueba:* `probar-bd` («PDF agregados al editar») y `probar-interfaz`.
 - **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
   endpoint de exportación nuevo que proteger.
 

@@ -22,6 +22,8 @@ export interface HallazgoInforme {
   riesgo_impacto?: number | null
   controles?: Array<{ descripcion: string; tipo: string; origen: string; adoptado: boolean }> | null
   evidencia_archivo?: { nombre: string; paginas: number; sha256: string } | null
+  /** PDF cargados al editar la evidencia (migración 0012) */
+  evidencia_anexos?: Array<{ nombre: string; paginas: number; sha256: string }> | null
 }
 
 export interface AuditoriaInforme {
@@ -355,9 +357,11 @@ export function construirContenido(opciones: {
   const { auditoria: a, perfil: p, hallazgos, estadisticas: e, narrativa: n } = opciones
   const evaluador = TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? ''
   const objeto = objetoDe(a)
+  // PDF analizados y PDF agregados al editar, sin repetir (por su huella)
   const adjuntos = [...new Map(hallazgos
-    .filter((h) => h.evidencia_archivo?.nombre)
-    .map((h) => [h.evidencia_archivo!.sha256, `${h.evidencia_archivo!.nombre} (${h.evidencia_archivo!.paginas} ${h.evidencia_archivo!.paginas === 1 ? 'página' : 'páginas'})`])).values()]
+    .flatMap((h) => [h.evidencia_archivo, ...(h.evidencia_anexos ?? [])])
+    .filter((pdf): pdf is { nombre: string; paginas: number; sha256: string } => Boolean(pdf?.nombre))
+    .map((pdf) => [pdf.sha256, `${pdf.nombre} (${pdf.paginas} ${pdf.paginas === 1 ? 'página' : 'páginas'})`])).values()]
   return {
     version_estructura: 3,
     formato: 'Auditoria_interna.odt',

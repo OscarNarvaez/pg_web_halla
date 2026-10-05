@@ -164,7 +164,8 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
   const hs = [
     { ...base, id: 'h1', consecutivo: 1, clasificacion: 'NO_CONFORMIDAD', hallazgo_corregido: 'NC uno', riesgo_probabilidad: 4, riesgo_impacto: 5, evidencia_archivo: pdf },
     { ...base, id: 'h2', consecutivo: 2, clasificacion: 'FORTALEZA', hallazgo_corregido: 'Fortaleza uno', controles: [], evidencia_archivo: pdf },
-    { ...base, id: 'h3', consecutivo: 3, clasificacion: 'OBSERVACION', hallazgo_corregido: 'Obs uno', riesgo_probabilidad: 2, riesgo_impacto: 2 },
+    { ...base, id: 'h3', consecutivo: 3, clasificacion: 'OBSERVACION', hallazgo_corregido: 'Obs uno', riesgo_probabilidad: 2, riesgo_impacto: 2,
+      evidencia_anexos: [pdf, { nombre: 'registro-firmas.pdf', paginas: 1, sha256: 'e'.repeat(64), agregado_en: '2026-10-05T10:00:00Z' }] },
   ]
   const e = informe.calcularEstadisticas(hs)
   const n = informe.narrativaRespaldo(aud, e)
@@ -175,7 +176,8 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
     'el evaluador y el título de la portada salen del perfil y de la auditoría')
   ok(c.ficha.inicio_planeada === '2026-10-01' && c.ficha.inicio_real === '2026-10-02' && c.ficha.fin_real === '' && c.ficha.lider.cargo === 'Auditor médico, Coordinadora'
     && c.ficha.equipo[0].nombre === 'Luis Ruiz', 'la Ficha Técnica lleva fechas planeadas y reales, el líder y el equipo')
-  ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)"]', 'los PDF de evidencia van en «Archivos adjuntos», sin repetir')
+  ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)","registro-firmas.pdf (1 página)"]',
+    'los PDF de evidencia (analizados y agregados al editar) van en «Archivos adjuntos», sin repetir', JSON.stringify(c.ficha.adjuntos))
   ok(c.objetivo === n.objetivo && n.objetivo.startsWith('Evaluar'), 'si la auditoría no trae objetivo, se redacta uno')
   ok(c.indicadores.some((l) => l.includes('Riesgos evaluados con la escala del PR13_GQ: 2 (Bajo 1 · Moderado 0 · Alto 0 · Extremo 1)')) && c.indicadores.some((l) => l === 'Controles adoptados: 2.'),
     'los indicadores los calcula el código (niveles de riesgo y controles)', c.indicadores.join(' | '))

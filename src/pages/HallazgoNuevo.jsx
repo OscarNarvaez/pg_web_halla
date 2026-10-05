@@ -27,9 +27,9 @@ const MAXIMO = 6000
 const MAXIMO_NOTAS = 2000
 const EJEMPLO =
   'Ejemplo: Se revisaron 20 historias clínicas del servicio de Hospitalización y en 5 de ellas no se encontró registrada la valoración de enfermería al ingreso.'
-// Campos que el auditor puede ajustar en los pasos 2 a 6 (se guardan al cambiar de paso)
+// Campos que el auditor puede ajustar en los pasos 2 a 6, incluidos los PDF agregados en el 4 (se guardan al cambiar de paso)
 const CAMPOS = [
-  'clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'severidad',
+  'clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_anexos', 'severidad',
   'riesgo_descripcion', 'riesgo_dimension', 'riesgo_probabilidad', 'riesgo_impacto', 'riesgo_justificacion', 'controles',
 ]
 const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
@@ -97,9 +97,11 @@ export default function HallazgoNuevo() {
       return
     }
     setEntradaAnalizada(entrada)
-    setPropuestas(data.hallazgos)
-    setGuardados(data.hallazgos)
-    setHallazgos(data.hallazgos)
+    // El servidor guardó la huella del PDF analizado en cada hallazgo; el paso 4 la muestra y no deja repetirlo
+    const recibidos = data.hallazgos.map((x) => ({ ...x, evidencia_archivo: archivo, evidencia_anexos: [] }))
+    setPropuestas(recibidos)
+    setGuardados(recibidos)
+    setHallazgos(recibidos)
     setIndice(0)
     setMeta(data.meta)
     setFase('analizado')

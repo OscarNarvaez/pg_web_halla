@@ -2,7 +2,7 @@ import { supabase, mensajeError } from '../lib/supabase'
 import { useConsulta } from './useConsulta'
 
 export const COLUMNAS_HALLAZGO =
-  'id, auditoria_id, consecutivo, entrada_auditor, clasificacion, justificacion, hallazgo_corregido, criterio_requisito, evidencia, severidad, estado, editado_por_usuario, modelo_ia, prompt_version, criterios_citados, avisos, riesgo_descripcion, riesgo_dimension, riesgo_probabilidad, riesgo_impacto, riesgo_justificacion, controles, evidencia_archivo, nota_validacion, creado_en, actualizado_en'
+  'id, auditoria_id, consecutivo, entrada_auditor, clasificacion, justificacion, hallazgo_corregido, criterio_requisito, evidencia, severidad, estado, editado_por_usuario, modelo_ia, prompt_version, criterios_citados, avisos, riesgo_descripcion, riesgo_dimension, riesgo_probabilidad, riesgo_impacto, riesgo_justificacion, controles, evidencia_archivo, evidencia_anexos, nota_validacion, creado_en, actualizado_en'
 
 /** Hallazgos de una auditoría, por consecutivo. */
 export function useHallazgos(auditoriaId) {
@@ -40,6 +40,9 @@ export async function duplicarHallazgo(h, userId) {
       riesgo_impacto: h.riesgo_impacto,
       riesgo_justificacion: h.riesgo_justificacion,
       controles: h.controles ?? [],
+      // La copia no tiene procedencia de IA: el PDF analizado del original pasa a sus PDF registrados
+      evidencia_anexos: [h.evidencia_archivo, ...(h.evidencia_anexos ?? [])].filter(Boolean)
+        .map(({ nombre, paginas, sha256 }) => ({ nombre, paginas, sha256 })),
       estado: 'editado',
       editado_por_usuario: true,
     })
