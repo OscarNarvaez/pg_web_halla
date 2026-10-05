@@ -349,6 +349,42 @@ const insertarConPdf = (archivo) => falla(comoUsuario(db, servicio, async (tx) =
 const pdfOk = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'b'.repeat(64) })
 const pdfMalo = await insertarConPdf({ nombre: 'evidencia.pdf', paginas: 3, sha256: 'no-es-un-hash' })
 ok(pdfOk === 'insertado' && pdfMalo?.includes('evidencia_archivo_valida'), 'el PDF de evidencia solo guarda nombre, páginas y una huella SHA-256 válida', `${pdfOk} | ${pdfMalo}`)
+
+// 0012: PDF cargados al editar la evidencia (evidencia_anexos)
+const anexo = (sha, extra = {}) => ({ nombre: 'acta-comite.pdf', paginas: 2, sha256: sha.repeat(64), ...extra })
+const ponerAnexos = (anexos, extra = '') => falla(comoA(`update public.hallazgos set evidencia_anexos = $2${extra} where id = $1`, [h2.id, JSON.stringify(anexos)]))
+await comoA(`update public.hallazgos set estado = 'confirmado', nota_validacion = null where id = $1`, [h2.id])
+const errAnexo = await ponerAnexos([anexo('c', { nombre: '../acta\u0007-comite.pdf', agregado_en: '2001-01-01T00:00:00Z' })], `, evidencia = 'Acta del comité: no se revisaron los indicadores.'`)
+const { rows: [conAnexo] } = await db.query('select evidencia_anexos, estado, evidencia_archivo from public.hallazgos where id = $1', [h2.id])
+const fechaAnexo = conAnexo.evidencia_anexos[0]?.agregado_en
+ok(errAnexo === null && conAnexo.evidencia_anexos.length === 1 && conAnexo.evidencia_anexos[0].nombre === '..acta-comite.pdf' && !fechaAnexo?.startsWith('2001'),
+  'al editar, el auditor agrega un PDF de evidencia: se guarda su huella con nombre saneado y fecha del servidor', `${errAnexo} | ${JSON.stringify(conAnexo.evidencia_anexos)}`)
+ok(conAnexo.estado === 'editado', 'agregar un PDF a un hallazgo validado lo devuelve a Pendiente', conAnexo.estado)
+await ponerAnexos([...conAnexo.evidencia_anexos, anexo('d')])
+const { rows: [dosAnexos] } = await db.query('select evidencia_anexos from public.hallazgos where id = $1', [h2.id])
+ok(dosAnexos.evidencia_anexos.length === 2 && dosAnexos.evidencia_anexos[0].agregado_en === fechaAnexo, 'un PDF que ya estaba conserva su fecha al agregar otro')
+const errAnexoMalo = await ponerAnexos([anexo('e', { sha256: 'no-es-un-hash' })])
+const errAnexoPaginas = await ponerAnexos([anexo('e', { paginas: 1.5 })])
+const errAnexoRepetido = await ponerAnexos([anexo('e'), anexo('e', { nombre: 'otra-copia.pdf' })])
+const errAnexoMuchos = await ponerAnexos(Array.from({ length: 11 }, (_, i) => anexo(i.toString(16))))
+const errAnexoTexto = await ponerAnexos([{ ...anexo('e'), texto: 'contenido del PDF' }])
+const { rows: [sinTexto] } = await db.query('select evidencia_anexos from public.hallazgos where id = $1', [h2.id])
+ok(errAnexoMalo?.includes('inválido') && errAnexoPaginas?.includes('inválido') && errAnexoRepetido?.includes('ya está registrado') && errAnexoMuchos?.includes('máximo 10')
+  && errAnexoTexto === null && !('texto' in sinTexto.evidencia_anexos[0]),
+  'de un PDF agregado solo se guarda la huella: hash válido, páginas enteras, sin repetir, máximo 10 y nada de su contenido',
+  [errAnexoMalo, errAnexoPaginas, errAnexoRepetido, errAnexoMuchos, errAnexoTexto].join(' | '))
+const { rows: [conArchivo] } = await comoUsuario(db, servicio, (tx) => tx.query(`insert into public.hallazgos (auditoria_id, user_id, entrada_auditor, clasificacion,
+  justificacion, hallazgo_corregido, criterio_requisito, evidencia, evidencia_archivo) values ($1,$2,'x','FORTALEZA','j','h','c','e',$3) returning id`,
+  [audA.id, A, JSON.stringify(anexo('f', { nombre: 'analizado.pdf' }))]))
+const errAnexoAnalizado = await falla(comoA(`update public.hallazgos set evidencia_anexos = $2 where id = $1`, [conArchivo.id, JSON.stringify([anexo('f')])]))
+ok(errAnexoAnalizado?.includes('ya está registrado'), 'el PDF que ya analizó la IA no se registra otra vez como agregado', errAnexoAnalizado)
+await ponerAnexos([dosAnexos.evidencia_anexos[1]])
+const { rows: histAnexos } = await db.query(`select 1 from public.hallazgos_historial where hallazgo_id = $1
+  and jsonb_array_length(antes->'evidencia_anexos') = 2 and jsonb_array_length(despues->'evidencia_anexos') = 1`, [h2.id])
+ok(histAnexos.length === 1, 'quitar un PDF agregado queda en el historial')
+const errPdfTrasAnexos = await falla(comoA(`update public.hallazgos set evidencia_archivo = null where id = $1`, [conArchivo.id]))
+ok(errPdfTrasAnexos?.includes('no se pueden modificar'), 'la huella del PDF analizado sigue sin poder cambiarse', errPdfTrasAnexos)
+await db.query('delete from public.hallazgos where id = $1', [conArchivo.id]) // solo era para esta prueba
 const { rows: columnaUmbrales } = await db.query(`select 1 from information_schema.columns where table_schema = 'public' and table_name = 'auditorias' and column_name = 'umbrales_riesgo'`)
 const errUmbrales = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 1, "moderado": 2, "alto": 3}' where id = $1`, [audA.id]))
 ok(columnaUmbrales.length === 0 && Boolean(errUmbrales), 'la escala de niveles de riesgo es fija: ninguna auditoría guarda ni edita umbrales (0008)', errUmbrales)

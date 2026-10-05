@@ -15,6 +15,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0009_cargos_y_equipo_auditor.sql` | Cargos de una lista institucional (`cargos text[]`) y equipo auditor de varias personas (`equipo_auditor jsonb`); retira `cargo`, `equipo_auditor_nombre` y `equipo_auditor_cargo` conservando lo que coincide con la lista |
 | `0010_evaluador_y_fechas_reales.sql` | `profiles.tipo_evaluador` (Auditores Internos o Externos, obligatorio al crear o cambiar el perfil) y `auditorias.fecha_inicio_real`/`fecha_fin_real` para la Ficha Técnica del formato oficial |
 | `0011_lista_verificacion.sql` | `listas_verificacion`: la hoja de trabajo del auditor (una por auditoría), validada por trigger, con RLS del dueño, sin borrado y en solo lectura si la auditoría está cerrada |
+| `0012_pdf_evidencia_al_editar.sql` | `hallazgos.evidencia_anexos`: huellas de los PDF que el auditor carga al editar la evidencia (validadas por trigger); entran en el historial y en la regla «editar un validado lo devuelve a pendiente» |
 
 ## Modelo
 
@@ -79,6 +80,7 @@ erDiagram
     text riesgo_justificacion
     jsonb controles "validados por trigger"
     jsonb evidencia_archivo "huella del PDF, inmutable"
+    jsonb evidencia_anexos "PDF agregados al editar (0012)"
     text nota_validacion "cambios sugeridos"
   }
   CRITERIOS_NORMATIVOS {
@@ -145,6 +147,11 @@ erDiagram
   validado (redacción, riesgo o controles), `proteger_hallazgo` lo devuelve a `editado` (Pendiente).
 - **PDF de evidencia (0007):** `evidencia_archivo` solo guarda `{nombre, paginas, sha256}` (check
   `evidencia_archivo_valida`) y es inmutable: el archivo nunca llega al servidor.
+- **PDF agregados al editar (0012):** `evidencia_anexos` es una lista de hasta 10 `{nombre, paginas, sha256,
+  agregado_en}`. El trigger `validar_evidencia_anexos` sanea el nombre, exige páginas enteras de 1 a 500 y un
+  SHA-256 válido, descarta cualquier otro campo (nada del contenido del PDF), no admite repetidos ni el PDF ya
+  analizado, y pone la fecha del servidor (un PDF que ya estaba conserva la suya). Agregar o quitar uno es un
+  cambio de contenido: queda en el historial y devuelve a pendiente un hallazgo validado.
 - **Procedencia de IA:** desde el cliente solo se pueden insertar hallazgos sin `modelo_ia`,
   `prompt_version` ni `respuesta_cruda` (acción «duplicar»). Los generados por la IA los inserta la
   Edge Function con la service role.
