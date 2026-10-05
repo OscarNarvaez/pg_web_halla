@@ -8,7 +8,7 @@
     "gemini-3.5-flash-lite",
     "gemini-3.1-flash-lite"
   ],
-  "fecha": "2026-10-04T18:13:40.251Z",
+  "fecha": "2026-10-05T16:01:46.776Z",
   "resultados": [
     {
       "caso": {
@@ -38,41 +38,48 @@
         "hallazgos": [
           {
             "clasificacion": "NO_CONFORMIDAD",
-            "justificacion": "Se evidencia el incumplimiento de la conservación de información documentada requerida para asegurar la operación y control del servicio de hospitalización, al no encontrarse la valoración de enfermería en 5 de 20 historias clínicas revisadas.",
-            "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida, incumpliendo con la conservación de la información documentada necesaria para apoyar la operación y evidenciar que los procesos se realizan según lo planificado, de acuerdo con lo establecido en la NTC-ISO 9001:2015, numeral 4.4.2.",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 4.4.2",
-            "evidencia": "Ausencia del registro de la valoración de enfermería en 5 de 20 historias clínicas revisadas durante la auditoría.",
+            "justificacion": "Se evidencia el incumplimiento de requisitos documentales obligatorios al verificarse la ausencia de registros de valoración de enfermería en una muestra de historias clínicas evaluadas.",
+            "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo la conservación de información documentada para tener la confianza de que los procesos se realizan según lo planificado y el control de la provisión del servicio bajo condiciones controladas, establecido en la NTC-ISO 9001:2015, numerales 4.4 y 8.5.1.",
+            "criterio_requisito": "NTC-ISO 9001:2015, numerales 4.4 y 8.5.1",
+            "evidencia": "En 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida.",
             "severidad": "media",
             "criterios_citados": [
               {
-                "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696",
-                "numeral": "4.4.2",
+                "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb",
+                "numeral": "4.4",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Sistema de gestión de la calidad y sus procesos",
+                "verificado": true
+              },
+              {
+                "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05",
+                "numeral": "8.5.1",
+                "documento": "NTC-ISO 9001:2015",
+                "titulo": "Control de la producción y de la provisión del servicio",
                 "verificado": true
               }
             ],
             "riesgo": {
-              "descripcion": "Posibilidad de fallas en la continuidad del cuidado o eventos adversos debido a la ausencia del registro de la valoración de enfermería en la historia clínica, lo que podría ocasionar un deterioro de severidad moderada en el estado de salud del paciente.",
+              "descripcion": "Posibilidad de fallas en la continuidad del cuidado o decisiones clínicas inadecuadas debido a la falta de registro de la valoración de enfermería en la historia clínica, lo que podría generar eventos adversos o complicaciones en la evolución del paciente.",
               "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
               "probabilidad": 3,
               "impacto": 3,
-              "justificacion": "Se estima una probabilidad posible (3) dado que la omisión se detectó en el 25% de la muestra evaluada (5 de 20 casos). El impacto se valora como moderado (3) puesto que la falta de información clínica clave puede derivar en decisiones de cuidado inadecuadas que afecten transitoriamente la salud del paciente hospitalizado."
+              "justificacion": "La omisión se presentó en el 25% de la muestra evaluada (5 de 20), lo que sugiere una frecuencia posible en la práctica clínica. La ausencia de información clave de enfermería puede derivar en afectaciones moderadas en la atención y seguridad del paciente hospitalizado."
             },
             "controles": [
               {
-                "descripcion": "La Coordinación de Enfermería debe realizar auditorías mensuales de adherencia al diligenciamiento completo y oportuno de la valoración de enfermería en historias clínicas.",
+                "descripcion": "La Coordinación de Enfermería debe realizar rondas de auditoría concurrente semanal sobre las historias clínicas del servicio para verificar el diligenciamiento completo y oportuno de las valoraciones de enfermería.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696"
+                "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05"
               },
               {
-                "descripcion": "El personal de enfermería responsable de los 5 casos identificados debe revisar y registrar de manera extemporánea o complementaria la valoración del estado de los pacientes, dejando constancia de la trazabilidad y justificación en el sistema clínico.",
+                "descripcion": "El personal de enfermería responsable del turno debe subsanar y completar los registros clínicos pendientes de los pacientes actualmente hospitalizados correspondientes a los casos identificados.",
                 "tipo": "CORRECTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb"
               }
             ],
             "avisos": [],
@@ -91,34 +98,39 @@
             "hallazgos": [
               {
                 "clasificacion": "NO_CONFORMIDAD",
-                "justificacion": "Se evidencia el incumplimiento de la conservación de información documentada requerida para asegurar la operación y control del servicio de hospitalización, al no encontrarse la valoración de enfermería en 5 de 20 historias clínicas revisadas.",
-                "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida, incumpliendo con la conservación de la información documentada necesaria para apoyar la operación y evidenciar que los procesos se realizan según lo planificado, de acuerdo con lo establecido en la NTC-ISO 9001:2015, numeral 4.4.2.",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 4.4.2",
-                "evidencia": "Ausencia del registro de la valoración de enfermería en 5 de 20 historias clínicas revisadas durante la auditoría.",
+                "justificacion": "Se evidencia el incumplimiento de requisitos documentales obligatorios al verificarse la ausencia de registros de valoración de enfermería en una muestra de historias clínicas evaluadas.",
+                "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo la conservación de información documentada para tener la confianza de que los procesos se realizan según lo planificado y el control de la provisión del servicio bajo condiciones controladas, establecido en la NTC-ISO 9001:2015, numerales 4.4 y 8.5.1.",
+                "criterio_requisito": "NTC-ISO 9001:2015, numerales 4.4 y 8.5.1",
+                "evidencia": "En 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696",
-                    "numeral": "4.4.2",
+                    "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb",
+                    "numeral": "4.4",
+                    "documento": "NTC-ISO 9001:2015"
+                  },
+                  {
+                    "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05",
+                    "numeral": "8.5.1",
                     "documento": "NTC-ISO 9001:2015"
                   }
                 ],
                 "riesgo": {
-                  "descripcion": "Posibilidad de fallas en la continuidad del cuidado o eventos adversos debido a la ausencia del registro de la valoración de enfermería en la historia clínica, lo que podría ocasionar un deterioro de severidad moderada en el estado de salud del paciente.",
+                  "descripcion": "Posibilidad de fallas en la continuidad del cuidado o decisiones clínicas inadecuadas debido a la falta de registro de la valoración de enfermería en la historia clínica, lo que podría generar eventos adversos o complicaciones en la evolución del paciente.",
                   "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
                   "probabilidad": 3,
                   "impacto": 3,
-                  "justificacion": "Se estima una probabilidad posible (3) dado que la omisión se detectó en el 25% de la muestra evaluada (5 de 20 casos). El impacto se valora como moderado (3) puesto que la falta de información clínica clave puede derivar en decisiones de cuidado inadecuadas que afecten transitoriamente la salud del paciente hospitalizado."
+                  "justificacion": "La omisión se presentó en el 25% de la muestra evaluada (5 de 20), lo que sugiere una frecuencia posible en la práctica clínica. La ausencia de información clave de enfermería puede derivar en afectaciones moderadas en la atención y seguridad del paciente hospitalizado."
                 },
                 "controles": [
                   {
-                    "descripcion": "La Coordinación de Enfermería debe realizar auditorías mensuales de adherencia al diligenciamiento completo y oportuno de la valoración de enfermería en historias clínicas.",
+                    "descripcion": "La Coordinación de Enfermería debe realizar rondas de auditoría concurrente semanal sobre las historias clínicas del servicio para verificar el diligenciamiento completo y oportuno de las valoraciones de enfermería.",
                     "tipo": "PREVENTIVO",
-                    "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696"
+                    "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05"
                   },
                   {
-                    "descripcion": "El personal de enfermería responsable de los 5 casos identificados debe revisar y registrar de manera extemporánea o complementaria la valoración del estado de los pacientes, dejando constancia de la trazabilidad y justificación en el sistema clínico.",
+                    "descripcion": "El personal de enfermería responsable del turno debe subsanar y completar los registros clínicos pendientes de los pacientes actualmente hospitalizados correspondientes a los casos identificados.",
                     "tipo": "CORRECTIVO",
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                    "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb"
                   }
                 ],
                 "severidad": "media"
@@ -133,54 +145,54 @@
               "hallazgos": [
                 {
                   "clasificacion": "NO_CONFORMIDAD",
-                  "justificacion": "Se evidencia el incumplimiento de la conservación de información documentada requerida para asegurar la operación y control del servicio de hospitalización, al no encontrarse la valoración de enfermería en 5 de 20 historias clínicas revisadas.",
-                  "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida, incumpliendo con la conservación de la información documentada necesaria para apoyar la operación y evidenciar que los procesos se realizan según lo planificado, de acuerdo con lo establecido en la NTC-ISO 9001:2015, numeral 4.4.2.",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 4.4.2",
-                  "evidencia": "Ausencia del registro de la valoración de enfermería en 5 de 20 historias clínicas revisadas durante la auditoría.",
+                  "justificacion": "Se evidencia el incumplimiento de requisitos documentales obligatorios al verificarse la ausencia de registros de valoración de enfermería en una muestra de historias clínicas evaluadas.",
+                  "hallazgo_corregido": "Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo la conservación de información documentada para tener la confianza de que los procesos se realizan según lo planificado y el control de la provisión del servicio bajo condiciones controladas, establecido en la NTC-ISO 9001:2015, numerales 4.4 y 8.5.1.",
+                  "criterio_requisito": "NTC-ISO 9001:2015, numerales 4.4 y 8.5.1",
+                  "evidencia": "En 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696",
-                      "numeral": "4.4.2",
+                      "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb",
+                      "numeral": "4.4",
+                      "documento": "NTC-ISO 9001:2015"
+                    },
+                    {
+                      "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05",
+                      "numeral": "8.5.1",
                       "documento": "NTC-ISO 9001:2015"
                     }
                   ],
                   "riesgo": {
-                    "descripcion": "Posibilidad de fallas en la continuidad del cuidado o eventos adversos debido a la ausencia del registro de la valoración de enfermería en la historia clínica, lo que podría ocasionar un deterioro de severidad moderada en el estado de salud del paciente.",
+                    "descripcion": "Posibilidad de fallas en la continuidad del cuidado o decisiones clínicas inadecuadas debido a la falta de registro de la valoración de enfermería en la historia clínica, lo que podría generar eventos adversos o complicaciones en la evolución del paciente.",
                     "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
                     "probabilidad": 3,
                     "impacto": 3,
-                    "justificacion": "Se estima una probabilidad posible (3) dado que la omisión se detectó en el 25% de la muestra evaluada (5 de 20 casos). El impacto se valora como moderado (3) puesto que la falta de información clínica clave puede derivar en decisiones de cuidado inadecuadas que afecten transitoriamente la salud del paciente hospitalizado."
+                    "justificacion": "La omisión se presentó en el 25% de la muestra evaluada (5 de 20), lo que sugiere una frecuencia posible en la práctica clínica. La ausencia de información clave de enfermería puede derivar en afectaciones moderadas en la atención y seguridad del paciente hospitalizado."
                   },
                   "controles": [
                     {
-                      "descripcion": "La Coordinación de Enfermería debe realizar auditorías mensuales de adherencia al diligenciamiento completo y oportuno de la valoración de enfermería en historias clínicas.",
+                      "descripcion": "La Coordinación de Enfermería debe realizar rondas de auditoría concurrente semanal sobre las historias clínicas del servicio para verificar el diligenciamiento completo y oportuno de las valoraciones de enfermería.",
                       "tipo": "PREVENTIVO",
-                      "criterio_id": "1d594cb0-5766-4e50-ad2f-48bd61bb6696"
+                      "criterio_id": "92b3dba7-f25f-4b16-b11c-6fb25eb7da05"
                     },
                     {
-                      "descripcion": "El personal de enfermería responsable de los 5 casos identificados debe revisar y registrar de manera extemporánea o complementaria la valoración del estado de los pacientes, dejando constancia de la trazabilidad y justificación en el sistema clínico.",
+                      "descripcion": "El personal de enfermería responsable del turno debe subsanar y completar los registros clínicos pendientes de los pacientes actualmente hospitalizados correspondientes a los casos identificados.",
                       "tipo": "CORRECTIVO",
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                      "criterio_id": "0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb"
                     }
                   ],
                   "severidad": "media"
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Se evidencia el incumplimiento de la conservación de información documentada requerida para asegurar la operación y control del servicio de hospitalización, al no encontrarse la valoración de enfermería en 5 de 20 historias clínicas revisadas.\",\n      \"hallazgo_corregido\": \"Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida, incumpliendo con la conservación de la información documentada necesaria para apoyar la operación y evidenciar que los procesos se realizan según lo planificado, de acuerdo con lo establecido en la NTC-ISO 9001:2015, numeral 4.4.2.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 4.4.2\",\n      \"evidencia\": \"Ausencia del registro de la valoración de enfermería en 5 de 20 historias clínicas revisadas durante la auditoría.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"1d594cb0-5766-4e50-ad2f-48bd61bb6696\",\n          \"numeral\": \"4.4.2\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de fallas en la continuidad del cuidado o eventos adversos debido a la ausencia del registro de la valoración de enfermería en la historia clínica, lo que podría ocasionar un deterioro de severidad moderada en el estado de salud del paciente.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 3,\n        \"impacto\": 3,\n        \"justificacion\": \"Se estima una probabilidad posible (3) dado que la omisión se detectó en el 25% de la muestra evaluada (5 de 20 casos). El impacto se valora como moderado (3) puesto que la falta de información clínica clave puede derivar en decisiones de cuidado inadecuadas que afecten transitoriamente la salud del paciente hospitalizado.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"La Coordinación de Enfermería debe realizar auditorías mensuales de adherencia al diligenciamiento completo y oportuno de la valoración de enfermería en historias clínicas.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"1d594cb0-5766-4e50-ad2f-48bd61bb6696\"\n        },\n        {\n          \"descripcion\": \"El personal de enfermería responsable de los 5 casos identificados debe revisar y registrar de manera extemporánea o complementaria la valoración del estado de los pacientes, dejando constancia de la trazabilidad y justificación en el sistema clínico.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\"\n        }\n      ],\n      \"severidad\": \"media\"\n    }\n  ]\n}",
-            "modelo": "gemini-flash-latest",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Se evidencia el incumplimiento de requisitos documentales obligatorios al verificarse la ausencia de registros de valoración de enfermería en una muestra de historias clínicas evaluadas.\",\n      \"hallazgo_corregido\": \"Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo la conservación de información documentada para tener la confianza de que los procesos se realizan según lo planificado y el control de la provisión del servicio bajo condiciones controladas, establecido en la NTC-ISO 9001:2015, numerales 4.4 y 8.5.1.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numerales 4.4 y 8.5.1\",\n      \"evidencia\": \"En 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería requerida.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb\",\n          \"numeral\": \"4.4\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        },\n        {\n          \"criterio_id\": \"92b3dba7-f25f-4b16-b11c-6fb25eb7da05\",\n          \"numeral\": \"8.5.1\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de fallas en la continuidad del cuidado o decisiones clínicas inadecuadas debido a la falta de registro de la valoración de enfermería en la historia clínica, lo que podría generar eventos adversos o complicaciones en la evolución del paciente.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 3,\n        \"impacto\": 3,\n        \"justificacion\": \"La omisión se presentó en el 25% de la muestra evaluada (5 de 20), lo que sugiere una frecuencia posible en la práctica clínica. La ausencia de información clave de enfermería puede derivar en afectaciones moderadas en la atención y seguridad del paciente hospitalizado.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"La Coordinación de Enfermería debe realizar rondas de auditoría concurrente semanal sobre las historias clínicas del servicio para verificar el diligenciamiento completo y oportuno de las valoraciones de enfermería.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"92b3dba7-f25f-4b16-b11c-6fb25eb7da05\"\n        },\n        {\n          \"descripcion\": \"El personal de enfermería responsable del turno debe subsanar y completar los registros clínicos pendientes de los pacientes actualmente hospitalizados correspondientes a los casos identificados.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"0e29270c-fc1f-4ce5-a61f-5f763ad5bbfb\"\n        }\n      ],\n      \"severidad\": \"media\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.8-flash",
             "modeloVersion": "gemini-3.8-flash",
             "finishReason": "STOP",
-            "tokensEntrada": 8904,
-            "tokensSalida": 772,
-            "intentos": 4,
-            "latenciaMs": 16695,
-            "descartados": [
-              {
-                "modelo": "gemini-3.8-flash",
-                "motivo": "error 503"
-              }
-            ]
+            "tokensEntrada": 9529,
+            "tokensSalida": 819,
+            "intentos": 1,
+            "latenciaMs": 4485,
+            "descartados": []
           }
         ],
         "reparado": false
@@ -200,7 +212,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 16.716
+      "segundos": 4.499
     },
     {
       "caso": {
@@ -230,14 +242,14 @@
         "hallazgos": [
           {
             "clasificacion": "FORTALEZA",
-            "justificacion": "El proceso evidencia una práctica sistemática y positiva consistente en el seguimiento periódico a los indicadores y la toma de decisiones basada en datos para definir acciones, lo cual genera un beneficio demostrado para la mejora y la gestión del sistema de calidad.",
-            "hallazgo_corregido": "Se evidencia seguimiento mensual a los indicadores por parte del equipo y la utilización sistemática de sus resultados para la definición de acciones, porque favorece la toma de decisiones basada en evidencia y el mejoramiento continuo del proceso.",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3",
-            "evidencia": "Seguimiento mensual documentado a los indicadores y formulación de acciones a partir de los resultados obtenidos.",
+            "justificacion": "Se identifica una práctica positiva sistemática y destacada consistente en el seguimiento periódico a los indicadores y el uso efectivo de los resultados para la toma de decisiones y definición de acciones, generando un beneficio tangible y actual en la gestión y mejora continua del proceso.",
+            "hallazgo_corregido": "El seguimiento mensual a los indicadores y la utilización de sus resultados para definir acciones, porque permite la toma de decisiones informada y favorece la mejora continua del proceso de gestión de calidad.",
+            "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3 (Análisis y evaluación)",
+            "evidencia": "El equipo realiza seguimiento mensual a los indicadores y utiliza los resultados para definir acciones.",
             "severidad": "baja",
             "criterios_citados": [
               {
-                "criterio_id": "8d77d1a3-4efb-49a7-a9cb-8274a37c540a",
+                "criterio_id": "a93c29f1-815d-4d4d-81b4-356caffa4c21",
                 "numeral": "9.1.3",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Análisis y evaluación",
@@ -262,13 +274,13 @@
             "hallazgos": [
               {
                 "clasificacion": "FORTALEZA",
-                "justificacion": "El proceso evidencia una práctica sistemática y positiva consistente en el seguimiento periódico a los indicadores y la toma de decisiones basada en datos para definir acciones, lo cual genera un beneficio demostrado para la mejora y la gestión del sistema de calidad.",
-                "hallazgo_corregido": "Se evidencia seguimiento mensual a los indicadores por parte del equipo y la utilización sistemática de sus resultados para la definición de acciones, porque favorece la toma de decisiones basada en evidencia y el mejoramiento continuo del proceso.",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3",
-                "evidencia": "Seguimiento mensual documentado a los indicadores y formulación de acciones a partir de los resultados obtenidos.",
+                "justificacion": "Se identifica una práctica positiva sistemática y destacada consistente en el seguimiento periódico a los indicadores y el uso efectivo de los resultados para la toma de decisiones y definición de acciones, generando un beneficio tangible y actual en la gestión y mejora continua del proceso.",
+                "hallazgo_corregido": "El seguimiento mensual a los indicadores y la utilización de sus resultados para definir acciones, porque permite la toma de decisiones informada y favorece la mejora continua del proceso de gestión de calidad.",
+                "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3 (Análisis y evaluación)",
+                "evidencia": "El equipo realiza seguimiento mensual a los indicadores y utiliza los resultados para definir acciones.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "8d77d1a3-4efb-49a7-a9cb-8274a37c540a",
+                    "criterio_id": "a93c29f1-815d-4d4d-81b4-356caffa4c21",
                     "numeral": "9.1.3",
                     "documento": "NTC-ISO 9001:2015"
                   }
@@ -287,13 +299,13 @@
               "hallazgos": [
                 {
                   "clasificacion": "FORTALEZA",
-                  "justificacion": "El proceso evidencia una práctica sistemática y positiva consistente en el seguimiento periódico a los indicadores y la toma de decisiones basada en datos para definir acciones, lo cual genera un beneficio demostrado para la mejora y la gestión del sistema de calidad.",
-                  "hallazgo_corregido": "Se evidencia seguimiento mensual a los indicadores por parte del equipo y la utilización sistemática de sus resultados para la definición de acciones, porque favorece la toma de decisiones basada en evidencia y el mejoramiento continuo del proceso.",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3",
-                  "evidencia": "Seguimiento mensual documentado a los indicadores y formulación de acciones a partir de los resultados obtenidos.",
+                  "justificacion": "Se identifica una práctica positiva sistemática y destacada consistente en el seguimiento periódico a los indicadores y el uso efectivo de los resultados para la toma de decisiones y definición de acciones, generando un beneficio tangible y actual en la gestión y mejora continua del proceso.",
+                  "hallazgo_corregido": "El seguimiento mensual a los indicadores y la utilización de sus resultados para definir acciones, porque permite la toma de decisiones informada y favorece la mejora continua del proceso de gestión de calidad.",
+                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.1.3 (Análisis y evaluación)",
+                  "evidencia": "El equipo realiza seguimiento mensual a los indicadores y utiliza los resultados para definir acciones.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "8d77d1a3-4efb-49a7-a9cb-8274a37c540a",
+                      "criterio_id": "a93c29f1-815d-4d4d-81b4-356caffa4c21",
                       "numeral": "9.1.3",
                       "documento": "NTC-ISO 9001:2015"
                     }
@@ -304,14 +316,14 @@
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"FORTALEZA\",\n      \"justificacion\": \"El proceso evidencia una práctica sistemática y positiva consistente en el seguimiento periódico a los indicadores y la toma de decisiones basada en datos para definir acciones, lo cual genera un beneficio demostrado para la mejora y la gestión del sistema de calidad.\",\n      \"hallazgo_corregido\": \"Se evidencia seguimiento mensual a los indicadores por parte del equipo y la utilización sistemática de sus resultados para la definición de acciones, porque favorece la toma de decisiones basada en evidencia y el mejoramiento continuo del proceso.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 9.1.3\",\n      \"evidencia\": \"Seguimiento mensual documentado a los indicadores y formulación de acciones a partir de los resultados obtenidos.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"8d77d1a3-4efb-49a7-a9cb-8274a37c540a\",\n          \"numeral\": \"9.1.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": null,\n      \"controles\": [],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
-            "modelo": "gemini-flash-latest",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"FORTALEZA\",\n      \"justificacion\": \"Se identifica una práctica positiva sistemática y destacada consistente en el seguimiento periódico a los indicadores y el uso efectivo de los resultados para la toma de decisiones y definición de acciones, generando un beneficio tangible y actual en la gestión y mejora continua del proceso.\",\n      \"hallazgo_corregido\": \"El seguimiento mensual a los indicadores y la utilización de sus resultados para definir acciones, porque permite la toma de decisiones informada y favorece la mejora continua del proceso de gestión de calidad.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 9.1.3 (Análisis y evaluación)\",\n      \"evidencia\": \"El equipo realiza seguimiento mensual a los indicadores y utiliza los resultados para definir acciones.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"a93c29f1-815d-4d4d-81b4-356caffa4c21\",\n          \"numeral\": \"9.1.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": null,\n      \"controles\": [],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.8-flash",
             "modeloVersion": "gemini-3.8-flash",
             "finishReason": "STOP",
-            "tokensEntrada": 8829,
-            "tokensSalida": 325,
-            "intentos": 1,
-            "latenciaMs": 17864,
+            "tokensEntrada": 9467,
+            "tokensSalida": 322,
+            "intentos": 2,
+            "latenciaMs": 48411,
             "descartados": []
           }
         ],
@@ -332,7 +344,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 17.875
+      "segundos": 48.424
     },
     {
       "caso": {
@@ -362,41 +374,26 @@
         "hallazgos": [
           {
             "clasificacion": "OBSERVACION",
-            "justificacion": "No se evidencia un incumplimiento directo y demostrable a un requisito mandatorio ya que los registros se encuentran diligenciados y completos, pero la baja legibilidad en algunas firmas constituye una debilidad que representa un riesgo potencial para la trazabilidad y la atribución de responsabilidades.",
-            "hallazgo_corregido": "Se evidencia baja legibilidad en algunas de las firmas consignadas en los registros del proceso de Consulta externa, situación que podría dificultar la clara identificación del personal responsable y comprometer la trazabilidad de la atención.",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-            "evidencia": "Registros del proceso completamente diligenciados que presentan algunas firmas con baja legibilidad.",
+            "justificacion": "No existe un incumplimiento directo de un requisito específico en los criterios dados, pero la falta de legibilidad en las firmas representa una debilidad que afecta la trazabilidad de la información.",
+            "hallazgo_corregido": "Se evidencia falta de legibilidad en algunas firmas de los registros, situación que podría impactar la trazabilidad y la identificación del personal responsable en el proceso.",
+            "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+            "evidencia": "Registros completados con firmas poco legibles.",
             "severidad": "baja",
-            "criterios_citados": [
-              {
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                "numeral": "7.5.3",
-                "documento": "NTC-ISO 9001:2015",
-                "titulo": "Control de la información documentada",
-                "verificado": true
-              }
-            ],
+            "criterios_citados": [],
             "riesgo": {
-              "descripcion": "Posibilidad de pérdida de trazabilidad en la atención clínica debido a la baja legibilidad en las firmas de los registros, lo que podría dificultar la identificación inequívoca del profesional tratante ante requerimientos asistenciales o legales.",
-              "dimension": "PRESTACION_SERVICIO",
-              "probabilidad": 3,
+              "descripcion": "Posibilidad de pérdida de trazabilidad debido a firmas poco legibles, lo que podría dificultar la identificación de los responsables en los registros.",
+              "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
+              "probabilidad": 2,
               "impacto": 2,
-              "justificacion": "Se estima una probabilidad posible (3) al evidenciarse en varios registros evaluados durante la auditoría. El impacto se califica como menor (2), dado que los registros se encuentran completos y la afectación generaría eventuales reprocesos de validación interna sin suspender ni comprometer directamente la prestación del servicio."
+              "justificacion": "Se estima una probabilidad 2 (improbable) dado que los registros están completos pero aisladamente presentan esta debilidad, y un impacto 2 (menor) porque genera un reproceso leve para identificar al responsable."
             },
             "controles": [
               {
-                "descripcion": "La coordinación de Consulta externa debe socializar con el equipo de salud la directriz sobre el registro claro de firmas acompañado de sello, código o posfirma legible en los formatos asistenciales.",
+                "descripcion": "Implementar la validación de la legibilidad de la firma al momento de diligenciar el registro por parte del personal de Consulta Externa.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
-              },
-              {
-                "descripcion": "El líder del proceso de Consulta externa debe realizar auditorías mensuales de adherencia al diligenciamiento y preservación de la legibilidad de la información documentada.",
-                "tipo": "PREVENTIVO",
-                "origen": "ia",
-                "adoptado": false,
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                "criterio_id": null
               }
             ],
             "avisos": [],
@@ -415,34 +412,22 @@
             "hallazgos": [
               {
                 "clasificacion": "OBSERVACION",
-                "justificacion": "No se evidencia un incumplimiento directo y demostrable a un requisito mandatorio ya que los registros se encuentran diligenciados y completos, pero la baja legibilidad en algunas firmas constituye una debilidad que representa un riesgo potencial para la trazabilidad y la atribución de responsabilidades.",
-                "hallazgo_corregido": "Se evidencia baja legibilidad en algunas de las firmas consignadas en los registros del proceso de Consulta externa, situación que podría dificultar la clara identificación del personal responsable y comprometer la trazabilidad de la atención.",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-                "evidencia": "Registros del proceso completamente diligenciados que presentan algunas firmas con baja legibilidad.",
-                "criterios_citados": [
-                  {
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                    "numeral": "7.5.3",
-                    "documento": "NTC-ISO 9001:2015"
-                  }
-                ],
+                "justificacion": "No existe un incumplimiento directo de un requisito específico en los criterios dados, pero la falta de legibilidad en las firmas representa una debilidad que afecta la trazabilidad de la información.",
+                "hallazgo_corregido": "Se evidencia falta de legibilidad en algunas firmas de los registros, situación que podría impactar la trazabilidad y la identificación del personal responsable en el proceso.",
+                "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+                "evidencia": "Registros completados con firmas poco legibles.",
+                "criterios_citados": [],
                 "riesgo": {
-                  "descripcion": "Posibilidad de pérdida de trazabilidad en la atención clínica debido a la baja legibilidad en las firmas de los registros, lo que podría dificultar la identificación inequívoca del profesional tratante ante requerimientos asistenciales o legales.",
-                  "dimension": "PRESTACION_SERVICIO",
-                  "probabilidad": 3,
+                  "descripcion": "Posibilidad de pérdida de trazabilidad debido a firmas poco legibles, lo que podría dificultar la identificación de los responsables en los registros.",
+                  "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
+                  "probabilidad": 2,
                   "impacto": 2,
-                  "justificacion": "Se estima una probabilidad posible (3) al evidenciarse en varios registros evaluados durante la auditoría. El impacto se califica como menor (2), dado que los registros se encuentran completos y la afectación generaría eventuales reprocesos de validación interna sin suspender ni comprometer directamente la prestación del servicio."
+                  "justificacion": "Se estima una probabilidad 2 (improbable) dado que los registros están completos pero aisladamente presentan esta debilidad, y un impacto 2 (menor) porque genera un reproceso leve para identificar al responsable."
                 },
                 "controles": [
                   {
-                    "descripcion": "La coordinación de Consulta externa debe socializar con el equipo de salud la directriz sobre el registro claro de firmas acompañado de sello, código o posfirma legible en los formatos asistenciales.",
-                    "tipo": "PREVENTIVO",
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
-                  },
-                  {
-                    "descripcion": "El líder del proceso de Consulta externa debe realizar auditorías mensuales de adherencia al diligenciamiento y preservación de la legibilidad de la información documentada.",
-                    "tipo": "PREVENTIVO",
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                    "descripcion": "Implementar la validación de la legibilidad de la firma al momento de diligenciar el registro por parte del personal de Consulta Externa.",
+                    "tipo": "PREVENTIVO"
                   }
                 ],
                 "severidad": "baja"
@@ -457,49 +442,58 @@
               "hallazgos": [
                 {
                   "clasificacion": "OBSERVACION",
-                  "justificacion": "No se evidencia un incumplimiento directo y demostrable a un requisito mandatorio ya que los registros se encuentran diligenciados y completos, pero la baja legibilidad en algunas firmas constituye una debilidad que representa un riesgo potencial para la trazabilidad y la atribución de responsabilidades.",
-                  "hallazgo_corregido": "Se evidencia baja legibilidad en algunas de las firmas consignadas en los registros del proceso de Consulta externa, situación que podría dificultar la clara identificación del personal responsable y comprometer la trazabilidad de la atención.",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-                  "evidencia": "Registros del proceso completamente diligenciados que presentan algunas firmas con baja legibilidad.",
-                  "criterios_citados": [
-                    {
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                      "numeral": "7.5.3",
-                      "documento": "NTC-ISO 9001:2015"
-                    }
-                  ],
+                  "justificacion": "No existe un incumplimiento directo de un requisito específico en los criterios dados, pero la falta de legibilidad en las firmas representa una debilidad que afecta la trazabilidad de la información.",
+                  "hallazgo_corregido": "Se evidencia falta de legibilidad en algunas firmas de los registros, situación que podría impactar la trazabilidad y la identificación del personal responsable en el proceso.",
+                  "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+                  "evidencia": "Registros completados con firmas poco legibles.",
+                  "criterios_citados": [],
                   "riesgo": {
-                    "descripcion": "Posibilidad de pérdida de trazabilidad en la atención clínica debido a la baja legibilidad en las firmas de los registros, lo que podría dificultar la identificación inequívoca del profesional tratante ante requerimientos asistenciales o legales.",
-                    "dimension": "PRESTACION_SERVICIO",
-                    "probabilidad": 3,
+                    "descripcion": "Posibilidad de pérdida de trazabilidad debido a firmas poco legibles, lo que podría dificultar la identificación de los responsables en los registros.",
+                    "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
+                    "probabilidad": 2,
                     "impacto": 2,
-                    "justificacion": "Se estima una probabilidad posible (3) al evidenciarse en varios registros evaluados durante la auditoría. El impacto se califica como menor (2), dado que los registros se encuentran completos y la afectación generaría eventuales reprocesos de validación interna sin suspender ni comprometer directamente la prestación del servicio."
+                    "justificacion": "Se estima una probabilidad 2 (improbable) dado que los registros están completos pero aisladamente presentan esta debilidad, y un impacto 2 (menor) porque genera un reproceso leve para identificar al responsable."
                   },
                   "controles": [
                     {
-                      "descripcion": "La coordinación de Consulta externa debe socializar con el equipo de salud la directriz sobre el registro claro de firmas acompañado de sello, código o posfirma legible en los formatos asistenciales.",
-                      "tipo": "PREVENTIVO",
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
-                    },
-                    {
-                      "descripcion": "El líder del proceso de Consulta externa debe realizar auditorías mensuales de adherencia al diligenciamiento y preservación de la legibilidad de la información documentada.",
-                      "tipo": "PREVENTIVO",
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                      "descripcion": "Implementar la validación de la legibilidad de la firma al momento de diligenciar el registro por parte del personal de Consulta Externa.",
+                      "tipo": "PREVENTIVO"
                     }
                   ],
                   "severidad": "baja"
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OBSERVACION\",\n      \"justificacion\": \"No se evidencia un incumplimiento directo y demostrable a un requisito mandatorio ya que los registros se encuentran diligenciados y completos, pero la baja legibilidad en algunas firmas constituye una debilidad que representa un riesgo potencial para la trazabilidad y la atribución de responsabilidades.\",\n      \"hallazgo_corregido\": \"Se evidencia baja legibilidad en algunas de las firmas consignadas en los registros del proceso de Consulta externa, situación que podría dificultar la clara identificación del personal responsable y comprometer la trazabilidad de la atención.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.5.3\",\n      \"evidencia\": \"Registros del proceso completamente diligenciados que presentan algunas firmas con baja legibilidad.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\",\n          \"numeral\": \"7.5.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de pérdida de trazabilidad en la atención clínica debido a la baja legibilidad en las firmas de los registros, lo que podría dificultar la identificación inequívoca del profesional tratante ante requerimientos asistenciales o legales.\",\n        \"dimension\": \"PRESTACION_SERVICIO\",\n        \"probabilidad\": 3,\n        \"impacto\": 2,\n        \"justificacion\": \"Se estima una probabilidad posible (3) al evidenciarse en varios registros evaluados durante la auditoría. El impacto se califica como menor (2), dado que los registros se encuentran completos y la afectación generaría eventuales reprocesos de validación interna sin suspender ni comprometer directamente la prestación del servicio.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"La coordinación de Consulta externa debe socializar con el equipo de salud la directriz sobre el registro claro de firmas acompañado de sello, código o posfirma legible en los formatos asistenciales.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\"\n        },\n        {\n          \"descripcion\": \"El líder del proceso de Consulta externa debe realizar auditorías mensuales de adherencia al diligenciamiento y preservación de la legibilidad de la información documentada.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
-            "modelo": "gemini-flash-latest",
-            "modeloVersion": "gemini-3.8-flash",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OBSERVACION\",\n      \"justificacion\": \"No existe un incumplimiento directo de un requisito específico en los criterios dados, pero la falta de legibilidad en las firmas representa una debilidad que afecta la trazabilidad de la información.\",\n      \"hallazgo_corregido\": \"Se evidencia falta de legibilidad en algunas firmas de los registros, situación que podría impactar la trazabilidad y la identificación del personal responsable en el proceso.\",\n      \"criterio_requisito\": \"[Requisito específico pendiente de identificación/validación]\",\n      \"evidencia\": \"Registros completados con firmas poco legibles.\",\n      \"criterios_citados\": [],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de pérdida de trazabilidad debido a firmas poco legibles, lo que podría dificultar la identificación de los responsables en los registros.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 2,\n        \"impacto\": 2,\n        \"justificacion\": \"Se estima una probabilidad 2 (improbable) dado que los registros están completos pero aisladamente presentan esta debilidad, y un impacto 2 (menor) porque genera un reproceso leve para identificar al responsable.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"Implementar la validación de la legibilidad de la firma al momento de diligenciar el registro por parte del personal de Consulta Externa.\",\n          \"tipo\": \"PREVENTIVO\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.5-flash-lite",
+            "modeloVersion": "gemini-3.5-flash-lite",
             "finishReason": "STOP",
-            "tokensEntrada": 7764,
-            "tokensSalida": 690,
-            "intentos": 1,
-            "latenciaMs": 10441,
-            "descartados": []
+            "tokensEntrada": 8390,
+            "tokensSalida": 366,
+            "intentos": 11,
+            "latenciaMs": 89542,
+            "descartados": [
+              {
+                "modelo": "gemini-3.8-flash",
+                "motivo": "error 503"
+              },
+              {
+                "modelo": "gemini-flash-latest",
+                "motivo": "error 503"
+              },
+              {
+                "modelo": "gemini-3.7-flash",
+                "motivo": "error 503"
+              },
+              {
+                "modelo": "gemini-3.6-flash",
+                "motivo": "error 503"
+              },
+              {
+                "modelo": "gemini-3.5-flash",
+                "motivo": "error 503"
+              }
+            ]
           }
         ],
         "reparado": false
@@ -519,7 +513,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 10.456
+      "segundos": 89.554
     },
     {
       "caso": {
@@ -549,34 +543,26 @@
         "hallazgos": [
           {
             "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-            "justificacion": "El proceso cumple con el registro adecuado de asistencia en medio físico y no presenta incumplimientos normativos ni debilidades críticas, pero existe la posibilidad de optimizar la gestión mediante su digitalización.",
-            "hallazgo_corregido": "El proceso de registro de asistencia es susceptible de mejorar mediante la adopción de herramientas digitales o sistematizadas para su diligenciamiento, lo cual permitirá agilizar la consolidación de la información, fortalecer la trazabilidad y optimizar los tiempos de análisis del proceso de Gestión humana.",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-            "evidencia": "El registro de asistencia se realiza de manera conforme y controlada a través de formato físico.",
+            "justificacion": "El proceso cumple con la actividad de registro de asistencia de manera correcta mediante formato físico, sin evidenciar incumplimiento de requisitos normativos ni debilidades significativas, existiendo una posibilidad de optimizar el proceso.",
+            "hallazgo_corregido": "El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede digitalizar el formato, lo que permitirá agilizar la consolidación de la información y facilitar su análisis.",
+            "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+            "evidencia": "El registro de asistencia actualmente se realiza correctamente en formato físico.",
             "severidad": "baja",
-            "criterios_citados": [
-              {
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                "numeral": "7.5.3",
-                "documento": "NTC-ISO 9001:2015",
-                "titulo": "Control de la información documentada",
-                "verificado": true
-              }
-            ],
+            "criterios_citados": [],
             "riesgo": {
-              "descripcion": "Posibilidad de reprocesos o demoras en la consolidación de datos debido al diligenciamiento exclusivamente manual en papel, lo que podría generar demoras en los análisis y reportes del proceso.",
+              "descripcion": "Posibilidad de pérdida de información debido al uso de formato físico en el registro de asistencia, lo que podría dificultar la consolidación oportuna de los datos.",
               "dimension": "PRESTACION_SERVICIO",
               "probabilidad": 2,
-              "impacto": 1,
-              "justificacion": "Dado que el registro se efectúa correctamente, demoras sustanciales son poco frecuentes (improbable), y la persistencia del medio físico no compromete la atención ni afecta la prestación del servicio asistencial (insignificante)."
+              "impacto": 2,
+              "justificacion": "Se estima una probabilidad baja dado que el proceso se realiza correctamente aunque en medio físico, y un impacto menor ya que los reprocesos en la consolidación no afectan directamente la atención a los pacientes."
             },
             "controles": [
               {
-                "descripcion": "Evaluar e implementar un mecanismo digitalizado para la captura y consolidación de la asistencia en las actividades de Gestión humana por parte de la coordinación del área.",
+                "descripcion": "Revisar periódicamente el archivo físico de los registros de asistencia para verificar su integridad. Responsable: Gestión humana. Frecuencia: Mensual.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                "criterio_id": null
               }
             ],
             "avisos": [],
@@ -595,29 +581,23 @@
             "hallazgos": [
               {
                 "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-                "justificacion": "El proceso cumple con el registro adecuado de asistencia en medio físico y no presenta incumplimientos normativos ni debilidades críticas, pero existe la posibilidad de optimizar la gestión mediante su digitalización.",
-                "hallazgo_corregido": "El proceso de registro de asistencia es susceptible de mejorar mediante la adopción de herramientas digitales o sistematizadas para su diligenciamiento, lo cual permitirá agilizar la consolidación de la información, fortalecer la trazabilidad y optimizar los tiempos de análisis del proceso de Gestión humana.",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-                "evidencia": "El registro de asistencia se realiza de manera conforme y controlada a través de formato físico.",
-                "criterios_citados": [
-                  {
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                    "numeral": "7.5.3",
-                    "documento": "NTC-ISO 9001:2015"
-                  }
-                ],
+                "justificacion": "El proceso cumple con la actividad de registro de asistencia de manera correcta mediante formato físico, sin evidenciar incumplimiento de requisitos normativos ni debilidades significativas, existiendo una posibilidad de optimizar el proceso.",
+                "hallazgo_corregido": "El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede digitalizar el formato, lo que permitirá agilizar la consolidación de la información y facilitar su análisis.",
+                "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+                "evidencia": "El registro de asistencia actualmente se realiza correctamente en formato físico.",
+                "criterios_citados": [],
                 "riesgo": {
-                  "descripcion": "Posibilidad de reprocesos o demoras en la consolidación de datos debido al diligenciamiento exclusivamente manual en papel, lo que podría generar demoras en los análisis y reportes del proceso.",
+                  "descripcion": "Posibilidad de pérdida de información debido al uso de formato físico en el registro de asistencia, lo que podría dificultar la consolidación oportuna de los datos.",
                   "dimension": "PRESTACION_SERVICIO",
                   "probabilidad": 2,
-                  "impacto": 1,
-                  "justificacion": "Dado que el registro se efectúa correctamente, demoras sustanciales son poco frecuentes (improbable), y la persistencia del medio físico no compromete la atención ni afecta la prestación del servicio asistencial (insignificante)."
+                  "impacto": 2,
+                  "justificacion": "Se estima una probabilidad baja dado que el proceso se realiza correctamente aunque en medio físico, y un impacto menor ya que los reprocesos en la consolidación no afectan directamente la atención a los pacientes."
                 },
                 "controles": [
                   {
-                    "descripcion": "Evaluar e implementar un mecanismo digitalizado para la captura y consolidación de la asistencia en las actividades de Gestión humana por parte de la coordinación del área.",
+                    "descripcion": "Revisar periódicamente el archivo físico de los registros de asistencia para verificar su integridad. Responsable: Gestión humana. Frecuencia: Mensual.",
                     "tipo": "PREVENTIVO",
-                    "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                    "criterio_id": ""
                   }
                 ],
                 "severidad": "baja"
@@ -632,43 +612,37 @@
               "hallazgos": [
                 {
                   "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-                  "justificacion": "El proceso cumple con el registro adecuado de asistencia en medio físico y no presenta incumplimientos normativos ni debilidades críticas, pero existe la posibilidad de optimizar la gestión mediante su digitalización.",
-                  "hallazgo_corregido": "El proceso de registro de asistencia es susceptible de mejorar mediante la adopción de herramientas digitales o sistematizadas para su diligenciamiento, lo cual permitirá agilizar la consolidación de la información, fortalecer la trazabilidad y optimizar los tiempos de análisis del proceso de Gestión humana.",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.5.3",
-                  "evidencia": "El registro de asistencia se realiza de manera conforme y controlada a través de formato físico.",
-                  "criterios_citados": [
-                    {
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010",
-                      "numeral": "7.5.3",
-                      "documento": "NTC-ISO 9001:2015"
-                    }
-                  ],
+                  "justificacion": "El proceso cumple con la actividad de registro de asistencia de manera correcta mediante formato físico, sin evidenciar incumplimiento de requisitos normativos ni debilidades significativas, existiendo una posibilidad de optimizar el proceso.",
+                  "hallazgo_corregido": "El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede digitalizar el formato, lo que permitirá agilizar la consolidación de la información y facilitar su análisis.",
+                  "criterio_requisito": "[Requisito específico pendiente de identificación/validación]",
+                  "evidencia": "El registro de asistencia actualmente se realiza correctamente en formato físico.",
+                  "criterios_citados": [],
                   "riesgo": {
-                    "descripcion": "Posibilidad de reprocesos o demoras en la consolidación de datos debido al diligenciamiento exclusivamente manual en papel, lo que podría generar demoras en los análisis y reportes del proceso.",
+                    "descripcion": "Posibilidad de pérdida de información debido al uso de formato físico en el registro de asistencia, lo que podría dificultar la consolidación oportuna de los datos.",
                     "dimension": "PRESTACION_SERVICIO",
                     "probabilidad": 2,
-                    "impacto": 1,
-                    "justificacion": "Dado que el registro se efectúa correctamente, demoras sustanciales son poco frecuentes (improbable), y la persistencia del medio físico no compromete la atención ni afecta la prestación del servicio asistencial (insignificante)."
+                    "impacto": 2,
+                    "justificacion": "Se estima una probabilidad baja dado que el proceso se realiza correctamente aunque en medio físico, y un impacto menor ya que los reprocesos en la consolidación no afectan directamente la atención a los pacientes."
                   },
                   "controles": [
                     {
-                      "descripcion": "Evaluar e implementar un mecanismo digitalizado para la captura y consolidación de la asistencia en las actividades de Gestión humana por parte de la coordinación del área.",
+                      "descripcion": "Revisar periódicamente el archivo físico de los registros de asistencia para verificar su integridad. Responsable: Gestión humana. Frecuencia: Mensual.",
                       "tipo": "PREVENTIVO",
-                      "criterio_id": "9f719726-fa7d-4141-ad13-f289ff49f010"
+                      "criterio_id": ""
                     }
                   ],
                   "severidad": "baja"
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OPORTUNIDAD_DE_MEJORA\",\n      \"justificacion\": \"El proceso cumple con el registro adecuado de asistencia en medio físico y no presenta incumplimientos normativos ni debilidades críticas, pero existe la posibilidad de optimizar la gestión mediante su digitalización.\",\n      \"hallazgo_corregido\": \"El proceso de registro de asistencia es susceptible de mejorar mediante la adopción de herramientas digitales o sistematizadas para su diligenciamiento, lo cual permitirá agilizar la consolidación de la información, fortalecer la trazabilidad y optimizar los tiempos de análisis del proceso de Gestión humana.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.5.3\",\n      \"evidencia\": \"El registro de asistencia se realiza de manera conforme y controlada a través de formato físico.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\",\n          \"numeral\": \"7.5.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de reprocesos o demoras en la consolidación de datos debido al diligenciamiento exclusivamente manual en papel, lo que podría generar demoras en los análisis y reportes del proceso.\",\n        \"dimension\": \"PRESTACION_SERVICIO\",\n        \"probabilidad\": 2,\n        \"impacto\": 1,\n        \"justificacion\": \"Dado que el registro se efectúa correctamente, demoras sustanciales son poco frecuentes (improbable), y la persistencia del medio físico no compromete la atención ni afecta la prestación del servicio asistencial (insignificante).\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"Evaluar e implementar un mecanismo digitalizado para la captura y consolidación de la asistencia en las actividades de Gestión humana por parte de la coordinación del área.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"9f719726-fa7d-4141-ad13-f289ff49f010\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
-            "modelo": "gemini-flash-latest",
-            "modeloVersion": "gemini-3.8-flash",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OPORTUNIDAD_DE_MEJORA\",\n      \"justificacion\": \"El proceso cumple con la actividad de registro de asistencia de manera correcta mediante formato físico, sin evidenciar incumplimiento de requisitos normativos ni debilidades significativas, existiendo una posibilidad de optimizar el proceso.\",\n      \"hallazgo_corregido\": \"El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede digitalizar el formato, lo que permitirá agilizar la consolidación de la información y facilitar su análisis.\",\n      \"criterio_requisito\": \"[Requisito específico pendiente de identificación/validación]\",\n      \"evidencia\": \"El registro de asistencia actualmente se realiza correctamente en formato físico.\",\n      \"criterios_citados\": [],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de pérdida de información debido al uso de formato físico en el registro de asistencia, lo que podría dificultar la consolidación oportuna de los datos.\",\n        \"dimension\": \"PRESTACION_SERVICIO\",\n        \"probabilidad\": 2,\n        \"impacto\": 2,\n        \"justificacion\": \"Se estima una probabilidad baja dado que el proceso se realiza correctamente aunque en medio físico, y un impacto menor ya que los reprocesos en la consolidación no afectan directamente la atención a los pacientes.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"Revisar periódicamente el archivo físico de los registros de asistencia para verificar su integridad. Responsable: Gestión humana. Frecuencia: Mensual.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.5-flash-lite",
+            "modeloVersion": "gemini-3.5-flash-lite",
             "finishReason": "STOP",
-            "tokensEntrada": 9017,
-            "tokensSalida": 564,
-            "intentos": 2,
-            "latenciaMs": 59147,
+            "tokensEntrada": 9662,
+            "tokensSalida": 397,
+            "intentos": 1,
+            "latenciaMs": 2210,
             "descartados": []
           }
         ],
@@ -689,7 +663,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 59.162
+      "segundos": 2.224
     },
     {
       "caso": {
@@ -723,14 +697,14 @@
         "hallazgos": [
           {
             "clasificacion": "NO_CONFORMIDAD",
-            "justificacion": "Se evidencia el incumplimiento de un requisito explícito y obligatorio de la norma NTC-ISO 9001:2015, numeral 9.3.3 literal a), el cual exige que las salidas de la revisión por la dirección incluyan decisiones y acciones relacionadas con las oportunidades de mejora.",
-            "hallazgo_corregido": "Durante la revisión del informe de la revisión por la dirección se evidenció que no se incluyeron las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3 literal a).",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.3.3 literal a)",
-            "evidencia": "Ausencia de registro de decisiones y acciones relacionadas con las oportunidades de mejora dentro de las salidas de la revisión por la dirección.",
+            "justificacion": "Se evidencia el incumplimiento de un requisito normativo obligatorio de la NTC-ISO 9001:2015, ya que en la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora.",
+            "hallazgo_corregido": "En la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.",
+            "criterio_requisito": "NTC-ISO 9001:2015 numeral 9.3.3",
+            "evidencia": "No se incluyeron las decisiones y acciones frente a las oportunidades de mejora en la revisión por la dirección.",
             "severidad": "media",
             "criterios_citados": [
               {
-                "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d",
+                "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494",
                 "numeral": "9.3.3",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Salidas de la revisión por la dirección",
@@ -738,26 +712,26 @@
               }
             ],
             "riesgo": {
-              "descripcion": "Posibilidad de estancamiento o pérdida de eficacia del sistema de gestión de la calidad debido a la omisión de decisiones y acciones estratégicas sobre las oportunidades de mejora en la revisión por la dirección, lo que podría generar reprocesos e ineficiencias en la gestión institucional.",
-              "dimension": "PRESTACION_SERVICIO",
+              "descripcion": "Posibilidad de desalineación estratégica y estancamiento en la gestión debido a la omisión de decisiones sobre oportunidades de mejora en la revisión por la dirección, lo que podría afectar la eficacia del sistema de gestión de la calidad.",
+              "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
               "probabilidad": 2,
               "impacto": 2,
-              "justificacion": "La revisión por la dirección se ejecuta habitualmente de manera anual o periódica, haciendo que el evento sea poco frecuente (Improbable = 2). La falta de definición de estas decisiones puede ocasionar reprocesos en la gestión gerencial sin suspender la prestación directa de servicios de salud (Menor = 2)."
+              "justificacion": "Se estima una probabilidad 2 (Improbable) por presentarse en el ciclo de revisión anual, y un impacto 2 (Menor) debido a que genera reprocesos o falta de direccionamiento sin comprometer de forma crítica la seguridad inmediata del paciente."
             },
             "controles": [
               {
-                "descripcion": "La Gerencia y el área de Gestión de Calidad deben actualizar el acta o informe de la revisión por la dirección incorporando formalmente las decisiones y acciones tomadas frente a las oportunidades de mejora identificadas.",
-                "tipo": "CORRECTIVO",
-                "origen": "ia",
-                "adoptado": false,
-                "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
-              },
-              {
-                "descripcion": "El área de Gestión de Calidad debe implementar una lista de verificación previa al cierre de cada revisión por la dirección que valide la inclusión de todas las salidas obligatorias del estándar.",
+                "descripcion": "Incluir obligatoriamente un acápite en el acta de revisión por la dirección dedicado a las decisiones y acciones sobre oportunidades de mejora, verificado por el área de Gestión Gerencial.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
+                "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
+              },
+              {
+                "descripcion": "Revisar la trazabilidad de las actas de revisión por la dirección antes de su cierre definitivo.",
+                "tipo": "CORRECTIVO",
+                "origen": "ia",
+                "adoptado": false,
+                "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
               }
             ],
             "avisos": [],
@@ -776,34 +750,34 @@
             "hallazgos": [
               {
                 "clasificacion": "NO_CONFORMIDAD",
-                "justificacion": "Se evidencia el incumplimiento de un requisito explícito y obligatorio de la norma NTC-ISO 9001:2015, numeral 9.3.3 literal a), el cual exige que las salidas de la revisión por la dirección incluyan decisiones y acciones relacionadas con las oportunidades de mejora.",
-                "hallazgo_corregido": "Durante la revisión del informe de la revisión por la dirección se evidenció que no se incluyeron las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3 literal a).",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.3.3 literal a)",
-                "evidencia": "Ausencia de registro de decisiones y acciones relacionadas con las oportunidades de mejora dentro de las salidas de la revisión por la dirección.",
+                "justificacion": "Se evidencia el incumplimiento de un requisito normativo obligatorio de la NTC-ISO 9001:2015, ya que en la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora.",
+                "hallazgo_corregido": "En la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.",
+                "criterio_requisito": "NTC-ISO 9001:2015 numeral 9.3.3",
+                "evidencia": "No se incluyeron las decisiones y acciones frente a las oportunidades de mejora en la revisión por la dirección.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d",
+                    "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494",
                     "numeral": "9.3.3",
                     "documento": "NTC-ISO 9001:2015"
                   }
                 ],
                 "riesgo": {
-                  "descripcion": "Posibilidad de estancamiento o pérdida de eficacia del sistema de gestión de la calidad debido a la omisión de decisiones y acciones estratégicas sobre las oportunidades de mejora en la revisión por la dirección, lo que podría generar reprocesos e ineficiencias en la gestión institucional.",
-                  "dimension": "PRESTACION_SERVICIO",
+                  "descripcion": "Posibilidad de desalineación estratégica y estancamiento en la gestión debido a la omisión de decisiones sobre oportunidades de mejora en la revisión por la dirección, lo que podría afectar la eficacia del sistema de gestión de la calidad.",
+                  "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
                   "probabilidad": 2,
                   "impacto": 2,
-                  "justificacion": "La revisión por la dirección se ejecuta habitualmente de manera anual o periódica, haciendo que el evento sea poco frecuente (Improbable = 2). La falta de definición de estas decisiones puede ocasionar reprocesos en la gestión gerencial sin suspender la prestación directa de servicios de salud (Menor = 2)."
+                  "justificacion": "Se estima una probabilidad 2 (Improbable) por presentarse en el ciclo de revisión anual, y un impacto 2 (Menor) debido a que genera reprocesos o falta de direccionamiento sin comprometer de forma crítica la seguridad inmediata del paciente."
                 },
                 "controles": [
                   {
-                    "descripcion": "La Gerencia y el área de Gestión de Calidad deben actualizar el acta o informe de la revisión por la dirección incorporando formalmente las decisiones y acciones tomadas frente a las oportunidades de mejora identificadas.",
-                    "tipo": "CORRECTIVO",
-                    "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
+                    "descripcion": "Incluir obligatoriamente un acápite en el acta de revisión por la dirección dedicado a las decisiones y acciones sobre oportunidades de mejora, verificado por el área de Gestión Gerencial.",
+                    "tipo": "PREVENTIVO",
+                    "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
                   },
                   {
-                    "descripcion": "El área de Gestión de Calidad debe implementar una lista de verificación previa al cierre de cada revisión por la dirección que valide la inclusión de todas las salidas obligatorias del estándar.",
-                    "tipo": "PREVENTIVO",
-                    "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
+                    "descripcion": "Revisar la trazabilidad de las actas de revisión por la dirección antes de su cierre definitivo.",
+                    "tipo": "CORRECTIVO",
+                    "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
                   }
                 ],
                 "severidad": "media"
@@ -818,48 +792,48 @@
               "hallazgos": [
                 {
                   "clasificacion": "NO_CONFORMIDAD",
-                  "justificacion": "Se evidencia el incumplimiento de un requisito explícito y obligatorio de la norma NTC-ISO 9001:2015, numeral 9.3.3 literal a), el cual exige que las salidas de la revisión por la dirección incluyan decisiones y acciones relacionadas con las oportunidades de mejora.",
-                  "hallazgo_corregido": "Durante la revisión del informe de la revisión por la dirección se evidenció que no se incluyeron las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3 literal a).",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 9.3.3 literal a)",
-                  "evidencia": "Ausencia de registro de decisiones y acciones relacionadas con las oportunidades de mejora dentro de las salidas de la revisión por la dirección.",
+                  "justificacion": "Se evidencia el incumplimiento de un requisito normativo obligatorio de la NTC-ISO 9001:2015, ya que en la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora.",
+                  "hallazgo_corregido": "En la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.",
+                  "criterio_requisito": "NTC-ISO 9001:2015 numeral 9.3.3",
+                  "evidencia": "No se incluyeron las decisiones y acciones frente a las oportunidades de mejora en la revisión por la dirección.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d",
+                      "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494",
                       "numeral": "9.3.3",
                       "documento": "NTC-ISO 9001:2015"
                     }
                   ],
                   "riesgo": {
-                    "descripcion": "Posibilidad de estancamiento o pérdida de eficacia del sistema de gestión de la calidad debido a la omisión de decisiones y acciones estratégicas sobre las oportunidades de mejora en la revisión por la dirección, lo que podría generar reprocesos e ineficiencias en la gestión institucional.",
-                    "dimension": "PRESTACION_SERVICIO",
+                    "descripcion": "Posibilidad de desalineación estratégica y estancamiento en la gestión debido a la omisión de decisiones sobre oportunidades de mejora en la revisión por la dirección, lo que podría afectar la eficacia del sistema de gestión de la calidad.",
+                    "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
                     "probabilidad": 2,
                     "impacto": 2,
-                    "justificacion": "La revisión por la dirección se ejecuta habitualmente de manera anual o periódica, haciendo que el evento sea poco frecuente (Improbable = 2). La falta de definición de estas decisiones puede ocasionar reprocesos en la gestión gerencial sin suspender la prestación directa de servicios de salud (Menor = 2)."
+                    "justificacion": "Se estima una probabilidad 2 (Improbable) por presentarse en el ciclo de revisión anual, y un impacto 2 (Menor) debido a que genera reprocesos o falta de direccionamiento sin comprometer de forma crítica la seguridad inmediata del paciente."
                   },
                   "controles": [
                     {
-                      "descripcion": "La Gerencia y el área de Gestión de Calidad deben actualizar el acta o informe de la revisión por la dirección incorporando formalmente las decisiones y acciones tomadas frente a las oportunidades de mejora identificadas.",
-                      "tipo": "CORRECTIVO",
-                      "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
+                      "descripcion": "Incluir obligatoriamente un acápite en el acta de revisión por la dirección dedicado a las decisiones y acciones sobre oportunidades de mejora, verificado por el área de Gestión Gerencial.",
+                      "tipo": "PREVENTIVO",
+                      "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
                     },
                     {
-                      "descripcion": "El área de Gestión de Calidad debe implementar una lista de verificación previa al cierre de cada revisión por la dirección que valide la inclusión de todas las salidas obligatorias del estándar.",
-                      "tipo": "PREVENTIVO",
-                      "criterio_id": "08fec393-24ed-450f-bb4a-91b2326d344d"
+                      "descripcion": "Revisar la trazabilidad de las actas de revisión por la dirección antes de su cierre definitivo.",
+                      "tipo": "CORRECTIVO",
+                      "criterio_id": "9a8f5414-9eeb-4e24-a708-bf739832f494"
                     }
                   ],
                   "severidad": "media"
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Se evidencia el incumplimiento de un requisito explícito y obligatorio de la norma NTC-ISO 9001:2015, numeral 9.3.3 literal a), el cual exige que las salidas de la revisión por la dirección incluyan decisiones y acciones relacionadas con las oportunidades de mejora.\",\n      \"hallazgo_corregido\": \"Durante la revisión del informe de la revisión por la dirección se evidenció que no se incluyeron las decisiones y acciones frente a las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3 literal a).\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 9.3.3 literal a)\",\n      \"evidencia\": \"Ausencia de registro de decisiones y acciones relacionadas con las oportunidades de mejora dentro de las salidas de la revisión por la dirección.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"08fec393-24ed-450f-bb4a-91b2326d344d\",\n          \"numeral\": \"9.3.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de estancamiento o pérdida de eficacia del sistema de gestión de la calidad debido a la omisión de decisiones y acciones estratégicas sobre las oportunidades de mejora en la revisión por la dirección, lo que podría generar reprocesos e ineficiencias en la gestión institucional.\",\n        \"dimension\": \"PRESTACION_SERVICIO\",\n        \"probabilidad\": 2,\n        \"impacto\": 2,\n        \"justificacion\": \"La revisión por la dirección se ejecuta habitualmente de manera anual o periódica, haciendo que el evento sea poco frecuente (Improbable = 2). La falta de definición de estas decisiones puede ocasionar reprocesos en la gestión gerencial sin suspender la prestación directa de servicios de salud (Menor = 2).\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"La Gerencia y el área de Gestión de Calidad deben actualizar el acta o informe de la revisión por la dirección incorporando formalmente las decisiones y acciones tomadas frente a las oportunidades de mejora identificadas.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"08fec393-24ed-450f-bb4a-91b2326d344d\"\n        },\n        {\n          \"descripcion\": \"El área de Gestión de Calidad debe implementar una lista de verificación previa al cierre de cada revisión por la dirección que valide la inclusión de todas las salidas obligatorias del estándar.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"08fec393-24ed-450f-bb4a-91b2326d344d\"\n        }\n      ],\n      \"severidad\": \"media\"\n    }\n  ]\n}",
-            "modelo": "gemini-3.8-flash",
-            "modeloVersion": "gemini-3.8-flash",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Se evidencia el incumplimiento de un requisito normativo obligatorio de la NTC-ISO 9001:2015, ya que en la revisión por la dirección no se incluyeron las decisiones y acciones frente a las oportunidades de mejora.\",\n      \"hallazgo_corregido\": \"En la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015 numeral 9.3.3\",\n      \"evidencia\": \"No se incluyeron las decisiones y acciones frente a las oportunidades de mejora en la revisión por la dirección.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"9a8f5414-9eeb-4e24-a708-bf739832f494\",\n          \"numeral\": \"9.3.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de desalineación estratégica y estancamiento en la gestión debido a la omisión de decisiones sobre oportunidades de mejora en la revisión por la dirección, lo que podría afectar la eficacia del sistema de gestión de la calidad.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 2,\n        \"impacto\": 2,\n        \"justificacion\": \"Se estima una probabilidad 2 (Improbable) por presentarse en el ciclo de revisión anual, y un impacto 2 (Menor) debido a que genera reprocesos o falta de direccionamiento sin comprometer de forma crítica la seguridad inmediata del paciente.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"Incluir obligatoriamente un acápite en el acta de revisión por la dirección dedicado a las decisiones y acciones sobre oportunidades de mejora, verificado por el área de Gestión Gerencial.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"9a8f5414-9eeb-4e24-a708-bf739832f494\"\n        },\n        {\n          \"descripcion\": \"Revisar la trazabilidad de las actas de revisión por la dirección antes de su cierre definitivo.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"9a8f5414-9eeb-4e24-a708-bf739832f494\"\n        }\n      ],\n      \"severidad\": \"media\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.5-flash-lite",
+            "modeloVersion": "gemini-3.5-flash-lite",
             "finishReason": "STOP",
-            "tokensEntrada": 8411,
-            "tokensSalida": 747,
+            "tokensEntrada": 9039,
+            "tokensSalida": 680,
             "intentos": 1,
-            "latenciaMs": 34409,
+            "latenciaMs": 2867,
             "descartados": []
           }
         ],
@@ -884,7 +858,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 34.422
+      "segundos": 2.88
     },
     {
       "caso": {
@@ -915,14 +889,14 @@
         "hallazgos": [
           {
             "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-            "justificacion": "No se evidencia incumplimiento de un requisito normativo o legal obligatorio aplicable a la capacidad del parqueadero, pero existe una oportunidad para optimizar la capacidad y gestión del espacio físico en beneficio de los usuarios.",
-            "hallazgo_corregido": "La capacidad y disponibilidad del parqueadero de visitantes es susceptible de mejorar mediante la evaluación de alternativas de ampliación, redistribución o convenios externos para días de alta afluencia, lo cual permitirá facilitar el acceso y mejorar la comodidad de los usuarios.",
+            "justificacion": "No se evidencia incumplimiento de un requisito normativo o institucional obligatorio que fije una capacidad mínima de parqueadero, ni se reporta una falla que impida la operación del servicio hospitalario; no obstante, existe una posibilidad de optimizar la infraestructura y logística de parqueo para mejorar la comodidad y el acceso de los usuarios.",
+            "hallazgo_corregido": "La capacidad y gestión del parqueadero de visitantes es susceptible de mejorar, para lo cual se podrían implementar alternativas de señalización, control de cupos o convenios de estacionamiento, lo que permitirá optimizar la accesibilidad, el confort y la comodidad de los usuarios durante los días de mayor afluencia.",
             "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.1.3",
-            "evidencia": "Durante la auditoría se constató que el parqueadero destinado para visitantes cuenta con una capacidad reducida y alcanza su ocupación máxima los días viernes.",
+            "evidencia": "Durante la auditoría se identificó que el parqueadero de visitantes cuenta con una capacidad limitada, llenándose en su totalidad los días viernes.",
             "severidad": "baja",
             "criterios_citados": [
               {
-                "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53",
+                "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f",
                 "numeral": "7.1.3",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Infraestructura",
@@ -930,19 +904,19 @@
               }
             ],
             "riesgo": {
-              "descripcion": "Posibilidad de inconformidad o congestión vehicular en el acceso debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar la percepción de satisfacción y la imagen institucional.",
+              "descripcion": "Posibilidad de congestión y quejas de los usuarios debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar levemente la percepción del servicio.",
               "dimension": "REPUTACIONAL",
               "probabilidad": 4,
-              "impacto": 1,
-              "justificacion": "La saturación se presenta de forma recurrente semanalmente (probable), pero su impacto en la imagen hospitalaria es mínimo e insignificante al tratarse de un servicio complementario."
+              "impacto": 2,
+              "justificacion": "Se estima una probabilidad probable (4) al ocurrir de manera recurrente cada semana (los viernes), y un impacto menor (2) dado que una eventual molestia en el estacionamiento afecta de forma leve la percepción del usuario pero puede ser gestionada sin comprometer la atención médica institucional ni generar repercusiones mayores en medios o redes."
             },
             "controles": [
               {
-                "descripcion": "El área de Gestión de recursos físicos realizará un estudio de capacidad y rotación vehicular para implementar planes de contingencia o convenios de parqueo en días de alta demanda.",
+                "descripcion": "El área de Gestión de recursos físicos evaluará la viabilidad de implementar señalización de disponibilidad en tiempo real y convenios con parqueaderos aledaños para contingencias de alta demanda.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53"
+                "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f"
               }
             ],
             "avisos": [],
@@ -961,29 +935,29 @@
             "hallazgos": [
               {
                 "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-                "justificacion": "No se evidencia incumplimiento de un requisito normativo o legal obligatorio aplicable a la capacidad del parqueadero, pero existe una oportunidad para optimizar la capacidad y gestión del espacio físico en beneficio de los usuarios.",
-                "hallazgo_corregido": "La capacidad y disponibilidad del parqueadero de visitantes es susceptible de mejorar mediante la evaluación de alternativas de ampliación, redistribución o convenios externos para días de alta afluencia, lo cual permitirá facilitar el acceso y mejorar la comodidad de los usuarios.",
+                "justificacion": "No se evidencia incumplimiento de un requisito normativo o institucional obligatorio que fije una capacidad mínima de parqueadero, ni se reporta una falla que impida la operación del servicio hospitalario; no obstante, existe una posibilidad de optimizar la infraestructura y logística de parqueo para mejorar la comodidad y el acceso de los usuarios.",
+                "hallazgo_corregido": "La capacidad y gestión del parqueadero de visitantes es susceptible de mejorar, para lo cual se podrían implementar alternativas de señalización, control de cupos o convenios de estacionamiento, lo que permitirá optimizar la accesibilidad, el confort y la comodidad de los usuarios durante los días de mayor afluencia.",
                 "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.1.3",
-                "evidencia": "Durante la auditoría se constató que el parqueadero destinado para visitantes cuenta con una capacidad reducida y alcanza su ocupación máxima los días viernes.",
+                "evidencia": "Durante la auditoría se identificó que el parqueadero de visitantes cuenta con una capacidad limitada, llenándose en su totalidad los días viernes.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53",
+                    "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f",
                     "numeral": "7.1.3",
                     "documento": "NTC-ISO 9001:2015"
                   }
                 ],
                 "riesgo": {
-                  "descripcion": "Posibilidad de inconformidad o congestión vehicular en el acceso debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar la percepción de satisfacción y la imagen institucional.",
+                  "descripcion": "Posibilidad de congestión y quejas de los usuarios debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar levemente la percepción del servicio.",
                   "dimension": "REPUTACIONAL",
                   "probabilidad": 4,
-                  "impacto": 1,
-                  "justificacion": "La saturación se presenta de forma recurrente semanalmente (probable), pero su impacto en la imagen hospitalaria es mínimo e insignificante al tratarse de un servicio complementario."
+                  "impacto": 2,
+                  "justificacion": "Se estima una probabilidad probable (4) al ocurrir de manera recurrente cada semana (los viernes), y un impacto menor (2) dado que una eventual molestia en el estacionamiento afecta de forma leve la percepción del usuario pero puede ser gestionada sin comprometer la atención médica institucional ni generar repercusiones mayores en medios o redes."
                 },
                 "controles": [
                   {
-                    "descripcion": "El área de Gestión de recursos físicos realizará un estudio de capacidad y rotación vehicular para implementar planes de contingencia o convenios de parqueo en días de alta demanda.",
+                    "descripcion": "El área de Gestión de recursos físicos evaluará la viabilidad de implementar señalización de disponibilidad en tiempo real y convenios con parqueaderos aledaños para contingencias de alta demanda.",
                     "tipo": "PREVENTIVO",
-                    "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53"
+                    "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f"
                   }
                 ],
                 "severidad": "baja"
@@ -998,53 +972,44 @@
               "hallazgos": [
                 {
                   "clasificacion": "OPORTUNIDAD_DE_MEJORA",
-                  "justificacion": "No se evidencia incumplimiento de un requisito normativo o legal obligatorio aplicable a la capacidad del parqueadero, pero existe una oportunidad para optimizar la capacidad y gestión del espacio físico en beneficio de los usuarios.",
-                  "hallazgo_corregido": "La capacidad y disponibilidad del parqueadero de visitantes es susceptible de mejorar mediante la evaluación de alternativas de ampliación, redistribución o convenios externos para días de alta afluencia, lo cual permitirá facilitar el acceso y mejorar la comodidad de los usuarios.",
+                  "justificacion": "No se evidencia incumplimiento de un requisito normativo o institucional obligatorio que fije una capacidad mínima de parqueadero, ni se reporta una falla que impida la operación del servicio hospitalario; no obstante, existe una posibilidad de optimizar la infraestructura y logística de parqueo para mejorar la comodidad y el acceso de los usuarios.",
+                  "hallazgo_corregido": "La capacidad y gestión del parqueadero de visitantes es susceptible de mejorar, para lo cual se podrían implementar alternativas de señalización, control de cupos o convenios de estacionamiento, lo que permitirá optimizar la accesibilidad, el confort y la comodidad de los usuarios durante los días de mayor afluencia.",
                   "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.1.3",
-                  "evidencia": "Durante la auditoría se constató que el parqueadero destinado para visitantes cuenta con una capacidad reducida y alcanza su ocupación máxima los días viernes.",
+                  "evidencia": "Durante la auditoría se identificó que el parqueadero de visitantes cuenta con una capacidad limitada, llenándose en su totalidad los días viernes.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53",
+                      "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f",
                       "numeral": "7.1.3",
                       "documento": "NTC-ISO 9001:2015"
                     }
                   ],
                   "riesgo": {
-                    "descripcion": "Posibilidad de inconformidad o congestión vehicular en el acceso debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar la percepción de satisfacción y la imagen institucional.",
+                    "descripcion": "Posibilidad de congestión y quejas de los usuarios debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar levemente la percepción del servicio.",
                     "dimension": "REPUTACIONAL",
                     "probabilidad": 4,
-                    "impacto": 1,
-                    "justificacion": "La saturación se presenta de forma recurrente semanalmente (probable), pero su impacto en la imagen hospitalaria es mínimo e insignificante al tratarse de un servicio complementario."
+                    "impacto": 2,
+                    "justificacion": "Se estima una probabilidad probable (4) al ocurrir de manera recurrente cada semana (los viernes), y un impacto menor (2) dado que una eventual molestia en el estacionamiento afecta de forma leve la percepción del usuario pero puede ser gestionada sin comprometer la atención médica institucional ni generar repercusiones mayores en medios o redes."
                   },
                   "controles": [
                     {
-                      "descripcion": "El área de Gestión de recursos físicos realizará un estudio de capacidad y rotación vehicular para implementar planes de contingencia o convenios de parqueo en días de alta demanda.",
+                      "descripcion": "El área de Gestión de recursos físicos evaluará la viabilidad de implementar señalización de disponibilidad en tiempo real y convenios con parqueaderos aledaños para contingencias de alta demanda.",
                       "tipo": "PREVENTIVO",
-                      "criterio_id": "7b0d84dc-980a-4200-88f3-eee8adba1b53"
+                      "criterio_id": "04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f"
                     }
                   ],
                   "severidad": "baja"
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OPORTUNIDAD_DE_MEJORA\",\n      \"justificacion\": \"No se evidencia incumplimiento de un requisito normativo o legal obligatorio aplicable a la capacidad del parqueadero, pero existe una oportunidad para optimizar la capacidad y gestión del espacio físico en beneficio de los usuarios.\",\n      \"hallazgo_corregido\": \"La capacidad y disponibilidad del parqueadero de visitantes es susceptible de mejorar mediante la evaluación de alternativas de ampliación, redistribución o convenios externos para días de alta afluencia, lo cual permitirá facilitar el acceso y mejorar la comodidad de los usuarios.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.1.3\",\n      \"evidencia\": \"Durante la auditoría se constató que el parqueadero destinado para visitantes cuenta con una capacidad reducida y alcanza su ocupación máxima los días viernes.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"7b0d84dc-980a-4200-88f3-eee8adba1b53\",\n          \"numeral\": \"7.1.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de inconformidad o congestión vehicular en el acceso debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar la percepción de satisfacción y la imagen institucional.\",\n        \"dimension\": \"REPUTACIONAL\",\n        \"probabilidad\": 4,\n        \"impacto\": 1,\n        \"justificacion\": \"La saturación se presenta de forma recurrente semanalmente (probable), pero su impacto en la imagen hospitalaria es mínimo e insignificante al tratarse de un servicio complementario.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"El área de Gestión de recursos físicos realizará un estudio de capacidad y rotación vehicular para implementar planes de contingencia o convenios de parqueo en días de alta demanda.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"7b0d84dc-980a-4200-88f3-eee8adba1b53\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
-            "modelo": "gemini-3.7-flash",
-            "modeloVersion": "gemini-3.7-flash",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"OPORTUNIDAD_DE_MEJORA\",\n      \"justificacion\": \"No se evidencia incumplimiento de un requisito normativo o institucional obligatorio que fije una capacidad mínima de parqueadero, ni se reporta una falla que impida la operación del servicio hospitalario; no obstante, existe una posibilidad de optimizar la infraestructura y logística de parqueo para mejorar la comodidad y el acceso de los usuarios.\",\n      \"hallazgo_corregido\": \"La capacidad y gestión del parqueadero de visitantes es susceptible de mejorar, para lo cual se podrían implementar alternativas de señalización, control de cupos o convenios de estacionamiento, lo que permitirá optimizar la accesibilidad, el confort y la comodidad de los usuarios durante los días de mayor afluencia.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.1.3\",\n      \"evidencia\": \"Durante la auditoría se identificó que el parqueadero de visitantes cuenta con una capacidad limitada, llenándose en su totalidad los días viernes.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f\",\n          \"numeral\": \"7.1.3\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de congestión y quejas de los usuarios debido a la capacidad limitada del parqueadero de visitantes los días viernes, lo que podría afectar levemente la percepción del servicio.\",\n        \"dimension\": \"REPUTACIONAL\",\n        \"probabilidad\": 4,\n        \"impacto\": 2,\n        \"justificacion\": \"Se estima una probabilidad probable (4) al ocurrir de manera recurrente cada semana (los viernes), y un impacto menor (2) dado que una eventual molestia en el estacionamiento afecta de forma leve la percepción del usuario pero puede ser gestionada sin comprometer la atención médica institucional ni generar repercusiones mayores en medios o redes.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"El área de Gestión de recursos físicos evaluará la viabilidad de implementar señalización de disponibilidad en tiempo real y convenios con parqueaderos aledaños para contingencias de alta demanda.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"04cb2e5f-3c72-497d-a1bd-5bbb46d1b67f\"\n        }\n      ],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.8-flash",
+            "modeloVersion": "gemini-3.8-flash",
             "finishReason": "STOP",
-            "tokensEntrada": 9262,
-            "tokensSalida": 563,
-            "intentos": 4,
-            "latenciaMs": 21738,
-            "descartados": [
-              {
-                "modelo": "gemini-3.8-flash",
-                "motivo": "error 503"
-              },
-              {
-                "modelo": "gemini-flash-latest",
-                "motivo": "cuota diaria agotada"
-              }
-            ]
+            "tokensEntrada": 9882,
+            "tokensSalida": 629,
+            "intentos": 1,
+            "latenciaMs": 10204,
+            "descartados": []
           }
         ],
         "reparado": false
@@ -1072,7 +1037,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 21.757
+      "segundos": 10.219
     },
     {
       "caso": {
@@ -1103,14 +1068,14 @@
         "hallazgos": [
           {
             "clasificacion": "NO_CONFORMIDAD",
-            "justificacion": "Existe evidencia objetiva de un incumplimiento en los controles de infraestructura y equipos para la atención en el servicio de urgencias, al encontrarse un equipo de control de incendios vencido.",
-            "hallazgo_corregido": "Durante la inspección realizada en el área de Urgencias se evidenció un extintor con la fecha de mantenimiento y recarga vencida, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 8.5.1, literal d.",
-            "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1, literal d",
-            "evidencia": "Extintor ubicado en el área de urgencias con fecha de vencimiento expirada.",
-            "severidad": "alta",
+            "justificacion": "Se evidencia el incumplimiento de una condición de infraestructura y entorno seguro para la operación del servicio al contar con un equipo contra incendios (extintor) vencido en el área de Urgencias.",
+            "hallazgo_corregido": "Durante la auditoría en el área de Urgencias se evidenció la presencia de un extintor vencido, incumpliendo con el aseguramiento del entorno adecuado para la operación de los procesos, establecido en la NTC-ISO 9001:2015, numeral 8.5.1.",
+            "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1",
+            "evidencia": "Extintor vencido en el área de urgencias.",
+            "severidad": "media",
             "criterios_citados": [
               {
-                "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4",
+                "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4",
                 "numeral": "8.5.1",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Control de la producción y de la provisión del servicio",
@@ -1118,26 +1083,26 @@
               }
             ],
             "riesgo": {
-              "descripcion": "Posibilidad de inoperatividad de los equipos de extinción de incendios debido a la falta de mantenimiento y recarga oportuna del extintor, lo que podría comprometer la seguridad de los pacientes y colaboradores ante una emergencia de conato de incendio.",
+              "descripcion": "Posibilidad de inoperatividad ante conatos de incendio debido a la falta de vigencia en la recarga e inspección de extintores en el servicio de urgencias, lo que podría ocasionar afectaciones graves en la integridad física de pacientes y colaboradores.",
               "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
-              "probabilidad": 3,
+              "probabilidad": 2,
               "impacto": 4,
-              "justificacion": "El vencimiento del extintor en un área crítica como urgencias genera un riesgo directo sobre la seguridad de pacientes y personal ante un evento de fuego; la probabilidad es posible por falta de seguimiento en las fechas de recarga."
+              "justificacion": "La ocurrencia de un conato de incendio es poco frecuente (improbable), pero al estar el extintor vencido no se garantiza la contención oportuna de la emergencia, lo cual podría derivar en un deterioro serio de la salud o riesgo vital para usuarios y personal del área de Urgencias."
             },
             "controles": [
               {
-                "descripcion": "Realizar la recarga y sustitución inmediata del extintor vencido en el área de urgencias.",
+                "descripcion": "El área de Mantenimiento / Seguridad y Salud en el Trabajo debe realizar el reemplazo o recarga inmediata del extintor vencido identificado en el área de Urgencias.",
                 "tipo": "CORRECTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
               },
               {
-                "descripcion": "Establecer un programa periódico de inspección y cronograma de mantenimiento de extintores y equipos de emergencia a cargo del área de SST.",
+                "descripcion": "El área de Seguridad y Salud en el Trabajo debe implementar una ronda mensual documentada de inspección de extintores en Urgencias para verificar fechas de vencimiento y estado operativo.",
                 "tipo": "PREVENTIVO",
                 "origen": "ia",
                 "adoptado": false,
-                "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
               }
             ],
             "avisos": [],
@@ -1152,14 +1117,14 @@
           },
           {
             "clasificacion": "FORTALEZA",
-            "justificacion": "Se identifica una práctica positiva destacada en el personal de urgencias sobre el dominio del protocolo de código azul, lo que genera un beneficio directo en la seguridad y atención del paciente crítico.",
-            "hallazgo_corregido": "Se evidencia en el personal del área de Urgencias un elevado nivel de competencia y dominio del protocolo de Código Azul, favoreciendo la oportunidad de la respuesta médica y el fortalecimiento de la seguridad del paciente ante emergencias vitales.",
+            "justificacion": "Se identifica una práctica positiva destacada en el personal respecto al conocimiento y aplicación del protocolo asistencial crítico de código azul, lo cual aporta a la oportunidad y seguridad en la atención de emergencias vitales.",
+            "hallazgo_corregido": "El dominio del protocolo de código azul por parte del personal del área de Urgencias, porque favorece la respuesta oportuna y segura ante emergencias médicas de los pacientes.",
             "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.2",
-            "evidencia": "Demostración de excelente dominio práctico y teórico del protocolo de código azul por parte del personal del área de urgencias.",
+            "evidencia": "El personal de urgencias muestra dominio del protocolo de código azul.",
             "severidad": "baja",
             "criterios_citados": [
               {
-                "criterio_id": "eb145164-5acd-42a9-b77a-fed8494baaf5",
+                "criterio_id": "3f390922-16a9-493b-aa29-7f9803bd6036",
                 "numeral": "7.2",
                 "documento": "NTC-ISO 9001:2015",
                 "titulo": "Competencia",
@@ -1184,47 +1149,47 @@
             "hallazgos": [
               {
                 "clasificacion": "NO_CONFORMIDAD",
-                "justificacion": "Existe evidencia objetiva de un incumplimiento en los controles de infraestructura y equipos para la atención en el servicio de urgencias, al encontrarse un equipo de control de incendios vencido.",
-                "hallazgo_corregido": "Durante la inspección realizada en el área de Urgencias se evidenció un extintor con la fecha de mantenimiento y recarga vencida, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 8.5.1, literal d.",
-                "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1, literal d",
-                "evidencia": "Extintor ubicado en el área de urgencias con fecha de vencimiento expirada.",
+                "justificacion": "Se evidencia el incumplimiento de una condición de infraestructura y entorno seguro para la operación del servicio al contar con un equipo contra incendios (extintor) vencido en el área de Urgencias.",
+                "hallazgo_corregido": "Durante la auditoría en el área de Urgencias se evidenció la presencia de un extintor vencido, incumpliendo con el aseguramiento del entorno adecuado para la operación de los procesos, establecido en la NTC-ISO 9001:2015, numeral 8.5.1.",
+                "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1",
+                "evidencia": "Extintor vencido en el área de urgencias.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4",
+                    "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4",
                     "numeral": "8.5.1",
                     "documento": "NTC-ISO 9001:2015"
                   }
                 ],
                 "riesgo": {
-                  "descripcion": "Posibilidad de inoperatividad de los equipos de extinción de incendios debido a la falta de mantenimiento y recarga oportuna del extintor, lo que podría comprometer la seguridad de los pacientes y colaboradores ante una emergencia de conato de incendio.",
+                  "descripcion": "Posibilidad de inoperatividad ante conatos de incendio debido a la falta de vigencia en la recarga e inspección de extintores en el servicio de urgencias, lo que podría ocasionar afectaciones graves en la integridad física de pacientes y colaboradores.",
                   "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
-                  "probabilidad": 3,
+                  "probabilidad": 2,
                   "impacto": 4,
-                  "justificacion": "El vencimiento del extintor en un área crítica como urgencias genera un riesgo directo sobre la seguridad de pacientes y personal ante un evento de fuego; la probabilidad es posible por falta de seguimiento en las fechas de recarga."
+                  "justificacion": "La ocurrencia de un conato de incendio es poco frecuente (improbable), pero al estar el extintor vencido no se garantiza la contención oportuna de la emergencia, lo cual podría derivar en un deterioro serio de la salud o riesgo vital para usuarios y personal del área de Urgencias."
                 },
                 "controles": [
                   {
-                    "descripcion": "Realizar la recarga y sustitución inmediata del extintor vencido en el área de urgencias.",
+                    "descripcion": "El área de Mantenimiento / Seguridad y Salud en el Trabajo debe realizar el reemplazo o recarga inmediata del extintor vencido identificado en el área de Urgencias.",
                     "tipo": "CORRECTIVO",
-                    "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                    "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
                   },
                   {
-                    "descripcion": "Establecer un programa periódico de inspección y cronograma de mantenimiento de extintores y equipos de emergencia a cargo del área de SST.",
+                    "descripcion": "El área de Seguridad y Salud en el Trabajo debe implementar una ronda mensual documentada de inspección de extintores en Urgencias para verificar fechas de vencimiento y estado operativo.",
                     "tipo": "PREVENTIVO",
-                    "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                    "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
                   }
                 ],
-                "severidad": "alta"
+                "severidad": "media"
               },
               {
                 "clasificacion": "FORTALEZA",
-                "justificacion": "Se identifica una práctica positiva destacada en el personal de urgencias sobre el dominio del protocolo de código azul, lo que genera un beneficio directo en la seguridad y atención del paciente crítico.",
-                "hallazgo_corregido": "Se evidencia en el personal del área de Urgencias un elevado nivel de competencia y dominio del protocolo de Código Azul, favoreciendo la oportunidad de la respuesta médica y el fortalecimiento de la seguridad del paciente ante emergencias vitales.",
+                "justificacion": "Se identifica una práctica positiva destacada en el personal respecto al conocimiento y aplicación del protocolo asistencial crítico de código azul, lo cual aporta a la oportunidad y seguridad en la atención de emergencias vitales.",
+                "hallazgo_corregido": "El dominio del protocolo de código azul por parte del personal del área de Urgencias, porque favorece la respuesta oportuna y segura ante emergencias médicas de los pacientes.",
                 "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.2",
-                "evidencia": "Demostración de excelente dominio práctico y teórico del protocolo de código azul por parte del personal del área de urgencias.",
+                "evidencia": "El personal de urgencias muestra dominio del protocolo de código azul.",
                 "criterios_citados": [
                   {
-                    "criterio_id": "eb145164-5acd-42a9-b77a-fed8494baaf5",
+                    "criterio_id": "3f390922-16a9-493b-aa29-7f9803bd6036",
                     "numeral": "7.2",
                     "documento": "NTC-ISO 9001:2015"
                   }
@@ -1243,47 +1208,47 @@
               "hallazgos": [
                 {
                   "clasificacion": "NO_CONFORMIDAD",
-                  "justificacion": "Existe evidencia objetiva de un incumplimiento en los controles de infraestructura y equipos para la atención en el servicio de urgencias, al encontrarse un equipo de control de incendios vencido.",
-                  "hallazgo_corregido": "Durante la inspección realizada en el área de Urgencias se evidenció un extintor con la fecha de mantenimiento y recarga vencida, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 8.5.1, literal d.",
-                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1, literal d",
-                  "evidencia": "Extintor ubicado en el área de urgencias con fecha de vencimiento expirada.",
+                  "justificacion": "Se evidencia el incumplimiento de una condición de infraestructura y entorno seguro para la operación del servicio al contar con un equipo contra incendios (extintor) vencido en el área de Urgencias.",
+                  "hallazgo_corregido": "Durante la auditoría en el área de Urgencias se evidenció la presencia de un extintor vencido, incumpliendo con el aseguramiento del entorno adecuado para la operación de los procesos, establecido en la NTC-ISO 9001:2015, numeral 8.5.1.",
+                  "criterio_requisito": "NTC-ISO 9001:2015, numeral 8.5.1",
+                  "evidencia": "Extintor vencido en el área de urgencias.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4",
+                      "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4",
                       "numeral": "8.5.1",
                       "documento": "NTC-ISO 9001:2015"
                     }
                   ],
                   "riesgo": {
-                    "descripcion": "Posibilidad de inoperatividad de los equipos de extinción de incendios debido a la falta de mantenimiento y recarga oportuna del extintor, lo que podría comprometer la seguridad de los pacientes y colaboradores ante una emergencia de conato de incendio.",
+                    "descripcion": "Posibilidad de inoperatividad ante conatos de incendio debido a la falta de vigencia en la recarga e inspección de extintores en el servicio de urgencias, lo que podría ocasionar afectaciones graves en la integridad física de pacientes y colaboradores.",
                     "dimension": "CALIDAD_SEGURIDAD_PACIENTE",
-                    "probabilidad": 3,
+                    "probabilidad": 2,
                     "impacto": 4,
-                    "justificacion": "El vencimiento del extintor en un área crítica como urgencias genera un riesgo directo sobre la seguridad de pacientes y personal ante un evento de fuego; la probabilidad es posible por falta de seguimiento en las fechas de recarga."
+                    "justificacion": "La ocurrencia de un conato de incendio es poco frecuente (improbable), pero al estar el extintor vencido no se garantiza la contención oportuna de la emergencia, lo cual podría derivar en un deterioro serio de la salud o riesgo vital para usuarios y personal del área de Urgencias."
                   },
                   "controles": [
                     {
-                      "descripcion": "Realizar la recarga y sustitución inmediata del extintor vencido en el área de urgencias.",
+                      "descripcion": "El área de Mantenimiento / Seguridad y Salud en el Trabajo debe realizar el reemplazo o recarga inmediata del extintor vencido identificado en el área de Urgencias.",
                       "tipo": "CORRECTIVO",
-                      "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                      "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
                     },
                     {
-                      "descripcion": "Establecer un programa periódico de inspección y cronograma de mantenimiento de extintores y equipos de emergencia a cargo del área de SST.",
+                      "descripcion": "El área de Seguridad y Salud en el Trabajo debe implementar una ronda mensual documentada de inspección de extintores en Urgencias para verificar fechas de vencimiento y estado operativo.",
                       "tipo": "PREVENTIVO",
-                      "criterio_id": "7c03ec48-9705-4ff7-8d6a-8671e4ad26f4"
+                      "criterio_id": "ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4"
                     }
                   ],
-                  "severidad": "alta"
+                  "severidad": "media"
                 },
                 {
                   "clasificacion": "FORTALEZA",
-                  "justificacion": "Se identifica una práctica positiva destacada en el personal de urgencias sobre el dominio del protocolo de código azul, lo que genera un beneficio directo en la seguridad y atención del paciente crítico.",
-                  "hallazgo_corregido": "Se evidencia en el personal del área de Urgencias un elevado nivel de competencia y dominio del protocolo de Código Azul, favoreciendo la oportunidad de la respuesta médica y el fortalecimiento de la seguridad del paciente ante emergencias vitales.",
+                  "justificacion": "Se identifica una práctica positiva destacada en el personal respecto al conocimiento y aplicación del protocolo asistencial crítico de código azul, lo cual aporta a la oportunidad y seguridad en la atención de emergencias vitales.",
+                  "hallazgo_corregido": "El dominio del protocolo de código azul por parte del personal del área de Urgencias, porque favorece la respuesta oportuna y segura ante emergencias médicas de los pacientes.",
                   "criterio_requisito": "NTC-ISO 9001:2015, numeral 7.2",
-                  "evidencia": "Demostración de excelente dominio práctico y teórico del protocolo de código azul por parte del personal del área de urgencias.",
+                  "evidencia": "El personal de urgencias muestra dominio del protocolo de código azul.",
                   "criterios_citados": [
                     {
-                      "criterio_id": "eb145164-5acd-42a9-b77a-fed8494baaf5",
+                      "criterio_id": "3f390922-16a9-493b-aa29-7f9803bd6036",
                       "numeral": "7.2",
                       "documento": "NTC-ISO 9001:2015"
                     }
@@ -1294,20 +1259,15 @@
                 }
               ]
             },
-            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Existe evidencia objetiva de un incumplimiento en los controles de infraestructura y equipos para la atención en el servicio de urgencias, al encontrarse un equipo de control de incendios vencido.\",\n      \"hallazgo_corregido\": \"Durante la inspección realizada en el área de Urgencias se evidenció un extintor con la fecha de mantenimiento y recarga vencida, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 8.5.1, literal d.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 8.5.1, literal d\",\n      \"evidencia\": \"Extintor ubicado en el área de urgencias con fecha de vencimiento expirada.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"7c03ec48-9705-4ff7-8d6a-8671e4ad26f4\",\n          \"numeral\": \"8.5.1\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de inoperatividad de los equipos de extinción de incendios debido a la falta de mantenimiento y recarga oportuna del extintor, lo que podría comprometer la seguridad de los pacientes y colaboradores ante una emergencia de conato de incendio.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 3,\n        \"impacto\": 4,\n        \"justificacion\": \"El vencimiento del extintor en un área crítica como urgencias genera un riesgo directo sobre la seguridad de pacientes y personal ante un evento de fuego; la probabilidad es posible por falta de seguimiento en las fechas de recarga.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"Realizar la recarga y sustitución inmediata del extintor vencido en el área de urgencias.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"7c03ec48-9705-4ff7-8d6a-8671e4ad26f4\"\n        },\n        {\n          \"descripcion\": \"Establecer un programa periódico de inspección y cronograma de mantenimiento de extintores y equipos de emergencia a cargo del área de SST.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"7c03ec48-9705-4ff7-8d6a-8671e4ad26f4\"\n        }\n      ],\n      \"severidad\": \"alta\"\n    },\n    {\n      \"clasificacion\": \"FORTALEZA\",\n      \"justificacion\": \"Se identifica una práctica positiva destacada en el personal de urgencias sobre el dominio del protocolo de código azul, lo que genera un beneficio directo en la seguridad y atención del paciente crítico.\",\n      \"hallazgo_corregido\": \"Se evidencia en el personal del área de Urgencias un elevado nivel de competencia y dominio del protocolo de Código Azul, favoreciendo la oportunidad de la respuesta médica y el fortalecimiento de la seguridad del paciente ante emergencias vitales.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.2\",\n      \"evidencia\": \"Demostración de excelente dominio práctico y teórico del protocolo de código azul por parte del personal del área de urgencias.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"eb145164-5acd-42a9-b77a-fed8494baaf5\",\n          \"numeral\": \"7.2\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": null,\n      \"controles\": [],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
-            "modelo": "gemini-3.6-flash",
-            "modeloVersion": "gemini-3.6-flash",
+            "texto": "{\n  \"hallazgos\": [\n    {\n      \"clasificacion\": \"NO_CONFORMIDAD\",\n      \"justificacion\": \"Se evidencia el incumplimiento de una condición de infraestructura y entorno seguro para la operación del servicio al contar con un equipo contra incendios (extintor) vencido en el área de Urgencias.\",\n      \"hallazgo_corregido\": \"Durante la auditoría en el área de Urgencias se evidenció la presencia de un extintor vencido, incumpliendo con el aseguramiento del entorno adecuado para la operación de los procesos, establecido en la NTC-ISO 9001:2015, numeral 8.5.1.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 8.5.1\",\n      \"evidencia\": \"Extintor vencido en el área de urgencias.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4\",\n          \"numeral\": \"8.5.1\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": {\n        \"descripcion\": \"Posibilidad de inoperatividad ante conatos de incendio debido a la falta de vigencia en la recarga e inspección de extintores en el servicio de urgencias, lo que podría ocasionar afectaciones graves en la integridad física de pacientes y colaboradores.\",\n        \"dimension\": \"CALIDAD_SEGURIDAD_PACIENTE\",\n        \"probabilidad\": 2,\n        \"impacto\": 4,\n        \"justificacion\": \"La ocurrencia de un conato de incendio es poco frecuente (improbable), pero al estar el extintor vencido no se garantiza la contención oportuna de la emergencia, lo cual podría derivar en un deterioro serio de la salud o riesgo vital para usuarios y personal del área de Urgencias.\"\n      },\n      \"controles\": [\n        {\n          \"descripcion\": \"El área de Mantenimiento / Seguridad y Salud en el Trabajo debe realizar el reemplazo o recarga inmediata del extintor vencido identificado en el área de Urgencias.\",\n          \"tipo\": \"CORRECTIVO\",\n          \"criterio_id\": \"ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4\"\n        },\n        {\n          \"descripcion\": \"El área de Seguridad y Salud en el Trabajo debe implementar una ronda mensual documentada de inspección de extintores en Urgencias para verificar fechas de vencimiento y estado operativo.\",\n          \"tipo\": \"PREVENTIVO\",\n          \"criterio_id\": \"ecf4dbe2-d038-4366-bd09-4b1d15e6ffe4\"\n        }\n      ],\n      \"severidad\": \"media\"\n    },\n    {\n      \"clasificacion\": \"FORTALEZA\",\n      \"justificacion\": \"Se identifica una práctica positiva destacada en el personal respecto al conocimiento y aplicación del protocolo asistencial crítico de código azul, lo cual aporta a la oportunidad y seguridad en la atención de emergencias vitales.\",\n      \"hallazgo_corregido\": \"El dominio del protocolo de código azul por parte del personal del área de Urgencias, porque favorece la respuesta oportuna y segura ante emergencias médicas de los pacientes.\",\n      \"criterio_requisito\": \"NTC-ISO 9001:2015, numeral 7.2\",\n      \"evidencia\": \"El personal de urgencias muestra dominio del protocolo de código azul.\",\n      \"criterios_citados\": [\n        {\n          \"criterio_id\": \"3f390922-16a9-493b-aa29-7f9803bd6036\",\n          \"numeral\": \"7.2\",\n          \"documento\": \"NTC-ISO 9001:2015\"\n        }\n      ],\n      \"riesgo\": null,\n      \"controles\": [],\n      \"severidad\": \"baja\"\n    }\n  ]\n}",
+            "modelo": "gemini-3.8-flash",
+            "modeloVersion": "gemini-3.8-flash",
             "finishReason": "STOP",
-            "tokensEntrada": 8450,
-            "tokensSalida": 1833,
-            "intentos": 3,
-            "latenciaMs": 21925,
-            "descartados": [
-              {
-                "modelo": "gemini-3.7-flash",
-                "motivo": "error 503"
-              }
-            ]
+            "tokensEntrada": 9077,
+            "tokensSalida": 989,
+            "intentos": 1,
+            "latenciaMs": 5098,
+            "descartados": []
           }
         ],
         "reparado": false
@@ -1327,7 +1287,7 @@
         ]
       ],
       "ok": true,
-      "segundos": 21.941
+      "segundos": 5.114
     }
   ]
 }

@@ -96,7 +96,7 @@ supabase secrets set \
   GEMINI_MODEL=gemini-3.8-flash \
   GEMINI_MAX_OUTPUT_TOKENS=8192 \
   GEMINI_NIVEL_RAZONAMIENTO=low \
-  PROMPT_VERSION=1.2.0 \
+  PROMPT_VERSION=1.3.0 \
   LIMITE_IA_DIARIO_POR_USUARIO=40 \
   LIMITE_IA_POR_MINUTO=5
 ```
@@ -106,7 +106,7 @@ supabase secrets set \
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Verificado el 3/10/2026. `gemini-2.5-flash` (el del prompt maestro) devuelve 404 a cuentas nuevas |
 | `GEMINI_MODELOS_RESPALDO` | *(sin definir)* | Si no se define, se usa la cascada por defecto (abajo). Para desactivarla, defínelo igual al modelo principal: `GEMINI_MODELOS_RESPALDO=gemini-3.8-flash` |
 | `GEMINI_MAX_OUTPUT_TOKENS` | `8192` | Gemini 3.x razona por defecto y esos tokens cuentan; además cada hallazgo trae riesgo y controles (unos 400 tokens más). Con 2 048 la respuesta podía cortarse |
-| `PROMPT_VERSION` | `1.2.0` | Queda guardada en cada hallazgo e informe. 1.1.0 agrega la metodología de riesgo del PR13_GQ al mensaje (el prompt del sistema sigue siendo el ANEXO A literal); 1.2.0, la narrativa del informe con el formato oficial |
+| `PROMPT_VERSION` | `1.3.0` | Queda guardada en cada hallazgo e informe. 1.1.0 agrega la metodología de riesgo del PR13_GQ al mensaje (el prompt del sistema sigue siendo el ANEXO A literal); 1.2.0, la narrativa del informe con el formato oficial; 1.3.0, la guía de redacción del dueño (fórmulas por categoría) en el mensaje |
 | `GEMINI_NIVEL_RAZONAMIENTO` | `low` | Misma calidad de clasificación con 1,7 s de latencia en vez de 6,2 s |
 | `LIMITE_IA_DIARIO_POR_USUARIO` | `40` sugerido | Ver «Cuota de la IA» |
 | `LIMITE_IA_POR_MINUTO` | `5` | Evita que un usuario agote la cuota compartida en segundos |
@@ -345,6 +345,14 @@ cambiarlo también en `src/lib/formato-informe.js` (la prueba `pnpm probar:inter
 
 **Lista de verificación (4/10/2026):** `supabase db push` (0011) y luego `git push origin main`. No cambia ninguna
 Edge Function.
+
+**Guía de redacción por categoría (5/10/2026):** cambia el mensaje a la IA y la verificación de la estructura.
+
+```bash
+supabase secrets set PROMPT_VERSION=1.3.0
+supabase functions deploy clasificar-hallazgo      # guía de redacción en el mensaje y V3 con «porque» / «para lo cual»
+git push origin main
+```
 
 **PDF de evidencia al editar (5/10/2026):**
 

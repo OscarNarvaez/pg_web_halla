@@ -15,6 +15,28 @@ Lo único que no interviene es la capa HTTP de Supabase (JWT, RLS y persistencia
 - El modelo principal respondió con 503 (alta demanda) en varios casos y `gemini-flash-latest` agotó su cuota diaria en el caso 6, así que respondieron los de respaldo. Cada caso indica cuál.
 - Los niveles de riesgo usan la escala fija (Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25).
 
+## Corrida del 5/10/2026: guía de redacción por categoría (PROMPT_VERSION 1.3.0)
+
+Misma prueba, con la guía de redacción del dueño en el mensaje de usuario (fórmula de cada categoría con sus
+conectores «porque» y «para lo cual», y sus ejemplos) y V3 ajustada a ella. **Los 7 casos clasifican como se
+espera y todas las redacciones siguen la fórmula de su categoría.** En una primera corrida, el caso 7 coincidió
+con errores 503 de dos modelos: la fortaleza copió «excelente» del texto del auditor y la reparación V4 no
+alcanzó a ejecutarse, así que el hallazgo quedó con el aviso «Revisa la redacción». Repetido el caso con el
+servicio disponible, salió bien. Estas salidas son las de `scripts/fixtures/motor-casos.json`.
+
+| # | Clasificación | Hallazgo corregido | Fórmula (V3) | Modelo |
+|---|---|---|---|---|
+| 1 | No conformidad | Durante la auditoría al proceso de Hospitalización se evidenció que en 5 de 20 historias clínicas revisadas no se encontró registrada la valoración de enfermería, incumpliendo la conservación de información documentada para tener la confianza de que los procesos se realizan según lo planificado y el control de la provisión del servicio bajo condiciones controladas, establecido en la NTC-ISO 9001:2015, numerales 4.4 y 8.5.1. | ✓ | gemini-3.8-flash |
+| 2 | Fortaleza | El seguimiento mensual a los indicadores y la utilización de sus resultados para definir acciones, porque permite la toma de decisiones informada y favorece la mejora continua del proceso de gestión de calidad. | ✓ | gemini-3.8-flash |
+| 3 | Observación | Se evidencia falta de legibilidad en algunas firmas de los registros, situación que podría impactar la trazabilidad y la identificación del personal responsable en el proceso. | ✓ | gemini-3.5-flash-lite |
+| 4 | Oportunidad de mejora | El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede digitalizar el formato, lo que permitirá agilizar la consolidación de la información y facilitar su análisis. | ✓ | gemini-3.5-flash-lite |
+| 5 | No conformidad | En la revisión por la dirección no se incluyeron las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3. | ✓ | gemini-3.5-flash-lite |
+| 6 | Oportunidad de mejora | La capacidad y gestión del parqueadero de visitantes es susceptible de mejorar, para lo cual se podrían implementar alternativas de señalización, control de cupos o convenios de estacionamiento, lo que permitirá optimizar la accesibilidad, el confort y la comodidad de los usuarios durante los días de mayor afluencia. | ✓ | gemini-3.8-flash |
+| 7 | No conformidad | Durante la auditoría en el área de Urgencias se evidenció la presencia de un extintor vencido, incumpliendo con el aseguramiento del entorno adecuado para la operación de los procesos, establecido en la NTC-ISO 9001:2015, numeral 8.5.1. | ✓ | gemini-3.8-flash |
+| 7 | Fortaleza | El dominio del protocolo de código azul por parte del personal del área de Urgencias, porque favorece la respuesta oportuna y segura ante emergencias médicas de los pacientes. | ✓ | gemini-3.8-flash |
+
+Las secciones siguientes («Resumen» y «Detalle de cada caso») son de la corrida del 4/10/2026 (PROMPT_VERSION 1.2.0).
+
 ## Resumen
 
 | # | Entrada (resumida) | Esperada | Obtenida | Criterio | Riesgo (PR13) | Controles | Modelo | Resultado |
@@ -262,11 +284,11 @@ pnpm probar          # todo lo siguiente, en orden
 | Comando | Qué verifica | Resultado |
 |---|---|---|
 | `pnpm verificar:prompt` | El prompt del sistema es el ANEXO A literal | ✓ 15 600 caracteres idénticos |
-| `pnpm probar:validacion` | V1–V7, anonimización antes de la IA y coherencia de catálogos (cargos, evaluador y escala de riesgo) y contenido del informe oficial | ✓ 87 comprobaciones |
+| `pnpm probar:validacion` | V1–V7, guía de redacción por categoría (y que la app verifique igual que el servidor), anonimización antes de la IA, coherencia de catálogos (cargos, evaluador y escala de riesgo) y contenido del informe oficial | ✓ 95 comprobaciones |
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
 | `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador, fechas reales, lista de verificación y PDF agregados al editar (incluida la conversión de perfiles existentes) | ✓ 131 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |
-| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia (al analizar y al editar), matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), lista de verificación (pregunta al crear y al entrar, guardado y cierre de sesión), CSP, cuentas pendientes, admin, 360 px | ✓ 162 comprobaciones |
+| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia (al analizar y al editar), matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), lista de verificación (pregunta al crear y al entrar, guardado y cierre de sesión), CSP, cuentas pendientes, admin, 360 px | ✓ 166 comprobaciones |
 
 ## Pendiente: contra la función desplegada
 

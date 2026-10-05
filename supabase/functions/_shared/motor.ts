@@ -1,7 +1,7 @@
 // Motor de clasificación: arma el mensaje, llama a la IA, valida y repara una sola vez (V4).
 // No conoce Deno ni Supabase: recibe la función que llama al modelo, así se prueba en local.
 
-import { DIMENSIONES_IMPACTO, ESCALA_PROBABILIDAD, ETIQUETAS, MARCADOR_PENDIENTE, NIVELES_IMPACTO } from './catalogos.ts'
+import { DIMENSIONES_IMPACTO, ESCALA_PROBABILIDAD, ETIQUETAS, MARCADOR_PENDIENTE, NIVELES_IMPACTO, type Clasificacion } from './catalogos.ts'
 import type { Criterio } from './recuperar-criterios.ts'
 import type { RespuestaGemini } from './gemini.ts'
 import {
@@ -52,11 +52,74 @@ export function construirMensaje(ctx: ContextoAuditoria, criterios: Criterio[], 
     const idioma = c.idioma === 'en' ? ' | texto en inglés: cita el numeral tal cual y redacta en español' : ''
     lineas.push(`[C${i + 1}] id=${c.id} | ${c.documento_codigo} | ${numeral} | ${c.titulo}${idioma}`, c.contenido.trim(), '')
   })
+  lineas.push(...bloqueRedaccion())
   lineas.push(...bloqueRiesgo())
   lineas.push('## HALLAZGO REPORTADO POR EL AUDITOR', '"""', entrada, '"""', '')
   if (notas?.trim()) lineas.push('## NOTAS O CONTEXTO ADICIONAL DEL AUDITOR', notas.trim(), '')
   lineas.push('Responde ÚNICAMENTE con el JSON definido en el esquema.')
   return lineas.join('\n')
+}
+
+/**
+ * Guía de redacción del dueño (5/10/2026): cuándo corresponde cada categoría, su fórmula y sus ejemplos. Coincide con
+ * el ANEXO A y precisa los conectores («porque», «para lo cual»). La pantalla muestra las mismas fórmulas
+ * (`ESTRUCTURAS` en src/lib/catalogos.js) y V3 las verifica (`verificarEstructura`).
+ */
+export const GUIA_REDACCION: Record<Clasificacion, { cuando: string; formula: string; ejemplos: string[] }> = {
+  NO_CONFORMIDAD: {
+    cuando: 'cuando se evidencia el incumplimiento de un requisito, norma o procedimiento',
+    formula: 'Evidencia + incumplimiento + requisito incumplido.',
+    ejemplos: [
+      'En la Revisión por la dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones relacionadas con las oportunidades de mejora, incumpliendo lo establecido en la NTC-ISO 9001:2015, numeral 9.3.3.',
+    ],
+  },
+  FORTALEZA: {
+    cuando: 'cuando se identifica una práctica positiva y destacable que genera beneficios al proceso o al sistema',
+    formula: 'Qué es relevante + porque + beneficio obtenido en el presente.',
+    ejemplos: [
+      'El liderazgo de la alta dirección del sistema de gestión, porque permite la mejora de los procesos y la competencia de su personal.',
+      'El equipo biométrico para control de asistencia, porque permite el control en tiempo real de la asistencia, la generación de certificados y el control de costos.',
+    ],
+  },
+  OBSERVACION: {
+    cuando: 'cuando existe una situación que requiere atención o seguimiento, pero no constituye un incumplimiento comprobado',
+    formula: 'Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia.',
+    ejemplos: [
+      'Se evidencia falta de planificación de los cambios relacionados con la reposición e incursión de tecnología biomédica, que podría impactar en la ocurrencia de posibles eventos adversos.',
+    ],
+  },
+  OPORTUNIDAD_DE_MEJORA: {
+    cuando: 'cuando el proceso cumple con los requisitos, pero existe la posibilidad de optimizarlo para obtener mejores resultados',
+    formula: 'Qué es susceptible de mejorar + para lo cual + beneficio en el futuro.',
+    ejemplos: [
+      'La infraestructura para la prestación de los servicios es susceptible de mejorar, lo cual permitirá contar con espacios agradables y de confort para el cliente.',
+      'El método utilizado para el registro de asistencia es susceptible de mejorar, para lo cual se puede fortalecer, lo que permitirá la conservación adecuada de los registros y la generación oportuna de los certificados.',
+    ],
+  },
+}
+
+// Orden en que se presentan: el de la pregunta de clasificación del ANEXO A
+const ORDEN_GUIA: Clasificacion[] = ['NO_CONFORMIDAD', 'OBSERVACION', 'FORTALEZA', 'OPORTUNIDAD_DE_MEJORA']
+
+/**
+ * Guía de redacción en el mensaje de usuario: el prompt del sistema es el ANEXO A literal y no se toca.
+ */
+export function bloqueRedaccion(): string[] {
+  return [
+    '## GUÍA DE REDACCIÓN DEL HOSPITAL',
+    'Una vez clasificado, "hallazgo_corregido" sigue OBLIGATORIAMENTE la fórmula de su categoría. Los ejemplos muestran la forma:',
+    'cita solo criterios de la lista (o el marcador de requisito pendiente) y solo hechos que dio el auditor.',
+    ...ORDEN_GUIA.flatMap((c) => [
+      `- ${ETIQUETAS[c].singular.toUpperCase()}, ${GUIA_REDACCION[c].cuando}. Fórmula: ${GUIA_REDACCION[c].formula}`,
+      ...GUIA_REDACCION[c].ejemplos.map((e) => `  Ejemplo: «${e}»`),
+    ]),
+    'Se establece una NO CONFORMIDAD cuando: el hallazgo incumple requisitos del cliente, legales, de la organización o de ISO 9001;',
+    'se repite durante la recolección de la información; genera un alto impacto para la entidad; la documentación es diferente a lo',
+    'que sucede en la realidad; el auditado no conoce las disposiciones documentadas aplicables; hay contradicciones en',
+    'procedimientos, formatos o guías; faltan las evidencias objetivas (registros); o falta consignar información en los registros.',
+    'Los hallazgos de no conformidad evidencian fallas e impactos en los objetivos definidos.',
+    '',
+  ]
 }
 
 /**
@@ -93,6 +156,7 @@ export function construirReparacion(mensaje: string, respuestaAnterior: string, 
     fallidos.length > 1 ? `Hallazgo ${indice + 1} del arreglo:` : '',
     `La respuesta anterior no cumplió la estructura obligatoria de la categoría ${ETIQUETAS[h.clasificacion].singular.toUpperCase()}.`,
     `Problema detectado: ${h.problemas.join('; ')}.`,
+    `Fórmula de la categoría: ${GUIA_REDACCION[h.clasificacion].formula} Ejemplo: «${GUIA_REDACCION[h.clasificacion].ejemplos[0]}»`,
     'Reescribe el campo "hallazgo_corregido" respetando la fórmula obligatoria de esa categoría.',
     'No cambies la clasificación ni inventes requisitos.',
   ].filter(Boolean).join('\n'))

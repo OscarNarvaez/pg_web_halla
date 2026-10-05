@@ -265,8 +265,13 @@ export function quitarDatosInventados(texto: string, entrada: string, criterios:
 // ─── V3 · Estructura según la categoría ────────────────────────────────────
 
 const REGLAS: Record<Clasificacion, { requiere: Array<[RegExp, string]>; prohibe: Array<[RegExp, string]> }> = {
+  // Guía de redacción del dueño (5/10/2026): el incumplimiento puede decirse con «incumpliendo…» o con lo que no se
+  // hizo («no se incluyó…», «no se encuentran controlados…», «falta…»), como en sus ejemplos
   NO_CONFORMIDAD: {
-    requiere: [[/incumpl/, 'no expresa el incumplimiento (por ejemplo, «incumpliendo lo establecido en…»)']],
+    requiere: [[
+      /incumpl|\bno (se|fue|fueron|esta|estan|cumple|cumplen|existe|existen|cuenta|cuentan|corresponde|corresponden|tiene|tienen|hay)\b|\bfalta(n)?\b|\bincomplet|\bvencid|\bdiferente|\bausencia\b|\bcontradic/,
+      'no expresa el incumplimiento (por ejemplo, «no se incluyó…» o «incumpliendo lo establecido en…»)',
+    ]],
     prohibe: [[/susceptible(s)? de mejora|podria(n)? mejorar/, 'usa lenguaje de oportunidad de mejora («susceptible de mejorar», «podría mejorar»)']],
   },
   OBSERVACION: {
@@ -274,7 +279,7 @@ const REGLAS: Record<Clasificacion, { requiere: Array<[RegExp, string]>; prohibe
     prohibe: [[/\bincumpliendo\b|\bincumple(n)?\b/, 'afirma un incumplimiento («incumple», «incumpliendo»), propio de una no conformidad']],
   },
   FORTALEZA: {
-    requiere: [[
+    requiere: [[/\bporque\b/, 'no dice por qué es relevante con «porque» (qué es relevante + porque + beneficio en el presente)'], [
       /\b(permite|permiten|favorece|favorecen|contribuye|contribuyen|fortalece|fortalecen|facilita|facilitan|garantiza|asegura|promueve|aporta|genera|optimiza|permitiendo|favoreciendo|contribuyendo|fortaleciendo|facilitando|garantizando|asegurando|promoviendo)\b/,
       'no expresa el beneficio actual con un verbo en presente («permite», «favorece», «contribuye», «fortalece»)',
     ]],
@@ -286,6 +291,7 @@ const REGLAS: Record<Clasificacion, { requiere: Array<[RegExp, string]>; prohibe
   OPORTUNIDAD_DE_MEJORA: {
     requiere: [
       [/susceptible(s)? de mejora|es posible/, 'no usa la fórmula «es susceptible de mejorar» (o «es posible»)'],
+      [/\blo cual\b/, 'no usa el conector «para lo cual» (o «lo cual») antes del beneficio'],
       [
         /\b(permitira|facilitara|contribuira|favorecera|fortalecera|mejorara|optimizara|agilizara|permitiria|facilitaria|contribuiria|favoreceria|fortaleceria)n?\b/,
         'no proyecta el beneficio futuro («permitirá», «facilitará», «contribuirá», «favorecerá»)',
