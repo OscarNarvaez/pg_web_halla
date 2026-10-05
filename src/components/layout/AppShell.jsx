@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, Menu, ShieldCheck, UserRound, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { RutaAnteriorProvider } from '../../contexts/RutaAnteriorContext'
 import { cx } from '../../lib/cx'
 import { objetoAuditado } from '../../lib/catalogos'
 import { perfilIncompleto } from '../../lib/esquemas'
@@ -130,7 +131,9 @@ export function AppShell() {
             Técnica del informe y sin ellos no se puede generar. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
           </p>
         )}
-        <Outlet />
+        <RutaAnteriorProvider>
+          <Outlet />
+        </RutaAnteriorProvider>
       </main>
     </div>
   )

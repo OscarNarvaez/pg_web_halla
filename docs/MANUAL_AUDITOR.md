@@ -51,11 +51,17 @@ en un informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
   ajuste lo que haga falta antes de guardar.
 
+Al pulsar **Crear auditoría** la plataforma le pregunta cómo quiere empezar:
+
+- **Sí, crear la lista de verificación:** abre la lista de la nueva auditoría (§3) para preparar la visita.
+- **Iniciar directamente la auditoría:** lo lleva a la auditoría para registrar hallazgos. Puede crear la lista
+  más adelante con el botón **Crear lista de verificación**.
+
 ## 3. Preparar la lista de verificación
 
-Antes de ir al lugar de la auditoría, entre a la auditoría y pulse **Lista de verificación**. Es su hoja de trabajo,
-con el formato del hospital: organice ahí lo que va a verificar y anote durante la visita. **No pasa por la IA** ni
-cambia los hallazgos, la matriz o el informe.
+Antes de ir al lugar de la auditoría, cree la lista al crear la auditoría (§2) o, dentro de ella, con **Crear lista de
+verificación**. Es su hoja de trabajo, con el formato del hospital: organice ahí lo que va a verificar y anote durante
+la visita. **No pasa por la IA** ni cambia los hallazgos, la matriz o el informe.
 
 - **Auditoría No y Fecha:** el código de la auditoría y la fecha de la lista.
 - **INFORMACION GENERAL:** quién la elabora, el proceso, el cargo y nombre de los auditados, la fecha y el lugar de
@@ -64,9 +70,17 @@ cambia los hallazgos, la matriz o el informe.
   normatividad o requisito, pregunta, documentos o evidencia, la marca **NC** (No Conforme), **O** (Oportunidad),
   **OB** (Observación) o **F** (Fortaleza) y sus anotaciones. Cada fila admite una sola marca; púlsela otra vez para
   quitarla. Use **Agregar fila** y **Agregar sección** para ampliarla.
-- **Se guarda sola** unos segundos después de cada cambio (verá «Guardado»).
+- **Guardar cambios:** la barra de abajo siempre está a la vista. Además, la lista se guarda sola un momento después
+  de cada cambio, y también con **Ctrl+S**. La barra dice «Cambios sin guardar», «Guardando…» o «Cambios guardados
+  a las…». Si sale de la página o **cierra la sesión**, lo pendiente se guarda antes; si cierra la pestaña con
+  cambios sin guardar, el navegador le avisa.
+- **Continuar con la auditoría:** guarda y lo lleva a la auditoría.
+- **Cada vez que entre a una auditoría que tiene lista**, la plataforma le pregunta si quiere **seguir editando la
+  lista** o **continuar con el proceso de auditoría**, y le muestra el avance (cuántos puntos tienen marca) y la
+  última edición. No pregunta cuando vuelve a la auditoría desde la lista, un hallazgo, la matriz o el informe.
 - **Descargar PDF** la entrega en carta horizontal, para llevarla impresa.
-- Con la auditoría cerrada, la lista queda en solo lectura.
+- Con la auditoría cerrada, la lista queda en solo lectura (se puede ver y descargar). Si necesita cambiarla, reabra
+  la auditoría.
 
 Lo que encuentre en la visita lo registra después como hallazgo con el asistente (§4).
 

@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ClipboardCheck, FilePlus2, FileText, Lock, LockOpen, Search, Table2 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowRight, ClipboardCheck, FilePlus2, FileText, Lock, LockOpen, Search, Table2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useRutaAnterior } from '../contexts/RutaAnteriorContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuditoria } from '../hooks/useAuditorias'
+import { useConsulta } from '../hooks/useConsulta'
 import { actualizarHallazgo, duplicarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { CLASIFICACIONES, ESTADOS_AUDITORIA, ESTADOS_HALLAZGO, ORDEN_INFORME, TONOS, objetoAuditado } from '../lib/catalogos'
-import { fechaLarga } from '../lib/formato'
+import { fechaLarga, haceCuanto } from '../lib/formato'
+import { resumenLista } from '../lib/lista-verificacion'
 import { conteoPorCasilla, faltantesParaValidar } from '../lib/riesgo'
 import { mensajeError, supabase } from '../lib/supabase'
 import { cx } from '../lib/cx'
@@ -14,13 +17,23 @@ import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { TarjetaHallazgo } from '../components/hallazgos/TarjetaHallazgo'
 import { ModalHallazgo } from '../components/hallazgos/ModalHallazgo'
+import { ModalEleccion } from '../components/lista/ModalEleccion'
 import { Badge, Boton, BotonEnlace, EstadoError, EstadoVacio, Skeleton, claseControl } from '../components/ui'
 
 export default function AuditoriaDetalle() {
   const { id } = useParams()
   const { usuario } = useAuth()
   const { notificar } = useToast()
+  const navigate = useNavigate()
+  const rutaAnterior = useRutaAnterior()
   const auditoria = useAuditoria(id)
+  const lista = useConsulta(
+    () => supabase.from('listas_verificacion').select('secciones, actualizado_en').eq('auditoria_id', id).maybeSingle(),
+    [id],
+  )
+  // Cada vez que el auditor ENTRA a una auditoría con lista de verificación se le pregunta por dónde sigue. No se
+  // pregunta cuando vuelve desde una de sus páginas (la lista, un hallazgo, la matriz o el informe).
+  const [respondidaEn, setRespondidaEn] = useState(() => (rutaAnterior?.startsWith(`/app/auditorias/${id}/`) ? id : null))
   const { datos: hallazgos, setDatos: setHallazgos, cargando, error, recargar } = useHallazgos(id)
   const [filtroClase, setFiltroClase] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('vigentes')
@@ -53,6 +66,7 @@ export default function AuditoriaDetalle() {
   if (!auditoria.datos) return <EstadoVacio titulo="Auditoría no encontrada" descripcion="No existe o no tienes acceso a ella." accion={<BotonEnlace a="/app/auditorias" variante="secundario">Ver mis auditorías</BotonEnlace>} />
   const a = auditoria.datos
   const cerrada = a.estado === 'cerrada'
+  const resumen = lista.datos ? resumenLista(lista.datos) : null
 
   const reemplazar = (nuevo) => {
     setHallazgos((lista) => lista.map((h) => (h.id === nuevo.id ? nuevo : h)))
@@ -104,7 +118,9 @@ export default function AuditoriaDetalle() {
         acciones={
           <>
             <BotonEnlace a={`/app/auditorias/${id}/hallazgos/nuevo`} icono={FilePlus2} deshabilitado={cerrada}>Nuevo hallazgo</BotonEnlace>
-            <BotonEnlace a={`/app/auditorias/${id}/lista`} icono={ClipboardCheck} variante="secundario">Lista de verificación</BotonEnlace>
+            <BotonEnlace a={`/app/auditorias/${id}/lista`} icono={ClipboardCheck} variante="secundario" deshabilitado={cerrada && !lista.cargando && !lista.datos}>
+              {lista.cargando || lista.datos ? 'Lista de verificación' : 'Crear lista de verificación'}
+            </BotonEnlace>
             <BotonEnlace a={`/app/auditorias/${id}/matriz`} icono={Table2} variante="secundario">Matriz consolidada</BotonEnlace>
             <BotonEnlace a={`/app/auditorias/${id}/informe`} icono={FileText} variante="secundario" deshabilitado={confirmados === 0}
               title={confirmados === 0 ? 'Valida al menos un hallazgo para generar el informe' : undefined}>
@@ -208,6 +224,41 @@ export default function AuditoriaDetalle() {
         alValidar={validar}
         guardando={guardando}
         conteo={conteoMapa}
+      />
+
+      <ModalEleccion
+        abierto={Boolean(lista.datos) && respondidaEn !== id}
+        alCerrar={() => setRespondidaEn(id)}
+        titulo="¿Cómo quieres continuar?"
+        descripcion={
+          <>
+            <p>Esta auditoría tiene una lista de verificación.</p>
+            {resumen && (
+              <p className="text-tinta-500">
+                {resumen.puntos
+                  ? `${resumen.marcados} de ${resumen.puntos} ${resumen.puntos === 1 ? 'punto tiene' : 'puntos tienen'} marca (NC, O, OB o F)`
+                  : 'Aún no tiene puntos por verificar'}
+                {lista.datos.actualizado_en ? ` · última edición ${haceCuanto(lista.datos.actualizado_en)}` : ''}.
+              </p>
+            )}
+          </>
+        }
+        opciones={[
+          {
+            icono: ClipboardCheck,
+            titulo: cerrada ? 'Ver la lista de verificación' : 'Seguir editando la lista de verificación',
+            descripcion: cerrada
+              ? 'La auditoría está cerrada: puedes consultar y descargar la lista, pero no cambiarla.'
+              : 'Retómala donde la dejaste. Tus cambios se guardan y puedes volver a la auditoría cuando quieras.',
+            alPulsar: () => navigate(`/app/auditorias/${id}/lista`),
+          },
+          {
+            icono: ArrowRight,
+            titulo: cerrada ? 'Ver la auditoría' : 'Continuar con el proceso de auditoría',
+            descripcion: 'Hallazgos, matriz consolidada e informe. La lista sigue disponible en el botón «Lista de verificación».',
+            alPulsar: () => setRespondidaEn(id),
+          },
+        ]}
       />
     </>
   )

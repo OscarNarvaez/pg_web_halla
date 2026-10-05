@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Sparkles } from 'lucide-react'
+import { ArrowRight, ClipboardCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../contexts/ToastContext'
 import { proponerCodigo } from '../hooks/useAuditorias'
 import { aFilaAlcance, esquemaAuditoria } from '../lib/esquemas'
 import { DOCUMENTOS, documentosParaAlcance } from '../lib/catalogos'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { Encabezado } from '../components/layout/Encabezado'
 import { CamposAlcance } from '../components/perfil/CamposPerfil'
+import { ModalEleccion } from '../components/lista/ModalEleccion'
 import { AreaTexto, Boton, Campo, Checkbox, Tarjeta } from '../components/ui'
 
 const hoy = () => new Date().toISOString().slice(0, 10)
@@ -18,7 +18,7 @@ const hoy = () => new Date().toISOString().slice(0, 10)
 export default function AuditoriaNueva() {
   const { perfil, usuario } = useAuth()
   const navigate = useNavigate()
-  const { notificar } = useToast()
+  const [creada, setCreada] = useState(null) // { id, codigo }: abre la pregunta de cómo empezar
   const [sugiriendo, setSugiriendo] = useState(false)
   const [avisoIa, setAvisoIa] = useState('')
   const [error, setError] = useState('')
@@ -92,9 +92,11 @@ export default function AuditoriaNueva() {
       .select('id')
       .single()
     if (err) return setError(mensajeError(err))
-    notificar('Auditoría creada', 'exito')
-    navigate(`/app/auditorias/${data.id}`)
+    setCreada({ id: data.id, codigo: d.codigo })
   }
+
+  // «Atrás» desde la auditoría creada lleva a la lista de auditorías, no a este formulario ya usado
+  const irA = (ruta) => navigate(ruta, { replace: true })
 
   return (
     <>
@@ -150,9 +152,31 @@ export default function AuditoriaNueva() {
 
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={() => navigate('/app/auditorias')}>Cancelar</Boton>
-          <Boton type="submit" cargando={isSubmitting}>Crear auditoría</Boton>
+          <Boton type="submit" cargando={isSubmitting} disabled={Boolean(creada)}>Crear auditoría</Boton>
         </div>
       </form>
+
+      <ModalEleccion
+        abierto={Boolean(creada)}
+        // Cerrar sin elegir lleva a la auditoría: ya está creada
+        alCerrar={() => creada && irA(`/app/auditorias/${creada.id}`)}
+        titulo="Auditoría creada"
+        descripcion={<p>La auditoría <strong>{creada?.codigo}</strong> quedó registrada. ¿Quieres preparar primero la lista de verificación o empezar directamente con la auditoría?</p>}
+        opciones={[
+          {
+            icono: ClipboardCheck,
+            titulo: 'Sí, crear la lista de verificación',
+            descripcion: 'Organiza los requisitos, las preguntas y los documentos que vas a revisar antes de ir al lugar. Se guarda y puedes retomarla cuando quieras.',
+            alPulsar: () => irA(`/app/auditorias/${creada.id}/lista`),
+          },
+          {
+            icono: ArrowRight,
+            titulo: 'Iniciar directamente la auditoría',
+            descripcion: 'Registra los hallazgos desde ya. La lista de verificación sigue disponible dentro de la auditoría.',
+            alPulsar: () => irA(`/app/auditorias/${creada.id}`),
+          },
+        ]}
+      />
     </>
   )
 }

@@ -266,7 +266,7 @@ pnpm probar          # todo lo siguiente, en orden
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
 | `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador, fechas reales y lista de verificación (incluida la conversión de perfiles existentes) | ✓ 112 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |
-| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia, matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), lista de verificación, CSP, cuentas pendientes, admin, 360 px | ✓ 133 comprobaciones |
+| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia, matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF), lista de verificación (pregunta al crear y al entrar, guardado y cierre de sesión), CSP, cuentas pendientes, admin, 360 px | ✓ 152 comprobaciones |
 
 ## Pendiente: contra la función desplegada
 

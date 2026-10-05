@@ -52,6 +52,13 @@ export function listaInicial(auditoria, perfil) {
   }
 }
 
+/** Puntos de la lista (filas con algo escrito o marcado) y cuántos ya tienen marca NC, O, OB o F. */
+export function resumenLista(lista) {
+  const filas = (lista?.secciones ?? []).flatMap((s) => s.filas ?? [])
+  const puntos = filas.filter((f) => f.marca || [f.requisito, f.pregunta, f.documentos, f.anotaciones].some((t) => String(t ?? '').trim()))
+  return { puntos: puntos.length, marcados: puntos.filter((f) => f.marca).length }
+}
+
 /** «2026-10-04» → { dia: '04', mes: '10', anio: '2026' }, para las tres casillas de «Fecha» del formato. */
 export function partesFecha(iso) {
   const [anio = '', mes = '', dia = ''] = String(iso ?? '').split('-')

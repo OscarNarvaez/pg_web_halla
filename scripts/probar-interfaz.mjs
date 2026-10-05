@@ -734,9 +734,18 @@ ok(true, 'un perfil anterior incompleto ve el aviso para completarlo en «Mi per
 perfil.cargos = ['Auditor médico', 'Coordinadora']
 
 // Lista de verificación: la hoja de trabajo del auditor (sin IA)
+const preguntaLista = p.getByRole('dialog', { name: '¿Cómo quieres continuar?' })
+const estadoGuardado = p.getByRole('status').filter({ hasText: /^Cambios guardados/ })
 await p.goto(`${BASE}/app/auditorias/${A1}`)
-await p.getByRole('link', { name: 'Lista de verificación' }).click()
+await p.getByRole('heading', { name: 'Auditoría interna al proceso de Urgencias' }).waitFor()
+await p.waitForTimeout(500)
+ok((await preguntaLista.count()) === 0, 'sin lista de verificación, entrar a la auditoría no pregunta nada')
+await p.getByRole('link', { name: 'Crear lista de verificación' }).click()
 await p.getByRole('heading', { name: 'Lista de verificación', exact: true }).waitFor()
+await estadoGuardado.waitFor({ timeout: 10000 })
+ok(db.listas_verificacion.some((l) => l.auditoria_id === A1), 'al abrirla, la lista queda creada aunque aún no se escriba nada')
+ok(await p.getByRole('button', { name: 'Guardar cambios' }).isVisible() && await p.getByRole('button', { name: 'Continuar con la auditoría' }).isVisible(),
+  'la barra de la lista siempre tiene «Guardar cambios» y «Continuar con la auditoría»')
 const antesLista = peticiones.length
 ok(await p.getByLabel('ELABORADA POR:').inputValue() === 'Ana María Rodríguez Peña' && await p.getByLabel('PROCESO A AUDITAR').inputValue() === 'Urgencias'
   && await p.getByLabel('CARGO Y NOMBRE DE LOS AUDITADOS:').inputValue() === 'Coordinador de Urgencias - Jorge Muñoz' && await p.getByLabel('LUGAR DE EJECUCIÓN:').inputValue() === 'Servicio de Urgencias',
@@ -754,15 +763,49 @@ ok((await p.getByRole('group', { name: 'Marca de la fila 2' }).getByRole('button
 await p.getByRole('button', { name: 'Agregar sección' }).click()
 await p.getByLabel('Título de la sección 2').fill('GESTION DE RECURSOS FISICOS (MANTENIMIENTO)')
 await p.getByRole('button', { name: 'Agregar fila a la sección 2' }).click()
-await p.getByRole('status').filter({ hasText: 'Guardado' }).waitFor({ timeout: 10000 })
+await estadoGuardado.waitFor({ timeout: 10000 })
 const guardadoLista = db.listas_verificacion.find((l) => l.auditoria_id === A1)
 ok(guardadoLista?.secciones.length === 2 && guardadoLista.secciones[0].filas[0].marca === 'NC' && guardadoLista.secciones[0].filas[1].marca === 'OB'
   && guardadoLista.secciones[1].filas.length === 6 && guardadoLista.user_id === USUARIO, 'la lista se guarda sola tras los cambios', JSON.stringify(guardadoLista?.secciones?.map((x) => x.filas.length)))
 ok(!peticiones.slice(antesLista).some((x) => x.metodo === 'FUNC'), 'la lista de verificación no pasa por la IA')
 await p.screenshot({ path: `${CAPTURAS}12-lista-verificacion.png`, fullPage: true })
+
+// «Guardar cambios» guarda en el acto, sin esperar el guardado automático
+await p.getByLabel(`${'Normatividad/requisito/ componente por auditar'} (fila 3)`).first().fill('Resolución 3100 de 2019: estándar de dotación')
+ok(await p.getByRole('status').filter({ hasText: 'Cambios sin guardar' }).isVisible(), 'mientras escribe, la barra avisa «Cambios sin guardar»')
+await p.getByRole('button', { name: 'Guardar cambios' }).click()
+await p.getByText('Lista guardada').waitFor()
+ok(db.listas_verificacion.find((l) => l.auditoria_id === A1).secciones[0].filas[2].requisito === 'Resolución 3100 de 2019: estándar de dotación', '«Guardar cambios» guarda la lista en el acto')
+await p.getByLabel('Pregunta (fila 3)').first().fill('¿Los carros de paro tienen la dotación completa?')
+await p.keyboard.press('Control+s')
+await p.getByText('Lista guardada').first().waitFor()
+await estadoGuardado.waitFor()
+ok(db.listas_verificacion.find((l) => l.auditoria_id === A1).secciones[0].filas[2].pregunta === '¿Los carros de paro tienen la dotación completa?', 'Ctrl+S también guarda la lista')
+
+// Volver a la auditoría desde la lista no pregunta; ENTRAR a ella sí, siempre
+await p.getByRole('button', { name: 'Continuar con la auditoría' }).click()
+await p.getByRole('heading', { name: 'Auditoría interna al proceso de Urgencias' }).waitFor()
+await p.waitForTimeout(500)
+ok((await preguntaLista.count()) === 0, 'al volver desde la lista a la auditoría no se pregunta de nuevo')
+for (const vuelta of [1, 2]) {
+  await p.getByRole('navigation', { name: 'Navegación principal' }).first().getByRole('link', { name: 'Auditorías' }).click()
+  await p.getByRole('link', { name: /Auditoría interna al proceso de Urgencias/ }).click()
+  await preguntaLista.waitFor()
+  ok(true, `al entrar a la auditoría con lista se pregunta si sigue con la lista o con la auditoría (vez ${vuelta})`)
+  if (vuelta === 1) {
+    ok(await preguntaLista.getByText('2 de 3 puntos tienen marca (NC, O, OB o F)').isVisible(), 'la pregunta resume el avance de la lista')
+    await p.screenshot({ path: `${CAPTURAS}12b-pregunta-lista.png` })
+    await preguntaLista.getByRole('button', { name: 'Continuar con el proceso de auditoría' }).click()
+    await p.waitForTimeout(300)
+    ok((await preguntaLista.count()) === 0 && await p.getByRole('heading', { name: 'Hallazgos', exact: true }).isVisible(), '«Continuar con el proceso de auditoría» cierra la pregunta y deja la auditoría')
+  }
+}
+await preguntaLista.getByRole('button', { name: 'Seguir editando la lista de verificación' }).click()
+await p.getByLabel('Título de la sección 2').waitFor()
+ok(await p.getByLabel('Hallazgos o anotaciones (fila 1)').first().inputValue() === 'El cronograma no incluye los extintores de Urgencias.', '«Seguir editando» abre la lista como se dejó')
 await p.reload()
 await p.getByLabel('Título de la sección 2').waitFor()
-ok(await p.getByLabel('Hallazgos o anotaciones (fila 1)').first().inputValue() === 'El cronograma no incluye los extintores de Urgencias.', 'al volver, la lista está como se dejó')
+ok(await p.getByLabel('Pregunta (fila 3)').first().inputValue() === '¿Los carros de paro tienen la dotación completa?', 'al recargar, la lista está como se dejó')
 const [descargaLista] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Descargar PDF' }).click()])
 const rutaLista = `${CAPTURAS}${descargaLista.suggestedFilename()}`
 await descargaLista.saveAs(rutaLista)
@@ -798,6 +841,51 @@ await p.getByRole('button', { name: 'Sugerir con IA' }).click()
 await p.getByText('Propuesta de la IA').waitFor()
 ok((await p.getByLabel('Objetivo de la auditoría').inputValue()).includes('Cirugía'), 'la IA rellena el objetivo')
 await p.screenshot({ path: `${CAPTURAS}09-nueva-auditoria.png`, fullPage: true })
+
+// Al crearla se pregunta si empieza por la lista de verificación o directamente por la auditoría
+await p.getByLabel('Título').fill('Auditoría interna al proceso de Cirugía')
+await p.getByRole('button', { name: 'Crear auditoría' }).click()
+const creada = p.getByRole('dialog', { name: 'Auditoría creada' })
+await creada.waitFor()
+const A2 = db.auditorias.find((a) => a.codigo === 'AI-2026-002')?.id
+ok(A2 && await creada.getByText('AI-2026-002').isVisible() && (await creada.getByRole('button').count()) === 3,
+  'al pulsar «Crear auditoría» aparece la pregunta: lista de verificación o auditoría')
+await p.screenshot({ path: `${CAPTURAS}09b-auditoria-creada.png` })
+await creada.getByRole('button', { name: 'Sí, crear la lista de verificación' }).click()
+await p.getByRole('heading', { name: 'Lista de verificación', exact: true }).waitFor()
+await estadoGuardado.waitFor({ timeout: 10000 })
+ok(p.url().endsWith(`/app/auditorias/${A2}/lista`) && db.listas_verificacion.some((l) => l.auditoria_id === A2) && await p.getByLabel('PROCESO A AUDITAR').inputValue() === 'Cirugía',
+  '«Sí, crear la lista» abre la lista de la nueva auditoría y la deja guardada')
+await p.getByRole('button', { name: 'Continuar con la auditoría' }).click()
+await p.getByRole('heading', { name: 'Auditoría interna al proceso de Cirugía' }).waitFor()
+await p.waitForTimeout(500)
+ok((await preguntaLista.count()) === 0, 'desde la lista recién creada se pasa a la auditoría sin otra pregunta')
+await p.goBack()
+await p.getByRole('heading', { name: 'Lista de verificación', exact: true }).waitFor()
+await p.goBack()
+await p.getByRole('heading', { name: 'Normas' }).first().waitFor()
+ok(!p.url().endsWith('/app/auditorias/nueva'), '«Atrás» desde la auditoría creada no vuelve al formulario ya enviado')
+
+await p.goto(`${BASE}/app/auditorias/nueva`)
+await p.waitForFunction(() => document.querySelector('input[name="codigo"]')?.value === 'AI-2026-003')
+await p.getByLabel('Título').fill('Auditoría interna al proceso de Farmacia')
+await p.getByRole('button', { name: 'Crear auditoría' }).click()
+await creada.getByRole('button', { name: 'Iniciar directamente la auditoría' }).click()
+await p.getByRole('heading', { name: 'Auditoría interna al proceso de Farmacia' }).waitFor()
+await p.waitForTimeout(500)
+const A3 = db.auditorias.find((a) => a.codigo === 'AI-2026-003')?.id
+ok(p.url().endsWith(`/app/auditorias/${A3}`) && !db.listas_verificacion.some((l) => l.auditoria_id === A3) && (await preguntaLista.count()) === 0
+  && await p.getByRole('link', { name: 'Crear lista de verificación' }).isVisible(),
+  '«Iniciar directamente la auditoría» lleva a la auditoría sin lista; se puede crear después')
+
+// Cerrar la sesión con cambios recién escritos: se guardan antes de salir
+await p.goto(`${BASE}/app/auditorias/${A1}/lista`)
+await p.getByLabel('Título de la sección 2').waitFor()
+await p.getByLabel('Hallazgos o anotaciones (fila 2)').first().fill('Revisar el registro de temperatura de la nevera.')
+await p.getByRole('button', { name: 'Salir' }).first().click()
+await p.waitForURL((u) => !u.pathname.startsWith('/app'), { timeout: 15000 })
+ok(db.listas_verificacion.find((l) => l.auditoria_id === A1).secciones[0].filas[1].anotaciones === 'Revisar el registro de temperatura de la nevera.',
+  'al cerrar la sesión, lo que se acababa de escribir en la lista queda guardado')
 await ctx.close()
 
 // ═══ 2b. Controles de acceso ═══
@@ -859,7 +947,6 @@ console.log('\n▸ Móvil (360 px)')
   m.on('pageerror', (e) => errores.push(`móvil: ${e.message}`))
   for (const [ruta, nombre, esperar] of [
     ['/app', 'panel', /Hola, Ana/],
-    [`/app/auditorias/${A1}`, 'detalle de auditoría', 'Auditoría interna al proceso de Urgencias'],
     [`/app/auditorias/${A1}/hallazgos/nuevo`, 'nuevo hallazgo', 'Nuevo hallazgo'],
     [`/app/auditorias/${A1}/informe`, 'informe', 'Informe de auditoría'],
     ['/app/normas', 'normas', 'Normas'],
@@ -873,6 +960,13 @@ console.log('\n▸ Móvil (360 px)')
     await m.waitForTimeout(400)
     await sinDesborde(m, nombre)
   }
+  // Entrar a la auditoría con lista: primero la pregunta, después el detalle
+  await m.goto(`${BASE}/app/auditorias/${A1}`)
+  await m.getByRole('dialog', { name: '¿Cómo quieres continuar?' }).waitFor()
+  await sinDesborde(m, 'pregunta al entrar a la auditoría')
+  await m.getByRole('button', { name: 'Continuar con el proceso de auditoría' }).click()
+  await m.getByRole('heading', { name: 'Auditoría interna al proceso de Urgencias' }).waitFor()
+  await sinDesborde(m, 'detalle de auditoría')
   await m.goto(`${BASE}/app/auditorias/${A1}/hallazgos/nuevo`)
   await m.getByLabel('Describe lo que observaste durante la auditoría').fill(motor.resultados.find((r) => r.caso.n === 7).caso.entrada)
   await m.getByRole('button', { name: 'Analizar con IA' }).click()

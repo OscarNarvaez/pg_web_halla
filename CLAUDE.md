@@ -73,7 +73,11 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   integrada ISO 19011 (`docs/RECONOCIMIENTO.md`).
 - Lista de verificación (formato del dueño, 0011, `src/pages/ListaVerificacion.jsx`): hoja de trabajo del auditor,
   una por auditoría, con guardado automático y PDF (`exportar-lista.js`). NO pasa por la IA ni alimenta hallazgos,
-  matriz ni informe. Textos del formato en `src/lib/lista-verificacion.js`.
+  matriz ni informe. Textos del formato en `src/lib/lista-verificacion.js`. Flujo (decisión del dueño, 5/10/2026):
+  al crear la auditoría se pregunta «lista o auditoría» (`ModalEleccion`); abrir la lista la crea; al ENTRAR a una
+  auditoría con lista se pregunta SIEMPRE si sigue con la lista o con la auditoría (no al volver desde sus páginas:
+  `RutaAnteriorContext`). Barra con «Guardar cambios» siempre visible; lo pendiente se guarda antes de cerrar sesión
+  (`src/lib/guardado-pendiente.js`).
 - PDF de evidencia: se lee en el navegador (`src/lib/pdf-evidencia.js`) y NUNCA se sube; solo viajan su texto
   y su huella `{nombre, paginas, sha256}`.
 - Matriz: «Validado» = estado `confirmado`. Se descarga (Excel) solo con TODOS los vigentes validados; validar

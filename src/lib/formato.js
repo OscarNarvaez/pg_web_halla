@@ -25,6 +25,12 @@ export function fechaHora(valor) {
   return fecha ? format(fecha, 'dd/MM/yyyy HH:mm', { locale: es }) : ''
 }
 
+/** Hora: «14:05» */
+export function hora(valor) {
+  const fecha = aFecha(valor)
+  return fecha ? format(fecha, 'HH:mm', { locale: es }) : ''
+}
+
 /** «hace 3 horas» */
 export function haceCuanto(valor) {
   const fecha = aFecha(valor)

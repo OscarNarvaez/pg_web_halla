@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase, mensajeError } from '../lib/supabase'
+import { guardarPendientes } from '../lib/guardado-pendiente'
 
 const AuthContext = createContext(null)
 
@@ -121,7 +122,7 @@ export function AuthProvider({ children }) {
     const revisar = setInterval(() => {
       if (Date.now() - ultimaActividad() > MINUTOS_INACTIVIDAD * 60_000) {
         setCerradaPorInactividad(true)
-        supabase.auth.signOut()
+        guardarPendientes().finally(() => supabase.auth.signOut())
       }
     }, 30_000)
     return () => {
@@ -166,7 +167,9 @@ export function AuthProvider({ children }) {
     return error ? { error: mensajeError(error) } : {}
   }, [])
 
+  // Antes de cerrar la sesión se guarda lo pendiente (p. ej. la lista de verificación): sin token ya no se podría
   const salir = useCallback(async () => {
+    await guardarPendientes()
     await supabase.auth.signOut()
   }, [])
 
