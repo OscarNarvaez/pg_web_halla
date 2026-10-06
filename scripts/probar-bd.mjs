@@ -173,6 +173,27 @@ const errFechasReales = await fijarFechasReales('2026-10-10', '2026-10-01')
 ok(errFechasReales?.includes('fechas_reales_coherentes'), 'la terminación real no puede ser anterior al inicio real (0010)', errFechasReales)
 const errFechasRealesOk = await fijarFechasReales('2026-10-01', '2026-10-03')
 ok(errFechasRealesOk === null, 'el auditor registra las fechas reales de su auditoría', errFechasRealesOk)
+// 0013: indicadores priorizados del proceso que revisa el auditor
+const ponerIndicadores = (como_, lista) => falla(comoUsuario(db, como(como_), (tx) => tx.query(
+  `update public.auditorias set indicadores_revisados = $2 where id = $1`, [audA.id, JSON.stringify(lista)])))
+const indicador = (extra = {}) => ({ nombre: '  Oportunidad en triage II ', meta: '≤ 30 minutos', resultado: '42 minutos', observacion: '', ...extra })
+const errIndicadores = await ponerIndicadores(A, [indicador({ extra: 'no se guarda' })])
+const { rows: [conIndicadores] } = await db.query('select indicadores_revisados from public.auditorias where id = $1', [audA.id])
+const [guardado] = conIndicadores.indicadores_revisados
+ok(errIndicadores === null && conIndicadores.indicadores_revisados.length === 1 && guardado.nombre === 'Oportunidad en triage II' && guardado.meta === '≤ 30 minutos'
+  && guardado.resultado === '42 minutos' && guardado.observacion === '' && Object.keys(guardado).sort().join() === 'meta,nombre,observacion,resultado',
+  'el auditor registra los indicadores que revisó: solo nombre, meta, resultado y observación, sin espacios sobrantes (0013)', `${errIndicadores} | ${JSON.stringify(conIndicadores.indicadores_revisados)}`)
+const errSinNombre = await ponerIndicadores(A, [indicador({ nombre: '   ' })])
+const errMetaLarga = await ponerIndicadores(A, [indicador({ meta: 'x'.repeat(121) })])
+const errObsLarga = await ponerIndicadores(A, [indicador({ observacion: 'x'.repeat(501) })])
+const errMuchosInd = await ponerIndicadores(A, Array.from({ length: 16 }, (_, i) => indicador({ nombre: `Indicador ${i + 1}` })))
+const errNoLista = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set indicadores_revisados = '{"nombre":"x"}' where id = $1`, [audA.id])))
+ok(errSinNombre?.includes('nombre') && errMetaLarga?.includes('120') && errObsLarga?.includes('500') && errMuchosInd?.includes('15') && errNoLista?.includes('lista'),
+  'los indicadores se validan: nombre obligatorio, meta y resultado de hasta 120, observación de hasta 500, máximo 15 y siempre una lista',
+  [errSinNombre, errMetaLarga, errObsLarga, errMuchosInd, errNoLista].join(' | '))
+const errIndAjeno = await comoUsuario(db, como(B), (tx) => tx.query(`update public.auditorias set indicadores_revisados = '[]' where id = $1`, [audA.id]))
+const { rows: [trasAjeno] } = await db.query('select jsonb_array_length(indicadores_revisados) as n from public.auditorias where id = $1', [audA.id])
+ok(errIndAjeno.affectedRows === 0 && trasAjeno.n === 1, 'B no puede cambiar los indicadores de una auditoría de A')
 const errAudAjena = await falla(comoUsuario(db, como(B), (tx) => tx.query(
   `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso) values ($1,'AI-2026-002','Falsa','PROCESOS','Urgencias')`, [A])))
 ok(Boolean(errAudAjena), 'B no puede crear auditorías a nombre de A')
