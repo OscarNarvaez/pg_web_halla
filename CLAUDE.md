@@ -90,6 +90,8 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   de niveles NO es editable (decisión del dueño): no agregues campos ni columnas para cambiarla. La metodología va en el mensaje de usuario
   (`bloqueRiesgo()` en `motor.ts`), nunca en el prompt del sistema. Colores de zona en `COLORES_ZONA`,
   validados con el skill dataviz para deuteranopía.
+- Sesión sin cierre por inactividad (decisión del dueño, 5/10/2026): dura hasta «Salir». No reintroduzcas un
+  temporizador ni actives `[auth.sessions]` en Supabase sin el dueño (riesgo aceptado en `docs/SEGURIDAD.md` S8).
 - Institución fija: HILA (`INSTITUCION` en `src/lib/catalogos.js` y `_shared/catalogos.ts`).
 - Cargos (decisión del dueño, 4/10/2026): NO se escriben a mano. El líder elige 1 a 5 de `CARGOS_LIDER` y cada persona
   del equipo auditor (1 a 10 personas, `profiles.equipo_auditor` jsonb) elige 1 a 5 de `CARGOS_EQUIPO`. Las listas

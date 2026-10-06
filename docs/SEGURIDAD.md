@@ -23,7 +23,7 @@ que deben completarse antes de cargar datos reales: ver [Antes de producción](#
 | S5 | Media | Sin Content Security Policy ni protección contra *clickjacking* | Corregido |
 | S6 | Media | Contraseña mínima de 6 caracteres en el servidor | Corregido · **aplicar configuración** |
 | S7 | Media | El registro revelaba si un correo ya existía (enumeración de cuentas) | Corregido |
-| S8 | Media | Sesiones sin cierre por inactividad en computadores compartidos | Corregido |
+| S8 | Media | Sesiones sin cierre por inactividad en computadores compartidos | Riesgo aceptado por el dueño (5/10/2026) |
 | S9 | Media | Sin autorización de tratamiento de datos personales (Ley 1581 de 2012) | Corregido · **validación jurídica** |
 | S10 | Media | Errores internos de la base de datos y de Google mostrados al usuario | Corregido |
 | S11 | Baja | Topes de tamaño, privilegios sobrantes, CI sin fijar, redirección sin validar | Corregido |
@@ -164,8 +164,14 @@ enlace…»). Los errores de Supabase Auth se traducen a mensajes que no disting
 
 ## S8 · Sin cierre por inactividad — Media
 
-**Corrección.** La sesión se cierra tras **30 minutos sin actividad**, compartiendo la marca entre pestañas,
-y el ingreso explica por qué se cerró.
+**Corrección inicial.** La sesión se cerraba tras 30 minutos sin actividad.
+
+**Retirada por decisión del dueño (5/10/2026).** El auditor debe poder mantener la sesión abierta el tiempo que
+quiera: la sesión dura hasta que pulse **Salir** (supabase-js la guarda en el navegador y renueva el token solo).
+**Riesgo residual:** en un computador compartido del hospital, quien llegue después ve los datos del auditor.
+Mitigación: el manual pide cerrar siempre con **Salir** en equipos compartidos. En Supabase no deben activarse
+«Time-box user sessions» ni «Inactivity timeout» (`[auth.sessions]` en `supabase/config.toml`, hoy comentado), o
+volverían a cerrar las sesiones.
 
 ## S9 · Sin autorización de tratamiento de datos (Ley 1581 de 2012) — Media
 

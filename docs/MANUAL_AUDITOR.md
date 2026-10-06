@@ -32,7 +32,8 @@ Abra el enlace de confirmación que le llega al correo (revise también el corre
 administrador debe aprobar su cuenta**: hasta entonces verá el aviso «Tu cuenta está pendiente de
 aprobación». Avísele al administrador de la plataforma.
 
-Por seguridad, la sesión se cierra sola después de 30 minutos sin actividad. Estos datos aparecen en la Ficha
+Su sesión queda abierta el tiempo que quiera, aunque cierre el navegador, hasta que pulse **Salir**. **En un
+computador compartido, pulse siempre Salir al terminar.** Estos datos aparecen en la Ficha
 Técnica del informe (evaluador, equipo auditor y líder del equipo); puede cambiarlos en **Mi perfil**.
 
 **Si su cuenta es anterior al 4 de octubre de 2026**, antes el cargo se escribía a mano. Si lo que escribió

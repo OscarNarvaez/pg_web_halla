@@ -952,6 +952,18 @@ await ctx.close()
 // ═══ 2b. Controles de acceso ═══
 console.log('\n▸ Controles de acceso')
 {
+  // Sin cierre por inactividad (decisión del dueño): la sesión dura hasta «Salir»
+  const ctxS = await prepararContexto(navegador, { sesion: true })
+  const ps = await ctxS.newPage()
+  await ps.clock.install()
+  await ps.goto(`${BASE}/app`)
+  await ps.getByRole('heading', { name: /Hola, Ana/ }).waitFor()
+  await ps.clock.fastForward('02:00:00')
+  await ps.waitForTimeout(500)
+  ok(new URL(ps.url()).pathname === '/app' && await ps.getByRole('heading', { name: /Hola, Ana/ }).isVisible(),
+    'tras 2 horas sin actividad la sesión sigue abierta: no hay cierre por inactividad')
+  await ctxS.close()
+
   perfil.aprobado = false
   const ctxP = await prepararContexto(navegador, { sesion: true })
   const pp = await ctxP.newPage()
