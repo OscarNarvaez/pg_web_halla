@@ -5,9 +5,9 @@ import { PasoRedaccion } from './asistente/PasoRedaccion'
 import { PasoRequisito } from './asistente/PasoRequisito'
 import { PasoRiesgo } from './asistente/PasoRiesgo'
 
-function Seccion({ titulo, children }) {
+function Seccion({ titulo, id, children }) {
   return (
-    <section className="space-y-3 border-t border-tinta-100 pt-5 first:border-t-0 first:pt-0">
+    <section id={id} className="scroll-mt-4 space-y-3 border-t border-tinta-100 pt-5 first:border-t-0 first:pt-0">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-halla-700">{titulo}</h3>
       {children}
     </section>
@@ -18,8 +18,9 @@ function Seccion({ titulo, children }) {
  * Hallazgo completo con las mismas secciones del asistente (clasificación, redacción, requisito, riesgo y
  * controles), editables en el sitio. Se usa al ver un hallazgo guardado desde el detalle o la matriz.
  * La clasificación la decidió la IA; el auditor solo puede corregirla después, de forma explícita.
+ * `ids` da un id a las secciones de riesgo y controles (para llevar al auditor a lo que le falta).
  */
-export function TarjetaResultado({ hallazgo, alCambiar, conteo, deshabilitado = false }) {
+export function TarjetaResultado({ hallazgo, alCambiar, conteo, deshabilitado = false, ids = {} }) {
   const tono = CLASIFICACIONES[hallazgo.clasificacion]?.tono
   return (
     <article
@@ -29,8 +30,8 @@ export function TarjetaResultado({ hallazgo, alCambiar, conteo, deshabilitado = 
       <Seccion titulo="Clasificación"><PasoClasificacion hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
       <Seccion titulo="Redacción"><PasoRedaccion hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
       <Seccion titulo="Norma, numeral y requisito"><PasoRequisito hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
-      <Seccion titulo="Riesgo"><PasoRiesgo hallazgo={hallazgo} alCambiar={alCambiar} conteo={conteo} deshabilitado={deshabilitado} /></Seccion>
-      <Seccion titulo="Controles"><PasoControles hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
+      <Seccion titulo="Riesgo" id={ids.riesgo}><PasoRiesgo hallazgo={hallazgo} alCambiar={alCambiar} conteo={conteo} deshabilitado={deshabilitado} /></Seccion>
+      <Seccion titulo="Controles" id={ids.controles}><PasoControles hallazgo={hallazgo} alCambiar={alCambiar} deshabilitado={deshabilitado} /></Seccion>
     </article>
   )
 }

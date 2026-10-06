@@ -2,7 +2,7 @@
 // Uso: pnpm probar:validacion
 import {
   verificarCitas, depurarReferencias, quitarDatosInventados, verificarEstructura, limpiarTexto, validarHallazgo,
-  validarRiesgoYControles, escala15, AVISO_RIESGO_INCOMPLETO,
+  validarRiesgoYControles, escala15, AVISO_RIESGO_INCOMPLETO, dimensionValida,
 } from '../supabase/functions/_shared/validar-salida.ts'
 import { construirMensaje, construirReparacion, GUIA_REDACCION } from '../supabase/functions/_shared/motor.ts'
 import { problemasDeEstructura } from '../src/lib/estructura.js'
@@ -174,6 +174,12 @@ ok(v7.riesgo === null && v7.controles.length === 0, 'una FORTALEZA no lleva ries
 v7 = validarRiesgoYControles({ ...baseNC, riesgo: { ...riesgoBueno, probabilidad: 7, dimension: 'INVENTADA' }, controles: [] }, ENTRADA_NC, entregados, [])
 ok(v7.riesgo.probabilidad === null && v7.riesgo.dimension === null && v7.avisos.includes(AVISO_RIESGO_INCOMPLETO), 'una probabilidad fuera de 1 a 5 o una dimensión inventada quedan vacías con aviso')
 ok(escala15(2.5) === null && escala15('5') === 5 && escala15(0) === null, 'la escala solo admite enteros de 1 a 5')
+ok(dimensionValida('CALIDAD_SEGURIDAD_PACIENTE') === 'CALIDAD_SEGURIDAD_PACIENTE' && dimensionValida('Calidad en la atención y seguridad del paciente') === 'CALIDAD_SEGURIDAD_PACIENTE'
+  && dimensionValida('prestacion del servicio') === 'PRESTACION_SERVICIO' && dimensionValida(' Reputacional ') === 'REPUTACIONAL' && dimensionValida('calidad_seguridad_paciente') === 'CALIDAD_SEGURIDAD_PACIENTE'
+  && dimensionValida('INVENTADA') === null && dimensionValida(3) === null,
+  'V7 reconoce la dimensión del PR13 escrita con su nombre, tildes o minúsculas; lo desconocido se descarta')
+v7 = validarRiesgoYControles({ ...baseNC, riesgo: { ...riesgoBueno, dimension: 'Calidad en la atención y seguridad del paciente' }, controles: [] }, ENTRADA_NC, entregados, [])
+ok(v7.riesgo.dimension === 'CALIDAD_SEGURIDAD_PACIENTE' && !v7.avisos.includes(AVISO_RIESGO_INCOMPLETO), 'una dimensión con el nombre en vez de la clave ya no deja el riesgo incompleto')
 v7 = validarRiesgoYControles({ ...baseNC, riesgo: riesgoBueno, controles: [{ descripcion: 'Auditar el registro según la NTC-ISO 9001:2015 numeral 7.5.3 cada 15 días.', tipo: 'OTRO', criterio_id: 'inventado' }] }, ENTRADA_NC, entregados, [])
 ok(v7.controles[0].criterio_id === null && v7.controlesSinCriterio.includes('inventado'), 'un control con un criterio que no se entregó pierde la cita (V1)')
 ok(v7.controles[0].tipo === 'CORRECTIVO' && v7.controles[0].descripcion.includes('[cantidad por confirmar]'), 'tipo inválido → correctivo en una NC; cifras inventadas en el control se marcan (V6)', v7.controles[0].descripcion)

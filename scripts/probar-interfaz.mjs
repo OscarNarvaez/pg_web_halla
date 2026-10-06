@@ -602,8 +602,32 @@ const aviso2 = p.getByRole('dialog', { name: 'Hay hallazgos con cambios sugerido
 await aviso2.waitFor()
 ok(await aviso2.getByText(/Precisar la fecha de vencimiento/).isVisible(), 'con «Se sugiere hacer cambios» tampoco se descarga (y se ve la nota)')
 await aviso2.getByRole('button', { name: 'Entendido' }).click()
+// Validar un hallazgo sin la dimensión de impacto: se abre directamente en el riesgo, con el campo marcado
+const h04 = db.hallazgos.find((h) => h.consecutivo === 4)
+const dimensionH04 = h04.riesgo_dimension
+h04.riesgo_dimension = null
+await p.reload()
+await filasMatriz.nth(4).waitFor()
 await p.getByRole('combobox', { name: 'Estado de H-04' }).selectOption('confirmado')
+const modalH04 = p.getByRole('dialog', { name: /^Hallazgo H-04/ })
+await modalH04.waitFor()
+const selectorDimension = modalH04.getByRole('combobox', { name: 'Dimensión de impacto' })
+await p.waitForTimeout(300)
+const dimensionVisible = await selectorDimension.evaluate((el) => {
+  const r = el.getBoundingClientRect()
+  return r.top >= 0 && r.bottom <= window.innerHeight
+})
+ok(await modalH04.getByText(/Para validarlo falta la dimensión de impacto/).isVisible() && dimensionVisible
+  && await modalH04.getByText('Elige la dimensión de impacto: sin ella el hallazgo no se puede validar.').isVisible()
+  && (await selectorDimension.getAttribute('aria-invalid')) === 'true' && h04.estado === 'cambios_sugeridos',
+  'si falta la dimensión, validar abre el hallazgo en el riesgo con el campo marcado (y no lo valida)')
+await p.screenshot({ path: `${CAPTURAS}06g-falta-dimension.png` })
+await selectorDimension.selectOption(dimensionH04)
+await modalH04.getByRole('button', { name: 'Validar hallazgo' }).click()
 await p.getByText('H-04 validado').waitFor()
+ok(h04.estado === 'confirmado' && h04.riesgo_dimension === dimensionH04, 'al elegir la dimensión, el hallazgo se valida desde el mismo modal')
+await p.keyboard.press('Escape')
+await modalH04.waitFor({ state: 'hidden' })
 const [descargaMatriz] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()])
 const rutaMatriz = `${CAPTURAS}${descargaMatriz.suggestedFilename()}`
 await descargaMatriz.saveAs(rutaMatriz)

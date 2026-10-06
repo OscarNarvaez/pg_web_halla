@@ -39,6 +39,7 @@ export default function AuditoriaDetalle() {
   const [filtroEstado, setFiltroEstado] = useState('vigentes')
   const [busqueda, setBusqueda] = useState('')
   const [abierto, setAbierto] = useState(null)
+  const [irAFaltante, setIrAFaltante] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
   const vigentes = useMemo(() => hallazgos.filter((h) => h.estado !== 'descartado'), [hallazgos])
@@ -68,6 +69,11 @@ export default function AuditoriaDetalle() {
   const cerrada = a.estado === 'cerrada'
   const resumen = lista.datos ? resumenLista(lista.datos) : null
 
+  const abrir = (h, faltante = false) => {
+    setIrAFaltante(faltante)
+    setAbierto(h)
+  }
+
   const reemplazar = (nuevo) => {
     setHallazgos((lista) => lista.map((h) => (h.id === nuevo.id ? nuevo : h)))
     setAbierto((actual) => (actual?.id === nuevo.id ? nuevo : actual))
@@ -88,10 +94,10 @@ export default function AuditoriaDetalle() {
     actualizar(abierto, { ...cambios, ...(abierto.estado === 'generado' ? { estado: 'editado' } : {}) })
   }
 
-  // Un hallazgo con riesgo incompleto o sin controles adoptados no se puede validar (la matriz quedaría coja)
+  // Un hallazgo con riesgo incompleto o sin controles adoptados no se puede validar (la matriz quedaría coja):
+  // se abre en la sección por completar, con lo que falta
   const validar = (h) => {
-    const faltan = faltantesParaValidar(h)
-    if (faltan.length) return notificar(`Para validar H-${String(h.consecutivo).padStart(2, '0')} falta ${faltan.join(', ')}.`, 'error')
+    if (faltantesParaValidar(h).length) return abrir(h, true)
     actualizar(h, { estado: 'confirmado', nota_validacion: null }, 'Hallazgo validado')
   }
 
@@ -207,7 +213,7 @@ export default function AuditoriaDetalle() {
             <TarjetaHallazgo
               key={h.id}
               hallazgo={h}
-              alVer={setAbierto}
+              alVer={(x) => abrir(x)}
               alValidar={validar}
               alDescartar={(x) => actualizar(x, { estado: 'descartado' }, 'Hallazgo descartado')}
               alRestaurar={(x) => actualizar(x, { estado: 'editado' }, 'Hallazgo restaurado')}
@@ -219,6 +225,7 @@ export default function AuditoriaDetalle() {
 
       <ModalHallazgo
         hallazgo={abierto}
+        irAFaltante={irAFaltante}
         alCerrar={() => setAbierto(null)}
         alCambiar={editar}
         alValidar={validar}

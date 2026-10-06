@@ -282,6 +282,10 @@ Para validar un hallazgo (que no sea fortaleza) debe tener el riesgo completo (d
 probabilidad e impacto) y al menos un control adoptado. **Si edita un hallazgo ya validado, vuelve a
 Pendiente**: la validación corresponde a lo que usted revisó, no a una versión posterior.
 
+Si intenta validar y le falta algo (por ejemplo, «Para validarlo falta la dimensión de impacto»), la plataforma abre
+el hallazgo directamente en la sección por completar y marca en rojo el campo vacío. Complételo y pulse **Validar
+hallazgo** en esa misma ventana.
+
 ## 7. La matriz consolidada
 
 **Matriz consolidada** (en el detalle de la auditoría, o al terminar el paso 7) reúne todos los hallazgos

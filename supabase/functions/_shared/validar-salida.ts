@@ -456,6 +456,23 @@ export function escala15(valor: unknown): number | null {
  * Valida el riesgo y los controles propuestos. La FORTALEZA no lleva ni lo uno ni lo otro. El nivel del
  * riesgo NO lo decide la IA: lo calcula la aplicación con probabilidad × impacto y la escala fija.
  */
+const claveDimension = (s: string) => quitarTildes(String(s ?? '')).toUpperCase().replace(/[^A-Z]+/g, '_').replace(/^_|_$/g, '')
+const DIMENSION_POR_NOMBRE = new Map(Object.entries(DIMENSIONES_IMPACTO).flatMap(([clave, d]) => [
+  [claveDimension(clave), clave],
+  [claveDimension(d.etiqueta), clave],
+]))
+
+/**
+ * Clave de la dimensión de impacto del PR13. Acepta la clave exacta y también el nombre o la clave escritos con
+ * tildes, minúsculas o espacios («Calidad en la atención y seguridad del paciente»): sin esto, una dimensión correcta
+ * mal escrita se descartaba y el hallazgo no se podía validar hasta elegirla a mano. Lo desconocido → null.
+ */
+export function dimensionValida(valor: unknown): string | null {
+  if (typeof valor !== 'string') return null
+  if (Object.hasOwn(DIMENSIONES_IMPACTO, valor)) return valor
+  return DIMENSION_POR_NOMBRE.get(claveDimension(valor)) ?? null
+}
+
 export function validarRiesgoYControles(h: HallazgoIA, entrada: string, entregados: Criterio[], verificadas: CitaVerificada[]) {
   const avisos: string[] = []
   const referencias: string[] = []
@@ -479,7 +496,7 @@ export function validarRiesgoYControles(h: HallazgoIA, entrada: string, entregad
   const descripcion = crudo && typeof crudo.descripcion === 'string' ? depurar(crudo.descripcion, LIMITES_RIESGO.descripcion.max) : ''
   const riesgo: RiesgoValidado = {
     descripcion: descripcion.length >= LIMITES_RIESGO.descripcion.min ? descripcion : null,
-    dimension: crudo && Object.hasOwn(DIMENSIONES_IMPACTO, crudo.dimension) ? crudo.dimension : null,
+    dimension: dimensionValida(crudo?.dimension),
     probabilidad: escala15(crudo?.probabilidad),
     impacto: escala15(crudo?.impacto),
     justificacion: crudo && typeof crudo.justificacion === 'string' ? depurar(crudo.justificacion, LIMITES_RIESGO.justificacion.max) || null : null,

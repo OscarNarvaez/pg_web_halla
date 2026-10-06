@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { DIMENSIONES_IMPACTO, ESCALA_PROBABILIDAD, FUENTE_RIESGO, NIVELES_IMPACTO } from '../../../lib/catalogos'
 import { requiereRiesgo } from '../../../lib/riesgo'
+import { cx } from '../../../lib/cx'
 import { CampoEditable } from '../CampoEditable'
 import { AvisosHallazgo } from '../AvisosHallazgo'
 import { AVISOS_DEL_PASO } from './pasos'
@@ -56,14 +57,24 @@ export function PasoRiesgo({ hallazgo, alCambiar, conteo = {}, propuesta, deshab
               id={idDimension}
               value={hallazgo.riesgo_dimension ?? ''}
               disabled={deshabilitado}
+              aria-invalid={!hallazgo.riesgo_dimension || undefined}
+              aria-describedby={!hallazgo.riesgo_dimension ? `${idDimension}-falta` : undefined}
               onChange={(e) => alCambiar({ riesgo_dimension: e.target.value || null })}
-              className="block w-full rounded-md border-tinta-300 text-sm focus:border-halla-500 focus:ring-halla-500"
+              className={cx(
+                'block w-full rounded-md text-sm focus:border-halla-500 focus:ring-halla-500',
+                hallazgo.riesgo_dimension ? 'border-tinta-300' : 'border-nc-borde bg-nc-bg',
+              )}
             >
               <option value="">Sin definir</option>
               {Object.entries(DIMENSIONES_IMPACTO).map(([clave, d]) => (
                 <option key={clave} value={clave}>{d.etiqueta}</option>
               ))}
             </select>
+            {!hallazgo.riesgo_dimension && (
+              <p id={`${idDimension}-falta`} className="mt-1 text-xs font-medium text-nc-texto">
+                Elige la dimensión de impacto: sin ella el hallazgo no se puede validar.
+              </p>
+            )}
           </div>
           <SelectorEscala
             etiqueta="Probabilidad (1 a 5, según el PR13_GQ)"

@@ -73,6 +73,11 @@ export default function MatrizConsolidada() {
   const auditoria = useAuditoria(id)
   const { datos: todos, setDatos, cargando, error, recargar } = useHallazgos(id)
   const [abierto, setAbierto] = useState(null)
+  const [irAFaltante, setIrAFaltante] = useState(false)
+  const abrir = (h, faltante = false) => {
+    setIrAFaltante(faltante)
+    setAbierto(h)
+  }
   const [guardando, setGuardando] = useState(false)
   const [bloqueo, setBloqueo] = useState(null)
   const [nota, setNota] = useState(null)
@@ -107,7 +112,7 @@ export default function MatrizConsolidada() {
 
   const validar = (h) => {
     const faltan = faltantesParaValidar(h)
-    if (faltan.length) return notificar(`Para validar ${idHallazgo(h)} falta ${faltan.join(', ')}. Ábrelo para completarlo.`, 'error')
+    if (faltan.length) return abrir(h, true) // se abre en la sección por completar, con lo que falta
     return actualizar(h, { estado: 'confirmado', nota_validacion: null }, `${idHallazgo(h)} validado`)
   }
 
@@ -205,7 +210,7 @@ export default function MatrizConsolidada() {
                 {vigentes.map((h) => (
                   <tr key={h.id}>
                     <th scope="row" className="sticky left-0 bg-white px-3 py-3 shadow-[1px_0_0_#e6eaee]">
-                      <button type="button" onClick={() => setAbierto(h)} className="inline-flex items-center gap-1 whitespace-nowrap font-mono text-sm font-semibold text-halla-700 hover:underline" aria-label={`Ver y editar ${idHallazgo(h)}`}>
+                      <button type="button" onClick={() => abrir(h)} className="inline-flex items-center gap-1 whitespace-nowrap font-mono text-sm font-semibold text-halla-700 hover:underline" aria-label={`Ver y editar ${idHallazgo(h)}`}>
                         {idHallazgo(h)} <Eye className="size-3.5" aria-hidden="true" />
                       </button>
                     </th>
@@ -246,7 +251,7 @@ export default function MatrizConsolidada() {
                   <div className="min-w-0 flex-1">
                     <SelectorEstado h={h} alCambiar={cambiarEstado} deshabilitado={guardando} />
                   </div>
-                  <Boton variante="secundario" tamano="sm" icono={Eye} onClick={() => setAbierto(h)}>Ver y editar</Boton>
+                  <Boton variante="secundario" tamano="sm" icono={Eye} onClick={() => abrir(h)}>Ver y editar</Boton>
                 </div>
                 {h.estado === 'cambios_sugeridos' && h.nota_validacion && <p className="mt-2 text-xs text-obs-texto">{h.nota_validacion}</p>}
               </li>
@@ -255,7 +260,7 @@ export default function MatrizConsolidada() {
         </>
       )}
 
-      <ModalHallazgo hallazgo={abierto} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} conteo={conteo} />
+      <ModalHallazgo hallazgo={abierto} irAFaltante={irAFaltante} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} conteo={conteo} />
 
       <Modal
         abierto={Boolean(bloqueo)}
