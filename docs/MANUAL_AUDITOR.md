@@ -310,6 +310,17 @@ Para corregir un hallazgo, haga clic en su ID (H-01…): se abre con todos sus p
 El archivo se llama `Matriz_<código>_<AAAAMMDD>.xlsx` e incluye las mismas columnas, el color del nivel de
 riesgo y la escala de niveles.
 
+**Resultados de la auditoría.** Debajo de la matriz está el consolidado, con los hallazgos vigentes (los
+descartados no cuentan):
+
+- **Hallazgos por clasificación:** un gráfico circular con el total al centro, la cantidad y el porcentaje de cada
+  clasificación, y las siglas **NC** (no conformidad), **F** (fortaleza), **O** (observación) y **OM** (oportunidad
+  de mejora).
+- **Distribución de hallazgos por norma o documento:** una barra por norma, con sus hallazgos por clasificación. Un
+  hallazgo que cita varias normas cuenta en cada una; los que no tienen requisito verificado aparecen como
+  «Requisito pendiente de identificación».
+- Sin hallazgos, el consolidado avisa que aún no hay datos para los gráficos.
+
 ## 8. Generar el informe
 
 El informe final sigue **exactamente** el formato oficial del hospital (el documento

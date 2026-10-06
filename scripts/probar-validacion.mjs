@@ -265,6 +265,28 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 4)')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
 }
 
+console.log('\n▸ Resultados de la auditoría (consolidado bajo la matriz)')
+{
+  const { resultadosAuditoria, tintaSobre, SIN_NORMA } = await import('../src/lib/resultados.js')
+  const cita = (documento) => ({ criterio_id: 'x', numeral: '1', documento })
+  const r = resultadosAuditoria([
+    { clasificacion: 'NO_CONFORMIDAD', estado: 'confirmado', criterios_citados: [cita('NTC-ISO 9001:2015'), cita('NTC-ISO 9001:2015')] },
+    { clasificacion: 'FORTALEZA', estado: 'generado', criterios_citados: [cita('NTC-ISO 9001:2015'), cita('PR13-GQ')] },
+    { clasificacion: 'OBSERVACION', estado: 'editado', criterios_citados: [] },
+    { clasificacion: 'FORTALEZA', estado: 'cambios_sugeridos', criterios_citados: [cita('PR13-GQ')] },
+    { clasificacion: 'OPORTUNIDAD_DE_MEJORA', estado: 'descartado', criterios_citados: [cita('ISO 19011')] },
+  ])
+  ok(r.total === 4 && JSON.stringify(r.porClasificacion.map((d) => [d.clasificacion, d.n, d.porcentaje]))
+    === JSON.stringify([['NO_CONFORMIDAD', 1, 25], ['FORTALEZA', 2, 50], ['OBSERVACION', 1, 25], ['OPORTUNIDAD_DE_MEJORA', 0, 0]]),
+  'cuenta los hallazgos vigentes por clasificación, en el orden NC, F, O, OM, con su porcentaje (los descartados no cuentan)')
+  ok(JSON.stringify(r.normas.map((f) => [f.norma, f.total])) === JSON.stringify([['NTC-ISO 9001:2015', 2], ['PR13-GQ', 2], [SIN_NORMA, 1]]) && r.maximo === 2
+    && r.normas[0].conteo.NO_CONFORMIDAD === 1 && r.normas[0].conteo.FORTALEZA === 1,
+    'por norma: un hallazgo cuenta una vez en cada documento que cita; sin criterio verificado va al final como requisito pendiente')
+  ok(resultadosAuditoria([]).total === 0 && resultadosAuditoria([]).porClasificacion.every((d) => d.porcentaje === 0) && !resultadosAuditoria([]).normas.length,
+    'sin hallazgos: todo en cero, sin barras')
+  ok(tintaSobre('#b42318') === '#ffffff' && tintaSobre('#b7791f') === '#16222c', 'el número dentro de un segmento usa el color de texto con más contraste sobre su relleno')
+}
+
 console.log('\n▸ Catálogos del cliente y del servidor')
 ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosCliente.PROCESOS), 'los 19 procesos coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')

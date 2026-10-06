@@ -65,6 +65,9 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
 - `src/components/hallazgos/asistente/`: los pasos del asistente; `TarjetaResultado` los reúne para el modal.
 - `src/components/riesgo/`: mapa de calor, selector de escala y nivel. `src/lib/matriz.js`: textos de la
   matriz (pantalla y Excel); `src/lib/exportar-matriz.js` se importa bajo demanda.
+- «Resultados de la auditoría» bajo la matriz (diseño del prototipo del dueño): `src/components/matriz/ResultadosAuditoria.jsx`
+  (anillo + barras apiladas por norma, SVG/HTML propio) con los datos de `src/lib/resultados.js`. Orden y siglas NC, F, O, OM;
+  colores = `TONOS` (rojo/verde en el piso de daltonismo: llevan separación de 2 px y números directos, no los quites).
 
 ## Decisiones tomadas (no re-litigar sin el dueño)
 

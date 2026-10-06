@@ -16,6 +16,7 @@ const SALIDA = `${REPO}/.e2e`
 const CAPTURAS = `${SALIDA}/capturas/`
 mkdirSync(CAPTURAS, { recursive: true })
 const { calcularEstadisticas, construirContenido, narrativaRespaldo } = await import(`${REPO}/supabase/functions/_shared/informe.ts`)
+const { resultadosAuditoria } = await import(`${REPO}/src/lib/resultados.js`)
 const motor = JSON.parse(readFileSync(`${REPO}/scripts/fixtures/motor-casos.json`, 'utf8'))
 
 // Compila con un Supabase ficticio (la red se intercepta en el navegador)
@@ -583,7 +584,7 @@ const filasMatriz = p.locator('table').filter({ has: p.locator('caption', { hasT
 await filasMatriz.nth(4).waitFor()
 ok((await filasMatriz.count()) === 5, 'la matriz lista los 5 hallazgos vigentes')
 ok(await escalaFija(), 'en la matriz tampoco se puede editar la escala de niveles')
-ok((await p.locator('thead th').allTextContents()).join('|') === 'ID|Clasificación|Norma y numeral|Evidencia|Riesgo|Hallazgo|Evaluación|Controles|Estado', 'columnas: ID, clasificación, norma y numeral, evidencia, riesgo, hallazgo, evaluación, controles y estado')
+ok((await p.locator('table').filter({ has: p.locator('caption', { hasText: 'Matriz consolidada de hallazgos' }) }).locator('thead th').allTextContents()).join('|') === 'ID|Clasificación|Norma y numeral|Evidencia|Riesgo|Hallazgo|Evaluación|Controles|Estado', 'columnas: ID, clasificación, norma y numeral, evidencia, riesgo, hallazgo, evaluación, controles y estado')
 await p.getByRole('button', { name: 'Descargar matriz (Excel)' }).click()
 const aviso1 = p.getByRole('dialog', { name: 'La matriz aún no se ha validado' })
 await aviso1.waitFor()
@@ -635,6 +636,25 @@ ok(/^Matriz_AI-2026-001_\d{8}\.xlsx$/.test(descargaMatriz.suggestedFilename()), 
 const xlsx = execSync(`unzip -p "${rutaMatriz}"`).toString()
 ok(['Matriz consolidada de hallazgos · AI-2026-001', 'Norma y numeral', 'H-04', 'NTC-ISO 9001:2015, numeral 8.5.1', '= 16 · Alto', 'Validado'].every((t) => xlsx.includes(t)),
   'el Excel tiene el título, las columnas, los hallazgos, la evaluación del riesgo y el estado')
+
+// Resultados de la auditoría, justo debajo de la matriz
+const resultados = p.getByRole('region', { name: 'Resultados de la auditoría' })
+await resultados.scrollIntoViewIfNeeded()
+const esperado = resultadosAuditoria(db.hallazgos.filter((h) => h.auditoria_id === A1))
+const leyenda = await resultados.getByRole('list', { name: 'Hallazgos por clasificación' }).innerText()
+const siglas = (await resultados.getByRole('list', { name: 'Resumen por sigla' }).innerText()).replace(/\s+/g, ' ')
+const filasNormas = await resultados.locator('table tbody th').allTextContents()
+const posMatriz = await filasMatriz.first().evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+const posResultados = await resultados.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+ok(posResultados > posMatriz && esperado.total === 5
+  && await resultados.getByRole('img', { name: /^Gráfico circular: 5 hallazgos\. No conformidad 1 \(20 %\), Fortaleza 2 \(40 %\), Observación 1 \(20 %\), Oportunidad de mejora 1 \(20 %\)/ }).isVisible()
+  && /No conformidad\s+1\s+20 %\s+Fortaleza\s+2\s+40 %\s+Observación\s+1\s+20 %\s+Oportunidad de mejora\s+1\s+20 %/.test(leyenda)
+  && siglas.includes('NC: 1') && siglas.includes('F: 2') && siglas.includes('O: 1') && siglas.includes('OM: 1'),
+  'debajo de la matriz: «Resultados de la auditoría» con el anillo, la leyenda (cifra y porcentaje) y las siglas NC, F, O, OM', `${leyenda} | ${siglas}`)
+ok(JSON.stringify(filasNormas) === JSON.stringify(esperado.normas.map((f) => f.norma)) && filasNormas.length > 0
+  && await resultados.getByRole('heading', { name: 'Distribución de hallazgos por norma o documento' }).isVisible(),
+  `y la distribución por norma o documento (${filasNormas.join(', ')})`)
+await resultados.screenshot({ path: `${CAPTURAS}06h-resultados.png` })
 
 await p.goto(`${BASE}/app/auditorias/${A1}`)
 await p.locator('article[aria-label^="Hallazgo"]').nth(4).waitFor()
@@ -987,6 +1007,14 @@ const A3 = db.auditorias.find((a) => a.codigo === 'AI-2026-003')?.id
 ok(p.url().endsWith(`/app/auditorias/${A3}`) && !db.listas_verificacion.some((l) => l.auditoria_id === A3) && (await preguntaLista.count()) === 0
   && await p.getByRole('link', { name: 'Crear lista de verificación' }).isVisible(),
   '«Iniciar directamente la auditoría» lleva a la auditoría sin lista; se puede crear después')
+await p.goto(`${BASE}/app/auditorias/${A3}/matriz`)
+const resultadosVacios = p.getByRole('region', { name: 'Resultados de la auditoría' })
+await resultadosVacios.waitFor()
+ok(await resultadosVacios.getByText('Aún no hay hallazgos registrados. Analice un hallazgo y regístrelo en la matriz para ver los gráficos.').isVisible()
+  && await resultadosVacios.getByRole('img', { name: 'Gráfico circular sin hallazgos.' }).isVisible()
+  && (await resultadosVacios.getByRole('list', { name: 'Resumen por sigla' }).innerText()).replace(/\s+/g, ' ').includes('NC: 0'),
+  'sin hallazgos, el consolidado muestra el aviso, el anillo vacío y todo en cero')
+await resultadosVacios.screenshot({ path: `${CAPTURAS}06i-resultados-vacio.png` })
 
 // Cerrar la sesión con cambios recién escritos: se guardan antes de salir
 await p.goto(`${BASE}/app/auditorias/${A1}/lista`)
@@ -1082,6 +1110,8 @@ console.log('\n▸ Móvil (360 px)')
     await m.waitForTimeout(400)
     await sinDesborde(m, nombre)
   }
+  await m.goto(`${BASE}/app/auditorias/${A1}/matriz`)
+  await m.getByRole('region', { name: 'Resultados de la auditoría' }).screenshot({ path: `${CAPTURAS}10b-movil-resultados.png` })
   // Entrar a la auditoría con lista: primero la pregunta, después el detalle
   await m.goto(`${BASE}/app/auditorias/${A1}`)
   await m.getByRole('dialog', { name: '¿Cómo quieres continuar?' }).waitFor()

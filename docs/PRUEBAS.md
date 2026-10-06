@@ -284,11 +284,11 @@ pnpm probar          # todo lo siguiente, en orden
 | Comando | Qué verifica | Resultado |
 |---|---|---|
 | `pnpm verificar:prompt` | El prompt del sistema es el ANEXO A literal | ✓ 15 600 caracteres idénticos |
-| `pnpm probar:validacion` | V1–V7, guía de redacción por categoría (y que la app verifique igual que el servidor), anonimización antes de la IA, coherencia de catálogos (cargos, evaluador y escala de riesgo) y contenido del informe oficial | ✓ 105 comprobaciones |
+| `pnpm probar:validacion` | V1–V7, guía de redacción por categoría (y que la app verifique igual que el servidor), anonimización antes de la IA, coherencia de catálogos (cargos, evaluador y escala de riesgo) contenido del informe oficial y consolidado de resultados | ✓ 109 comprobaciones |
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
 | `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador, fechas reales, lista de verificación, PDF agregados al editar e indicadores revisados (incluida la conversión de perfiles existentes) | ✓ 135 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |
-| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia (al analizar y al editar), matriz y Excel, cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF, indicadores revisados, sin recomendaciones), lista de verificación (pregunta al crear y al entrar, guardado y cierre de sesión), CSP, cuentas pendientes, admin, sesión sin cierre por inactividad, validar sin dimensión de impacto, 360 px | ✓ 172 comprobaciones |
+| `pnpm probar:interfaz` | Extremo a extremo en Chromium: asistente de 7 pasos, PDF de evidencia (al analizar y al editar), matriz y Excel, resultados de la auditoría (anillo y barras por norma), cargos de lista y equipo de varias personas, informe con la plantilla oficial (ODT y PDF, indicadores revisados, sin recomendaciones), lista de verificación (pregunta al crear y al entrar, guardado y cierre de sesión), CSP, cuentas pendientes, admin, sesión sin cierre por inactividad, validar sin dimensión de impacto, 360 px | ✓ 175 comprobaciones |
 
 ## Pendiente: contra la función desplegada
 

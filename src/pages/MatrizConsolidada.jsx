@@ -14,6 +14,7 @@ import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { BadgeClasificacion } from '../components/hallazgos/BadgeClasificacion'
 import { ModalHallazgo } from '../components/hallazgos/ModalHallazgo'
 import { MapaCalor } from '../components/riesgo/MapaCalor'
+import { ResultadosAuditoria } from '../components/matriz/ResultadosAuditoria'
 import { AreaTexto, Boton, BotonEnlace, EstadoError, EstadoVacio, Modal, Skeleton } from '../components/ui'
 
 const TONO_ESTADO = {
@@ -259,6 +260,9 @@ export default function MatrizConsolidada() {
           </ul>
         </>
       )}
+
+      {/* Consolidado de resultados, justo debajo de la matriz (también vacío, con su aviso) */}
+      {!cargando && !error && <ResultadosAuditoria hallazgos={vigentes} />}
 
       <ModalHallazgo hallazgo={abierto} irAFaltante={irAFaltante} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} conteo={conteo} />
 
