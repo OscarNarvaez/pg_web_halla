@@ -1,6 +1,6 @@
 // POST /functions/v1/generar-informe
-// Consolida los hallazgos en el informe ISO 19011. Las estadísticas se calculan en código; la IA solo
-// redacta resumen ejecutivo, conclusiones y recomendaciones, en UNA llamada (§9.5).
+// Consolida los hallazgos en el informe con el formato oficial. Las estadísticas se calculan en código; la IA solo
+// redacta las secciones narrativas (incluida la revisión de los indicadores que registró el auditor), en UNA llamada.
 import { preflight, respuestaError, respuestaJson } from '../_shared/cors.ts'
 import { autenticar, clienteAdmin, config, finalizarEvento, leerCuerpo, MENSAJE_NO_APROBADO, RE_UUID, reservarUso } from '../_shared/supabase.ts'
 import { anonimizar } from '../_shared/anonimizar.ts'
@@ -8,7 +8,7 @@ import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
   calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, narrativaRespaldo, perfilIncompletoInforme,
-  SISTEMA_INFORME, type HallazgoInforme, type Narrativa, type PerfilInforme,
+  revisados, SISTEMA_INFORME, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto, recortarEnOracion } from '../_shared/validar-salida.ts'
 import { TIPOS_EVALUADOR } from '../_shared/catalogos.ts'
@@ -78,7 +78,15 @@ Deno.serve(async (req) => {
   // Del equipo auditor a la IA solo llegan los cargos, nunca los nombres
   const p = perfil as PerfilInforme
   const equipoIa = { lider: p.cargos, integrantes: p.equipo_auditor.map((m) => m.cargos), evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '' }
-  const auditoriaIa = { ...auditoria, titulo: anonimizar(auditoria.titulo).texto, objetivo: auditoria.objetivo ? anonimizar(auditoria.objetivo).texto : null }
+  const auditoriaIa = {
+    ...auditoria,
+    titulo: anonimizar(auditoria.titulo).texto,
+    objetivo: auditoria.objetivo ? anonimizar(auditoria.objetivo).texto : null,
+    // Los indicadores los escribe el auditor: también pasan por la anonimización
+    indicadores_revisados: revisados(auditoria).map((i) => ({
+      nombre: anonimizar(i.nombre).texto, meta: anonimizar(i.meta).texto, resultado: anonimizar(i.resultado).texto, observacion: anonimizar(i.observacion).texto,
+    })),
+  }
   try {
     if ('error' in reserva) throw new ErrorGemini('límite de uso de la IA', 429, reserva.error, 0)
     const r = await llamarGemini(
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
       oportunidades: texto(s.oportunidades) || respaldo.oportunidades,
       observaciones: texto(s.observaciones) || respaldo.observaciones,
       conclusiones: texto(s.conclusiones, 2500) || respaldo.conclusiones,
-      recomendaciones: textos(s.recomendaciones, 8).length ? textos(s.recomendaciones, 8) : respaldo.recomendaciones,
+      indicadores: revisados(auditoria).length ? texto(s.indicadores, 2500) || respaldo.indicadores : '',
     }
     const cifras = cifrasNoRastreables(narrativa, auditoria, lista, estadisticas)
     if (cifras.length) avisos.push(`La narrativa menciona cifras que no están en los hallazgos ni en las estadísticas (${cifras.join(', ')}): revísala antes de firmar.`)
@@ -123,6 +131,7 @@ Deno.serve(async (req) => {
   }
   if (estadisticas.sin_confirmar) avisos.push(`El informe incluye ${estadisticas.sin_confirmar} hallazgo(s) sin validar.`)
   if (!auditoria.fecha_inicio_real || !auditoria.fecha_fin_real) avisos.push('Faltan las fechas reales de la auditoría: la Ficha Técnica las deja en blanco.')
+  if (!revisados(auditoria).length) avisos.push('No registraste indicadores priorizados del proceso: la sección «Indicadores» dirá que no se registraron.')
 
   // 5. Contenido con la estructura del formato oficial y nueva versión
   const { data: ultima } = await admin.from('informes').select('version').eq('auditoria_id', auditoria.id).order('version', { ascending: false }).limit(1).maybeSingle()
@@ -140,7 +149,7 @@ Deno.serve(async (req) => {
       version,
       resumen_ejecutivo: narrativa.observaciones, // la sección «Observaciones» es el resumen general del formato
       conclusiones: narrativa.conclusiones,
-      recomendaciones: narrativa.recomendaciones.map((r) => `- ${r}`).join('\n'),
+      recomendaciones: null, // la plantilla oficial ya no tiene recomendaciones (5/10/2026)
       estadisticas,
       contenido,
       modelo_ia: modelo,

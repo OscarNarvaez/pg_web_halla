@@ -189,7 +189,7 @@ const mensajeRiesgo = construirMensaje({ alcance: 'PROCESOS', proceso: 'Urgencia
 ok(/METODOLOGÍA DE RIESGO/.test(mensajeRiesgo) && /5 Casi seguro/.test(mensajeRiesgo) && /CALIDAD_SEGURIDAD_PACIENTE/.test(mensajeRiesgo) && mensajeRiesgo.indexOf('METODOLOGÍA') < mensajeRiesgo.indexOf('HALLAZGO REPORTADO'),
   'el mensaje entrega las escalas del PR13 antes del hallazgo (el prompt del sistema no cambia)')
 
-console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
+console.log('\n▸ Informe final con el formato oficial (version_estructura 4)')
 {
   const informe = await import('../supabase/functions/_shared/informe.ts')
   const aud = { id: 'a1', codigo: 'AI-2026-001', titulo: 'Auditoría a Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null, objetivo: '',
@@ -206,7 +206,8 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
   ]
   const e = informe.calcularEstadisticas(hs)
   const n = informe.narrativaRespaldo(aud, e)
-  ok(Object.values(n).every((v) => (Array.isArray(v) ? v.length : String(v).length) > 0), 'la plantilla de respaldo llena todas las secciones narrativas')
+  ok(Object.entries(n).every(([k, v]) => k === 'indicadores' || (Array.isArray(v) ? v.length : String(v).length) > 0) && n.indicadores === '',
+    'la plantilla de respaldo llena todas las secciones narrativas (sin indicadores registrados, su revisión queda vacía)')
   const c = informe.construirContenido({ auditoria: aud, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-04T17:14:00Z', version: 1, avisos: [] })
   ok(JSON.stringify(c.hallazgos.map((g) => g.clasificacion)) === '["FORTALEZA","OPORTUNIDAD_DE_MEJORA","OBSERVACION","NO_CONFORMIDAD"]', 'las listas siguen el orden del formato: fortalezas, oportunidades, observaciones, no conformidades')
   ok(c.ficha.evaluador === 'Auditores Externos' && c.encabezado.evaluador === 'Auditores Externos' && c.encabezado.anio === '2026' && c.encabezado.objeto === 'Urgencias',
@@ -216,8 +217,50 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 3)')
   ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)","registro-firmas.pdf (1 página)"]',
     'los PDF de evidencia (analizados y agregados al editar) van en «Archivos adjuntos», sin repetir', JSON.stringify(c.ficha.adjuntos))
   ok(c.objetivo === n.objetivo && n.objetivo.startsWith('Evaluar'), 'si la auditoría no trae objetivo, se redacta uno')
-  ok(c.indicadores.some((l) => l.includes('Riesgos evaluados con la escala del PR13_GQ: 2 (Bajo 1 · Moderado 0 · Alto 0 · Extremo 1)')) && c.indicadores.some((l) => l === 'Controles adoptados: 2.'),
-    'los indicadores los calcula el código (niveles de riesgo y controles)', c.indicadores.join(' | '))
+  ok(c.version_estructura === 4 && !('recomendaciones' in c) && !('recomendaciones' in n), 'la plantilla vigente ya no tiene recomendaciones (versión 4 del contenido)')
+  ok(c.indicadores.area === 'Urgencias' && !c.indicadores.revisados.length && c.indicadores.revision === informe.SIN_INDICADORES,
+    'sin indicadores registrados, la sección lo dice (y no muestra las cifras de la auditoría)', JSON.stringify(c.indicadores))
+  ok(informe.cifrasAuditoria(e).some((l) => l.includes('Riesgos evaluados con la escala del PR13_GQ: 2 (Bajo 1 · Moderado 0 · Alto 0 · Extremo 1)')) && informe.cifrasAuditoria(e).some((l) => l === 'Controles adoptados: 2.'),
+    'las cifras de la auditoría las sigue calculando el código, como contexto para la IA')
+  // Con indicadores registrados por el auditor (0013)
+  const audInd = { ...aud, area_auditada: 'Servicio de Urgencias', indicadores_revisados: [
+    { nombre: 'Oportunidad en la atención de triage II', meta: '≤ 30 minutos', resultado: '42 minutos', observacion: 'Dato del último trimestre.' },
+    { nombre: 'Proporción de reingresos a urgencias', meta: '', resultado: '', observacion: '' },
+  ] }
+  const nInd = { ...informe.narrativaRespaldo(audInd, e), indicadores: 'El indicador de oportunidad en triage II (42 minutos) supera la meta de 30 minutos.' }
+  const cInd = informe.construirContenido({ auditoria: audInd, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: nInd, generadoEn: '2026-10-04T17:14:00Z', version: 2, avisos: [] })
+  ok(cInd.indicadores.area === 'Servicio de Urgencias' && cInd.indicadores.revisados.length === 2 && cInd.indicadores.revisados[0].resultado === '42 minutos'
+    && cInd.indicadores.revision === nInd.indicadores && informe.narrativaRespaldo(audInd, e).indicadores.startsWith('Se revisaron dos indicadores priorizados del proceso de Servicio de Urgencias'),
+    'con indicadores registrados: el área de la plantilla, la lista exacta del auditor y la revisión redactada', JSON.stringify(cInd.indicadores))
+  ok(!informe.cifrasNoRastreables(nInd, audInd, hs, e).length && JSON.stringify(informe.cifrasNoRastreables({ ...nInd, indicadores: 'Resultado de 57 minutos.' }, audInd, hs, e)) === '["57"]',
+    'las cifras de los indicadores registrados son rastreables; una inventada se detecta')
+  const msgInd = informe.construirMensajeInforme(audInd, hs, e, { lider: ['Coordinadora'], integrantes: [['Médico']], evaluador: 'Auditores Externos' })
+  const msgSin = informe.construirMensajeInforme(aud, hs, e, { lider: ['Coordinadora'], integrantes: [['Médico']], evaluador: 'Auditores Externos' })
+  ok(msgInd.includes('## INDICADORES PRIORIZADOS DEL PROCESO (registrados por el auditor; proceso: Servicio de Urgencias)')
+    && msgInd.includes('[I1] Oportunidad en la atención de triage II · meta: ≤ 30 minutos · resultado: 42 minutos · observación del auditor: Dato del último trimestre.')
+    && msgInd.includes('[I2] Proporción de reingresos a urgencias · meta: no definida · resultado: no informado') && msgSin.includes('No se registraron indicadores'),
+    'la IA recibe los indicadores del auditor (o el aviso de que no hay) para redactar la revisión')
+  const { ESQUEMA_INFORME } = await import('../supabase/functions/_shared/esquema-salida.ts')
+  ok(ESQUEMA_INFORME.required.includes('indicadores') && !('recomendaciones' in ESQUEMA_INFORME.properties) && !/recomendaciones/.test(informe.SISTEMA_INFORME),
+    'la IA ya no redacta recomendaciones y sí la revisión de indicadores')
+  // La vista, el PDF y el ODT arman las secciones igual (src/lib/formato-informe.js)
+  const formato = await import('../src/lib/formato-informe.js')
+  const seccionInd = formato.seccionesFormato(cInd).find((x) => x.titulo === 'Indicadores')
+  ok(seccionInd.antes === 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias' && seccionInd.antesPlantilla === formato.TEXTOS_FORMATO.revisionIndicadores
+    && seccionInd.vinetas[0] === 'Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos. Dato del último trimestre.'
+    && seccionInd.vinetas[1] === 'Proporción de reingresos a urgencias: meta no definida; resultado no informado.'
+    && formato.seccionesFormato(cInd).at(-1).titulo === 'Conclusiones' && !formato.esFormatoOficial({ version_estructura: 3 }) && formato.esFormatoOficial(cInd),
+    'Indicadores: la línea de la plantilla con el área, cada indicador y la revisión; termina en Conclusiones; los informes de la versión 3 se regeneran')
+  // Cada texto que el sistema busca en la plantilla tiene que estar en ella (avisa si el dueño la vuelve a cambiar)
+  const { unzipSync, strFromU8 } = await import('fflate')
+  const odt = unzipSync(readFileSync(new URL('../src/formato_de_informe_final/Auditoria_interna.odt', import.meta.url)))
+  const textoPlantilla = ['content.xml', 'styles.xml'].map((x) => strFromU8(odt[x])).join(' ')
+    .replace(/<text:s text:c="(\d+)"\/>/g, (_, k) => ' '.repeat(Number(k))).replace(/<text:s\/>/g, ' ').replace(/<\/text:(p|h)>/g, '\n').replace(/<[^>]+>/g, '')
+  const lineasPlantilla = textoPlantilla.split('\n').map((l) => l.replace(/\s+/g, ' ').trim())
+  const buscados = [...Object.entries(formato.TEXTOS_FORMATO).filter(([k]) => k !== 'marcadorArea').map(([, v]) => v),
+    ...formato.LISTAS_HALLAZGOS.map((l) => l.titulo), ...formato.seccionesFormato(cInd).map((x) => x.titulo)]
+  const faltan = buscados.filter((t) => !lineasPlantilla.some((l) => l === t || l.startsWith(`${t} `) || l.includes(t)))
+  ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
   ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
 }

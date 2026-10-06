@@ -102,8 +102,13 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   llena SOBRE la plantilla (`src/lib/exportar-odt.js`, anclas por TEXTO, no por estilos); el PDF
   (`exportar-pdf.js`, Liberation Sans OFL) y la vista (`VistaInforme`) la reproducen. Textos fijos en
   `src/lib/formato-informe.js`. Únicos ajustes al llenar: campos de página en el pie (la plantilla traía «Página /») y
-  la posición del pie de la página maestra 2 (venía a mitad de hoja). Contenido `version_estructura: 3`; las versiones
+  la posición del pie de la página maestra 2 (venía a mitad de hoja). Contenido `version_estructura: 4`; las versiones
   anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
+  Plantilla del 5/10/2026 (decisión del dueño): SIN «RECOMENDACIONES»; «Indicadores» = «Revisión de indicadores
+  priorizados en el proceso de (area auditada)» (campo que se llena con `area_auditada` o el proceso) + los indicadores
+  que registra el auditor (`auditorias.indicadores_revisados`, 0013) + la revisión que redacta la IA (`narrativa.indicadores`).
+  Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.
+  `probar:validacion` lee la plantilla y avisa si falta un texto que el sistema busca.
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el ODT usan la imagen de la
   propia plantilla. Siempre sobre fondo blanco: su texto perimetral es oscuro.
 - Redacción (guía del dueño, 5/10/2026): fórmula por categoría en `GUIA_REDACCION` (`_shared/motor.ts`, va en el MENSAJE

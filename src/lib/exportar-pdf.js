@@ -28,7 +28,7 @@ const VACIOS_TRAS = {
   'FORTALEZAS IDENTIFICADAS': 3, 'OPORTUNIDADES DE MEJORA': 2, OBSERVACIONES: 2, 'NO CONFORMIDADES': 3,
   Objetivo: 1, Alcance: 1, 'Criterios de selección equipo auditor': 1, 'Criterios de auditoría': 1, 'Priorización de procesos': 1,
   'Métodos a emplear para el desarrollo de la auditoría': 3, 'Riesgos y oportunidades del programa auditoria': 2,
-  Indicadores: 1, Oportunidades: 1, Observaciones: 3, Conclusiones: 0, [TEXTOS_FORMATO.recomendaciones]: 0,
+  Indicadores: 1, Oportunidades: 1, Observaciones: 3, Conclusiones: 0,
 }
 
 export async function exportarPdf(informe) {
@@ -177,15 +177,16 @@ export async function exportarPdf(informe) {
     vacios(lista.titulo)
   }
 
-  // ─── Secciones de Objetivo a Recomendaciones ───────────────────────────────
+  // ─── Secciones de Objetivo a Conclusiones ──────────────────────────────────
   for (const s of seccionesFormato(c)) {
     const estilo = s.estiloTitulo ?? 'subrayado'
-    if (estilo === 'cuerpo') parrafo(s.titulo, { escala: ESCALA_ROTULO })
-    else parrafo(s.titulo, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: estilo === 'subrayado', centrado: estilo === 'centrado' })
-    if (s.antes) parrafo(s.antes, { escala: 1.1 })
+    parrafo(s.titulo, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: estilo === 'subrayado', centrado: estilo === 'centrado' })
+    if (s.antes) parrafo(s.antes, { escala: s.escalaAntes ?? 1.1 })
     const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
-    if (!contenido.length) parrafo('No informado.')
-    contenido.forEach((t, i) => parrafo(s.tipo === 'vinetas' ? `• ${t}` : s.tipo === 'numerada' ? `${i + 1}. ${t}` : t))
+    const vinetas = s.vinetas ?? []
+    if (!contenido.length && !vinetas.length) parrafo('No informado.')
+    vinetas.forEach((t) => parrafo(`• ${t}`))
+    contenido.forEach((t) => parrafo(s.tipo === 'vinetas' ? `• ${t}` : t))
     vacios(s.titulo)
   }
 

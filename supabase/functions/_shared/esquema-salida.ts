@@ -78,9 +78,9 @@ export const ESQUEMA_INFORME = {
     oportunidades: { type: 'string' },
     observaciones: { type: 'string', description: 'Resumen general de la auditoría' },
     conclusiones: { type: 'string' },
-    recomendaciones: { type: 'array', items: { type: 'string' } },
+    indicadores: { type: 'string', description: 'Revisión de los indicadores priorizados del proceso registrados por el auditor; vacía si no hay' },
   },
-  required: ['objetivo', 'alcance', 'criterios_seleccion_equipo', 'priorizacion_procesos', 'riesgos_oportunidades', 'oportunidades', 'observaciones', 'conclusiones', 'recomendaciones'],
+  required: ['objetivo', 'alcance', 'criterios_seleccion_equipo', 'priorizacion_procesos', 'riesgos_oportunidades', 'oportunidades', 'observaciones', 'conclusiones', 'indicadores'],
 }
 
 /** Esquema de completar-auditoria: las normas solo pueden ser las cargadas (enum dinámico). */

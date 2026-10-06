@@ -317,7 +317,11 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
 
 1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
    escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
-2. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
+2. **Registre los indicadores priorizados del proceso** que revisó, en el recuadro «Indicadores priorizados del
+   proceso»: el nombre, la meta, el resultado y, si quiere, una observación (hasta 15). Van en la sección
+   «Indicadores» del informe, bajo «Revisión de indicadores priorizados en el proceso de <área auditada>». Si no
+   registra ninguno, esa sección dice que no se registraron.
+3. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
 
 El informe tiene, en este orden:
 
@@ -327,15 +331,19 @@ El informe tiene, en este orden:
 | Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor, líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
 | Auditoria interna de SIG | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
-| Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones, Conclusiones y RECOMENDACIONES | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
-| Criterios de auditoría, Métodos a emplear e Indicadores | Las normas (con los numerales citados), los métodos de la auditoría y las cifras | El sistema |
+| Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones y Conclusiones | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
+| Criterios de auditoría y Métodos a emplear | Las normas (con los numerales citados) y los métodos de la auditoría | El sistema |
+| Indicadores | «Revisión de indicadores priorizados en el proceso de <área auditada>», cada indicador con su meta y su resultado, y la revisión que compara el resultado con la meta | Usted registra los indicadores; la IA redacta la revisión |
 
-- **Las cifras las calcula el sistema**, no la IA. Si la IA escribe una cifra que no está en los datos, se le avisa.
+- **Las cifras las calcula el sistema o las registra usted**, no la IA. Si la IA escribe una cifra que no está en los
+  datos (hallazgos, indicadores o estadísticas), se le avisa.
+- El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.
 - A la IA no llegan los nombres del equipo auditor, solo sus cargos.
-- Si cambia los hallazgos o las fechas, genere una **nueva versión**: las anteriores se conservan.
+- Si cambia los hallazgos, las fechas o los indicadores, genere una **nueva versión**: las anteriores se conservan.
 - Descárguelo como **Documento (ODT)**, que es la plantilla oficial llena y se abre en LibreOffice y en Word, o en
   **PDF**, que reproduce el mismo formato.
-- Un informe generado antes de adoptar el formato oficial no se descarga: genere una nueva versión.
+- Un informe generado con una plantilla anterior (por ejemplo, con RECOMENDACIONES) no se descarga: genere una
+  nueva versión.
 
 ## 9. Consultar las normas
 

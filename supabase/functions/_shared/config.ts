@@ -37,7 +37,7 @@ export function leerConfig(leer: (clave: string) => string | undefined): Config 
     geminiModelos: [principal, ...respaldo.filter((m) => m !== principal)],
     geminiMaxTokens: Number(leer('GEMINI_MAX_OUTPUT_TOKENS') ?? 8192), // riesgo y controles: ~400 tokens más por hallazgo
     geminiNivelRazonamiento: nivel === 'off' || nivel === 'none' ? null : (nivel as Config['geminiNivelRazonamiento']),
-    promptVersion: leer('PROMPT_VERSION') ?? '1.3.0', // 1.1.0: riesgo del PR13 en el mensaje · 1.2.0: informe con el formato oficial · 1.3.0: guía de redacción del dueño
+    promptVersion: leer('PROMPT_VERSION') ?? '1.4.0', // 1.1.0: riesgo del PR13 en el mensaje · 1.2.0: informe con el formato oficial · 1.3.0: guía de redacción del dueño · 1.4.0: revisión de indicadores del proceso en el informe, sin recomendaciones
     limiteDiario: Number(leer('LIMITE_IA_DIARIO_POR_USUARIO') ?? 120),
     limitePorMinuto: Number(leer('LIMITE_IA_POR_MINUTO') ?? 5),
   }

@@ -42,6 +42,15 @@ export interface AuditoriaInforme {
   fecha_fin: string | null
   fecha_inicio_real?: string | null
   fecha_fin_real?: string | null
+  /** Indicadores priorizados del proceso que registró el auditor (migración 0013) */
+  indicadores_revisados?: IndicadorRevisado[] | null
+}
+
+export interface IndicadorRevisado {
+  nombre: string
+  meta: string
+  resultado: string
+  observacion: string
 }
 
 export interface PerfilInforme {
@@ -69,7 +78,8 @@ export interface Narrativa {
   oportunidades: string
   observaciones: string
   conclusiones: string
-  recomendaciones: string[]
+  /** Revisión de los indicadores priorizados del proceso (vacía si el auditor no registró ninguno) */
+  indicadores: string
 }
 
 // Orden de las listas de hallazgos en el formato oficial
@@ -182,8 +192,11 @@ export function criteriosDeAuditoria(a: AuditoriaInforme, hallazgos: HallazgoInf
   })
 }
 
-/** Indicadores de la auditoría, calculados en código. */
-export function indicadores(e: Estadisticas): string[] {
+/**
+ * Cifras de la auditoría, calculadas en código. Ya no van en el informe (la sección «Indicadores» es la revisión de los
+ * indicadores del proceso); se entregan a la IA como contexto y sirven para rastrear las cifras de la narrativa.
+ */
+export function cifrasAuditoria(e: Estadisticas): string[] {
   const c = e.por_clasificacion
   const r = e.por_nivel_riesgo
   const evaluados = r.BAJA + r.MODERADA + r.ALTA + r.EXTREMA
@@ -211,7 +224,7 @@ Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría int
 - "oportunidades": un párrafo que resuma las oportunidades de mejora identificadas y su beneficio esperado.
 - "observaciones": un párrafo de resumen general de la auditoría (propósito, alcance y resultados principales).
 - "conclusiones": uno o dos párrafos que valoren la adecuación, la conveniencia y la eficacia del proceso o sistema frente a los criterios aplicados.
-- "recomendaciones": de 3 a 6 recomendaciones, una acción concreta por elemento, derivadas de las no conformidades, observaciones y oportunidades de mejora.
+- "indicadores": uno o dos párrafos con la revisión de los indicadores priorizados del proceso que registró el auditor: para cada uno, compara el resultado con la meta (si la cumple o no) y relaciónalo con los hallazgos cuando corresponda. Usa solo los nombres, metas, resultados y observaciones entregados. Si no se registraron indicadores, devuelve una cadena vacía.
 
 No inventes hallazgos, cifras, fechas, nombres ni requisitos: usa exclusivamente los datos entregados. Si un dato no está, no lo supongas.
 Cita normas o numerales solo si aparecen en los datos entregados.
@@ -236,7 +249,12 @@ export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: Hallazgo
     ...equipo.integrantes.map((c, i) => `Integrante ${i + 1}: ${c.join(', ')}`),
     '',
     '## ESTADÍSTICAS (calculadas por el sistema; no las modifiques)',
-    ...indicadores(e),
+    ...cifrasAuditoria(e),
+    '',
+    `## INDICADORES PRIORIZADOS DEL PROCESO (registrados por el auditor; proceso: ${areaIndicadores(a)})`,
+    ...(revisados(a).length
+      ? revisados(a).map((i, n) => `[I${n + 1}] ${i.nombre} · meta: ${i.meta || 'no definida'} · resultado: ${i.resultado || 'no informado'}${i.observacion ? ` · observación del auditor: ${i.observacion}` : ''}`)
+      : ['No se registraron indicadores: devuelve "indicadores" como cadena vacía.']),
     '',
     '## HALLAZGOS',
   ]
@@ -255,6 +273,14 @@ export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: Hallazgo
 const PALABRAS = ['ninguna', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez']
 const cuantas = (n: number, singular: string, plural: string) => `${n <= 10 ? PALABRAS[n] : n} ${n === 1 ? singular : plural}`
 const enLista = (partes: string[]) => (partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : partes[0] ?? '')
+
+/** Indicadores registrados por el auditor (lista vacía si no hay). */
+export const revisados = (a: AuditoriaInforme): IndicadorRevisado[] => (Array.isArray(a.indicadores_revisados) ? a.indicadores_revisados : [])
+
+/** «(area auditada)» de la plantilla: el área auditada o, si no se informó, el proceso o sistema. */
+export const areaIndicadores = (a: AuditoriaInforme) => a.area_auditada?.trim() || objetoDe(a)
+
+export const SIN_INDICADORES = 'No se registraron indicadores priorizados del proceso para esta auditoría.'
 
 /** Narrativa determinista, usada cuando la IA no está disponible. */
 export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrativa {
@@ -297,12 +323,10 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrati
     : c.NO_CONFORMIDAD ? 'su eficacia depende del cierre oportuno de las acciones correctivas' : 'no se identificaron aspectos que comprometan su eficacia'
   const conclusiones = `Con base en la evidencia objetiva recopilada, se concluye que ${objeto} ${adecuacion}; ${conveniencia}; y ${eficacia}.`
 
-  const recomendaciones: string[] = []
-  if (c.NO_CONFORMIDAD) recomendaciones.push('Formular e implementar acciones correctivas para cada no conformidad, con análisis de causa, responsable y fecha de cierre.')
-  if (c.OBSERVACION) recomendaciones.push('Analizar las observaciones registradas y definir controles preventivos que eviten su materialización como incumplimientos.')
-  if (c.OPORTUNIDAD_DE_MEJORA) recomendaciones.push('Evaluar la viabilidad de las oportunidades de mejora e incorporarlas en el plan de mejoramiento del proceso.')
-  if (c.NO_CONFORMIDAD || c.OBSERVACION) recomendaciones.push('Verificar la eficacia de las acciones tomadas en la siguiente auditoría interna.')
-  if (!recomendaciones.length) recomendaciones.push('Mantener las prácticas identificadas como fortalezas y verificar su continuidad en la siguiente auditoría interna.')
+  const registrados = revisados(a)
+  const indicadores = registrados.length
+    ? `Se revisaron ${cuantas(registrados.length, 'indicador priorizado', 'indicadores priorizados')} del proceso de ${areaIndicadores(a)}, con la meta y el resultado que se relacionan arriba.`
+    : ''
 
   return {
     objetivo: a.objetivo?.trim() ? '' : objetivo,
@@ -318,22 +342,23 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrati
     oportunidades,
     observaciones,
     conclusiones,
-    recomendaciones,
+    indicadores,
   }
 }
 
 /** Todos los textos de la narrativa, para revisar cifras y referencias. */
 export const textosNarrativa = (n: Narrativa) => [
   n.objetivo, n.alcance, ...n.criterios_seleccion_equipo, n.priorizacion_procesos, n.riesgos_oportunidades, n.oportunidades,
-  n.observaciones, n.conclusiones, ...n.recomendaciones,
+  n.observaciones, n.conclusiones, n.indicadores,
 ]
 
 /** Cifras de la narrativa que no se pueden rastrear a las estadísticas, los hallazgos o la auditoría. */
 export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas): string[] {
   const permitidas = new Set<string>(['9001', '14001', '45001', '19011', '31000', '2015', '2018', '13'])
   const agregar = (x: unknown) => String(x ?? '').match(/\d+(?:[.,]\d+)*/g)?.forEach((m) => permitidas.add(m))
-  ;[...indicadores(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_inicio_real, a.fecha_fin_real,
-    a.objetivo, a.area_auditada, ...(a.criterios ?? [])].forEach(agregar)
+  ;[...cifrasAuditoria(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_inicio_real, a.fecha_fin_real,
+    a.objetivo, a.area_auditada, ...(a.criterios ?? []), revisados(a).length,
+    ...revisados(a).flatMap((i) => [i.nombre, i.meta, i.resultado, i.observacion])].forEach(agregar)
   hallazgos.forEach((h) => [h.consecutivo, h.hallazgo_corregido, h.criterio_requisito, h.evidencia, h.riesgo_descripcion,
     h.riesgo_probabilidad, h.riesgo_impacto, (h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0)].forEach(agregar))
   const texto = textosNarrativa(n).join(' ')
@@ -341,8 +366,9 @@ export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos
 }
 
 /**
- * Contenido del informe con la estructura del formato oficial (version_estructura 3): portada, Ficha Técnica,
- * listas de hallazgos en el orden del formato y las secciones de Objetivo a Recomendaciones.
+ * Contenido del informe con la estructura del formato oficial (version_estructura 4): portada, Ficha Técnica,
+ * listas de hallazgos en el orden del formato y las secciones de Objetivo a Conclusiones. La 4 (plantilla del
+ * 5/10/2026): «Indicadores» es la revisión de los indicadores priorizados del proceso y ya no hay recomendaciones.
  */
 export function construirContenido(opciones: {
   auditoria: AuditoriaInforme
@@ -363,7 +389,7 @@ export function construirContenido(opciones: {
     .filter((pdf): pdf is { nombre: string; paginas: number; sha256: string } => Boolean(pdf?.nombre))
     .map((pdf) => [pdf.sha256, `${pdf.nombre} (${pdf.paginas} ${pdf.paginas === 1 ? 'página' : 'páginas'})`])).values()]
   return {
-    version_estructura: 3,
+    version_estructura: 4,
     formato: 'Auditoria_interna.odt',
     identificacion: {
       codigo: a.codigo,
@@ -398,11 +424,15 @@ export function construirContenido(opciones: {
     priorizacion_procesos: n.priorizacion_procesos,
     metodos: METODOS_AUDITORIA,
     riesgos_oportunidades: n.riesgos_oportunidades,
-    indicadores: indicadores(e),
+    // «Revisión de indicadores priorizados en el proceso de <area>»: la lista exacta del auditor y la revisión de la IA
+    indicadores: {
+      area: areaIndicadores(a),
+      revisados: revisados(a).map(({ nombre, meta, resultado, observacion }) => ({ nombre, meta, resultado, observacion })),
+      revision: revisados(a).length ? n.indicadores : SIN_INDICADORES,
+    },
     oportunidades: n.oportunidades,
     observaciones: n.observaciones,
     conclusiones: n.conclusiones,
-    recomendaciones: n.recomendaciones,
     avisos: opciones.avisos,
   }
 }

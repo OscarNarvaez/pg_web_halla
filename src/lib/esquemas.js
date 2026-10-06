@@ -122,6 +122,18 @@ export const esquemaFechasReales = z
   .object({ fecha_inicio_real: z.string().optional().default(''), fecha_fin_real: z.string().optional().default('') })
   .superRefine(validarFechasReales)
 
+// Indicadores priorizados del proceso que revisó el auditor (0013): van en la sección «Indicadores» del informe
+export const MAX_INDICADORES = 15
+export const indicadorVacio = () => ({ nombre: '', meta: '', resultado: '', observacion: '' })
+export const esquemaIndicadores = z.object({
+  indicadores: z.array(z.object({
+    nombre: z.string().trim().min(1, 'Escribe el nombre del indicador').max(200, 'Máximo 200 caracteres'),
+    meta: z.string().trim().max(120, 'Máximo 120 caracteres'),
+    resultado: z.string().trim().max(120, 'Máximo 120 caracteres'),
+    observacion: z.string().trim().max(500, 'Máximo 500 caracteres'),
+  })).max(MAX_INDICADORES, `Máximo ${MAX_INDICADORES} indicadores`),
+})
+
 /** Un perfil anterior a la 0009 puede no tener cargos o equipo completo: hay que completarlo en «Mi perfil». */
 export function perfilIncompleto(p) {
   return Boolean(p) && (!p.tipo_evaluador || !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m?.nombre || !m?.cargos?.length))

@@ -73,8 +73,24 @@ function reemplazarTexto(p, texto) {
 }
 
 /**
+ * Reemplaza un fragmento del texto de un párrafo (un campo de la plantilla, como «(area auditada)») sin tocar el
+ * resto ni sus estilos. Devuelve false si el fragmento no está entero en un mismo tramo de texto.
+ */
+function reemplazarFragmento(p, buscado, nuevo) {
+  const caminante = p.ownerDocument.createTreeWalker(p, 4 /* NodeFilter.SHOW_TEXT */)
+  for (let n = caminante.nextNode(); n; n = caminante.nextNode()) {
+    if (n.nodeValue.includes(buscado)) {
+      n.nodeValue = n.nodeValue.replace(buscado, nuevo)
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * Inserta líneas después de un ancla: en el primer renglón vacío que la plantilla trae ahí, con su estilo. Si ese
  * renglón usa el estilo genérico (sin el espacio superior de los demás), se usa el estilo de cuerpo de la plantilla.
+ * Si es el único renglón antes del siguiente título, se conserva como separación (como en las demás secciones).
  */
 function rellenar(ancla, lineas, estiloCuerpo, automaticos) {
   const doc = ancla.ownerDocument
@@ -83,11 +99,11 @@ function rellenar(ancla, lineas, estiloCuerpo, automaticos) {
   const estilo = estiloHueco && automaticos.has(estiloHueco) ? estiloHueco : estiloCuerpo
   const referencia = hueco ?? ancla.nextElementSibling
   for (const linea of lineas) ancla.parentNode.insertBefore(nuevoParrafo(doc, estilo, linea), referencia)
-  if (hueco) hueco.parentNode.removeChild(hueco)
+  const antesDeTitulo = es(hueco?.nextElementSibling, NS.text, 'h') && normal(textoDe(hueco.nextElementSibling))
+  if (hueco && !antesDeTitulo) hueco.parentNode.removeChild(hueco)
 }
 
 const conVinetas = (items) => items.map((t) => `• ${t}`)
-const numeradas = (items) => items.map((t, i) => `${i + 1}. ${t}`)
 
 function llenarCuerpo(doc, c) {
   const cuerpo = doc.getElementsByTagNameNS(NS.office, 'text')[0]
@@ -112,7 +128,7 @@ function llenarCuerpo(doc, c) {
   // Estilo de los párrafos de texto que se agregan donde la plantilla no trae renglón vacío
   const alcance = buscar('Alcance', { titulo: true })
   const estiloCuerpo = (vacio(alcance.nextElementSibling) && alcance.nextElementSibling.getAttributeNS(NS.text, 'style-name'))
-    || buscar(TEXTOS_FORMATO.recomendaciones).getAttributeNS(NS.text, 'style-name')
+    || buscar(TEXTOS_FORMATO.revisionIndicadores).getAttributeNS(NS.text, 'style-name')
 
   llenarFicha(cuerpo, c)
 
@@ -122,9 +138,13 @@ function llenarCuerpo(doc, c) {
   }
 
   for (const s of seccionesFormato(c)) {
-    const ancla = s.antes ? buscar(s.antes) : buscar(s.titulo, { titulo: s.estiloTitulo === 'cuerpo' ? false : true })
+    const ancla = s.antes ? buscar(s.antesPlantilla ?? s.antes) : buscar(s.titulo, { titulo: true })
+    // Campos de la plantilla («(area auditada)»): se llenan en su sitio, con el estilo que traen
+    for (const [campo, valor] of Object.entries(s.campos ?? {})) {
+      if (!reemplazarFragmento(ancla, campo, valor)) reemplazarTexto(ancla, s.antes)
+    }
     const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
-    const lineas = s.tipo === 'vinetas' ? conVinetas(contenido) : s.tipo === 'numerada' ? numeradas(contenido) : contenido
+    const lineas = [...conVinetas(s.vinetas ?? []), ...(s.tipo === 'vinetas' ? conVinetas(contenido) : contenido)]
     rellenar(ancla, lineas.length ? lineas : ['No informado.'], estiloCuerpo, automaticos)
   }
 }

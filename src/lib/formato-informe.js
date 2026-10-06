@@ -16,7 +16,15 @@ export const TEXTOS_FORMATO = {
   liderEquipo: 'Líder equipo',
   archivosAdjuntos: 'Archivos adjuntos',
   principalesAspectos: 'Principales aspectos que se tienen en cuenta:',
-  recomendaciones: 'RECOMENDACIONES:',
+  // Renglón de la plantilla bajo «Indicadores» (5/10/2026); «(area auditada)» se llena con el área de la auditoría
+  revisionIndicadores: 'Revisión de indicadores priorizados en el proceso de (area auditada)',
+  marcadorArea: '(area auditada)',
+}
+
+/** Un indicador revisado: «Nombre: meta ≥ 95 %; resultado 92 %. Observación del auditor». */
+export function lineaIndicador(i) {
+  const datos = `meta ${i.meta || 'no definida'}; resultado ${i.resultado || 'no informado'}`
+  return `${i.nombre}: ${datos}.${i.observacion ? ` ${i.observacion}` : ''}`
 }
 
 // Listas de hallazgos, en el orden de la plantilla
@@ -28,11 +36,11 @@ export const LISTAS_HALLAZGOS = [
 ]
 
 /**
- * Secciones del formato después de las listas de hallazgos, en su orden. `tipo`: párrafo, viñetas o lista
- * numerada. `antes` es el texto fijo que la plantilla trae entre el título y el contenido. `titulo` sigue el
- * estilo de la plantilla: negrita subrayada (los títulos de sección), negrita centrada (Conclusiones) o texto
- * normal (RECOMENDACIONES:).
- * @param {object} c contenido del informe (version_estructura 3)
+ * Secciones del formato después de las listas de hallazgos, en su orden. `tipo`: párrafo o viñetas. `antes` es el
+ * texto fijo que la plantilla trae entre el título y el contenido; si lleva un campo por llenar, `antesPlantilla` es
+ * el texto tal como está en la plantilla y `campos` lo que se reemplaza. `vinetas` va antes del contenido. `titulo`
+ * sigue el estilo de la plantilla: negrita subrayada (los títulos de sección) o negrita centrada (Conclusiones).
+ * @param {object} c contenido del informe (version_estructura 4)
  */
 export function seccionesFormato(c) {
   return [
@@ -43,11 +51,19 @@ export function seccionesFormato(c) {
     { titulo: 'Priorización de procesos', tipo: 'parrafo', contenido: c.priorizacion_procesos },
     { titulo: 'Métodos a emplear para el desarrollo de la auditoría', tipo: 'vinetas', contenido: c.metodos },
     { titulo: 'Riesgos y oportunidades del programa auditoria', tipo: 'parrafo', contenido: c.riesgos_oportunidades },
-    { titulo: 'Indicadores', tipo: 'vinetas', contenido: c.indicadores },
+    {
+      titulo: 'Indicadores',
+      tipo: 'parrafo',
+      antes: TEXTOS_FORMATO.revisionIndicadores.replace(TEXTOS_FORMATO.marcadorArea, c.indicadores.area),
+      antesPlantilla: TEXTOS_FORMATO.revisionIndicadores,
+      campos: { [TEXTOS_FORMATO.marcadorArea]: c.indicadores.area },
+      escalaAntes: 1,
+      vinetas: c.indicadores.revisados.map(lineaIndicador),
+      contenido: c.indicadores.revision,
+    },
     { titulo: 'Oportunidades', tipo: 'parrafo', contenido: c.oportunidades },
     { titulo: 'Observaciones', tipo: 'parrafo', contenido: c.observaciones },
     { titulo: 'Conclusiones', tipo: 'parrafo', contenido: c.conclusiones, estiloTitulo: 'centrado' },
-    { titulo: TEXTOS_FORMATO.recomendaciones, tipo: 'numerada', contenido: c.recomendaciones, estiloTitulo: 'cuerpo' },
   ]
 }
 
@@ -75,5 +91,8 @@ export const personaFicha = (p) => [p?.nombre, p?.cargo].filter(Boolean).join(' 
 /** Párrafos de un texto narrativo (separados por líneas en blanco). */
 export const parrafos = (texto) => String(texto ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean)
 
-/** ¿El informe tiene la estructura del formato oficial? Las versiones anteriores se deben regenerar. */
-export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 3
+/**
+ * ¿El informe tiene la estructura de la plantilla oficial vigente? Las versiones anteriores (la 3 traía
+ * recomendaciones y otros indicadores) se deben regenerar.
+ */
+export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 4

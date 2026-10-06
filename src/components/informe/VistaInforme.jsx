@@ -11,7 +11,6 @@ const TABLA = { fontFamily: 'Arial, "Liberation Sans", Helvetica, sans-serif' }
 const ENSANCHADO = { transform: 'scaleX(1.15)', transformOrigin: 'left', display: 'inline-block' }
 
 function Titulo({ children, estilo = 'subrayado' }) {
-  if (estilo === 'cuerpo') return <p className="mt-3" style={ENSANCHADO}>{children}</p>
   return (
     <h2 className={cx('mt-4 font-bold', estilo === 'centrado' ? 'text-center' : 'underline underline-offset-2')}>
       {children}
@@ -110,20 +109,21 @@ export function VistaInforme({ informe }) {
           )
         })}
 
-        {/* Secciones de Objetivo a Recomendaciones */}
+        {/* Secciones de Objetivo a Conclusiones */}
         {seccionesFormato(c).map((s) => {
           const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
+          const vinetas = s.vinetas ?? []
           return (
-            <section key={s.titulo} aria-label={s.titulo.replace(/:$/, '')} className="mb-4">
+            <section key={s.titulo} aria-label={s.titulo} className="mb-4">
               <Titulo estilo={s.estiloTitulo}>{s.titulo}</Titulo>
               {s.antes && <p className="mt-2">{s.antes}</p>}
-              {!contenido.length && <p className="mt-2">No informado.</p>}
+              {vinetas.length > 0 && (
+                <ul className="mt-2 space-y-1">{vinetas.map((t) => <li key={t} className="pl-3 -indent-3">• {t}</li>)}</ul>
+              )}
+              {!contenido.length && !vinetas.length && <p className="mt-2">No informado.</p>}
               {s.tipo === 'parrafo' && contenido.map((t) => <p key={t} className="mt-2 text-justify">{t}</p>)}
               {s.tipo === 'vinetas' && (
                 <ul className="mt-2 space-y-1">{contenido.map((t) => <li key={t} className="pl-3 -indent-3">• {t}</li>)}</ul>
-              )}
-              {s.tipo === 'numerada' && (
-                <ol className="mt-2 space-y-1">{contenido.map((t, i) => <li key={t}>{i + 1}. {t}</li>)}</ol>
               )}
             </section>
           )

@@ -245,7 +245,7 @@ async function funciones(route) {
     const narrativa = narrativaRespaldo(a, estadisticas)
     const version = db.informes.filter((i) => i.auditoria_id === a.id).length + 1
     const contenido = construirContenido({ auditoria: a, perfil, hallazgos: lista, estadisticas, narrativa, generadoEn: new Date().toISOString(), version, avisos: [] })
-    const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, resumen_ejecutivo: narrativa.observaciones, conclusiones: narrativa.conclusiones, recomendaciones: narrativa.recomendaciones.join('\n'), estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.1.0', generado_en: new Date().toISOString() }
+    const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, resumen_ejecutivo: narrativa.observaciones, conclusiones: narrativa.conclusiones, recomendaciones: null, estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.1.0', generado_en: new Date().toISOString() }
     db.informes.push(informe)
     return json({ ok: true, informe, meta: { modelo: 'gemini-3.8-flash', ia: true } })
   }
@@ -694,6 +694,24 @@ await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
 await p.getByRole('button', { name: 'Guardar fechas' }).click()
 await p.getByText(/Fechas reales guardadas/).waitFor()
 ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
+// Indicadores priorizados del proceso (plantilla del 5/10/2026): los registra el auditor y la IA redacta la revisión
+ok(await p.getByText('«Revisión de indicadores priorizados en el proceso de Servicio de Urgencias»').isVisible(), 'la tarjeta muestra la línea de la plantilla con el área de la auditoría')
+await p.getByRole('button', { name: 'Agregar indicador' }).click()
+await p.getByRole('button', { name: 'Guardar indicadores' }).click()
+await p.getByText('Escribe el nombre del indicador').waitFor()
+ok(true, 'un indicador sin nombre no se guarda')
+const indicador1 = p.getByRole('group', { name: 'Indicador 1' })
+await indicador1.getByLabel('Nombre').fill('Oportunidad en la atención de triage II')
+await indicador1.getByLabel('Meta').fill('≤ 30 minutos')
+await indicador1.getByLabel('Resultado').fill('42 minutos')
+await indicador1.getByLabel('Observación (opcional)').fill('Dato del último trimestre.')
+await p.getByRole('button', { name: 'Agregar indicador' }).click()
+await p.getByRole('group', { name: 'Indicador 2' }).getByLabel('Nombre').fill('Proporción de reingresos a urgencias')
+await p.getByRole('button', { name: 'Guardar indicadores' }).click()
+await p.getByText(/Indicadores guardados/).waitFor()
+const indicadoresDb = db.auditorias[0].indicadores_revisados
+ok(indicadoresDb?.length === 2 && indicadoresDb[0].resultado === '42 minutos' && indicadoresDb[1].meta === '' && Object.keys(indicadoresDb[0]).sort().join() === 'meta,nombre,observacion,resultado',
+  'el auditor registra los indicadores que revisó (nombre, meta, resultado y observación)', JSON.stringify(indicadoresDb))
 await p.getByRole('button', { name: 'Generar informe' }).click()
 const hoja = p.getByRole('article', { name: 'Informe final de auditoría' })
 await hoja.waitFor()
@@ -703,8 +721,10 @@ const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 
   'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora',
   'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
-  'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Oportunidades', 'Observaciones',
-  'Conclusiones', 'RECOMENDACIONES:', 'Generado por Ana María Rodríguez Peña - ']
+  'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
+  'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias', '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos. Dato del último trimestre.',
+  '• Proporción de reingresos a urgencias: meta no definida; resultado no informado.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones',
+  'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
 const enOrden = (texto, partes) => {
   let desde = 0
   for (const parte of partes) {
@@ -714,7 +734,7 @@ const enOrden = (texto, partes) => {
   }
   return ''
 }
-const faltaVista = enOrden(textoHoja, ORDEN_VISTA)
+const faltaVista = enOrden(textoHoja, ORDEN_VISTA) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)/.test(textoHoja) ? 'RECOMENDACIONES, cifras o campo sin llenar' : '')
 ok(!faltaVista, 'la vista sigue el formato oficial: portada, Ficha Técnica, hallazgos (fortalezas → oportunidades → observaciones → no conformidades) y secciones', faltaVista)
 const extintor = db.hallazgos.find((h) => h.clasificacion === 'NO_CONFORMIDAD' && /extintor/.test(h.hallazgo_corregido)).hallazgo_corregido
 ok(textoHoja.indexOf(extintor.slice(0, 60)) > textoHoja.indexOf('NO CONFORMIDADES') && textoHoja.indexOf(extintor.slice(0, 60)) < textoHoja.indexOf('Objetivo'),
@@ -740,7 +760,8 @@ const original = lineas(execSync(`unzip -p "${PLANTILLA}" content.xml`).toString
 const llenado = lineas(execSync(`unzip -p "${rutaOdt}" content.xml`).toString())
 const textoLlenado = llenado.join('\n')
 // Todos los textos de la plantilla siguen ahí, en el mismo orden (menos el título y el año de la portada, que se llenan)
-const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
+// (el renglón con «(area auditada)» se llena con el área: se comprueba abajo, ya lleno)
+const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l) && !l.includes('(area auditada)')).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
 const faltaFijo = enOrden(textoLlenado, fijos)
 ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
 const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
@@ -749,8 +770,10 @@ const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2
   'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
-  'Indicadores', '• Hallazgos registrados: 5', 'Oportunidades', 'Observaciones', 'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia', 'RECOMENDACIONES:', '1. ']
-const faltaOdt = enOrden(textoLlenado, ORDEN_ODT)
+  'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias', '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos. Dato del último trimestre.',
+  '• Proporción de reingresos a urgencias: meta no definida; resultado no informado.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones',
+  'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia']
+const faltaOdt = enOrden(textoLlenado, ORDEN_ODT) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)/.test(textoLlenado) ? 'RECOMENDACIONES, cifras o campo sin llenar' : '')
 ok(!faltaOdt, 'el ODT llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar', faltaOdt)
 const estilosOdt = execSync(`unzip -p "${rutaOdt}" styles.xml`).toString()
 ok(/Auditoria Interna - 2026 - Urgencias/.test(textoOdf(estilosOdt)) && /Generado por Ana María Rodríguez Peña - 20\d\d-\d\d-\d\d \d{1,2}:\d\d [AP]M/.test(textoOdf(estilosOdt))
@@ -791,7 +814,9 @@ ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), '
 const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
   'Evaluador', 'Auditores Internos', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
-  'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Oportunidades', 'Observaciones', 'Conclusiones', 'RECOMENDACIONES:'])
+  'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
+  '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones', 'Conclusiones'])
+  || (/RECOMENDACIONES|Hallazgos registrados:/.test(textoPdf) ? 'RECOMENDACIONES o cifras de la auditoría' : '')
 ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
 ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),
   `encabezado y pie de la plantilla en cada página (${paginasPdf} páginas), con tildes y «ñ»`)
