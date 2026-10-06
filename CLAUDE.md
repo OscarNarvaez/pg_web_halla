@@ -82,9 +82,11 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   `RutaAnteriorContext`). Barra con «Guardar cambios» siempre visible; lo pendiente se guarda antes de cerrar sesión
   (`src/lib/guardado-pendiente.js`).
 - PDF de evidencia: se lee en el navegador (`src/lib/pdf-evidencia.js`) y NUNCA se sube; solo viajan su texto
-  y su huella `{nombre, paginas, sha256}`. Se carga en el paso 1 (`evidencia_archivo`, el que analiza la IA, inmutable)
-  y también al editar la evidencia (decisión del dueño, 5/10/2026): paso 4, detalle y matriz, con `EvidenciaEditable`
-  → `evidencia_anexos` (0012). Ambos van a «Archivos adjuntos» del informe.
+  y su huella `{nombre, paginas, sha256}`. Se carga en el paso 1 (`evidencia_archivo`, el que analiza la IA) y también al
+  editar la evidencia (decisión del dueño, 5/10/2026): paso 4, detalle y matriz, con `EvidenciaEditable` →
+  `evidencia_anexos` (0012). Ambos van a «Archivos adjuntos» del informe. TODO documento se puede quitar en cualquier
+  momento (decisión del dueño, 5/10/2026) con `DocumentoAdjunto`: botón «Quitar» visible + X al pasar el puntero. El
+  analizado solo se puede quitar, no reemplazar; el historial guarda su huella (0014).
 - Matriz: «Validado» = estado `confirmado`. Se descarga (Excel) solo con TODOS los vigentes validados; validar
   exige riesgo completo y un control adoptado (`faltantesParaValidar` en `src/lib/riesgo.js`). Editar un
   validado lo devuelve a pendiente en el servidor (trigger `proteger_hallazgo`).

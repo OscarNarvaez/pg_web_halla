@@ -29,7 +29,7 @@ const EJEMPLO =
   'Ejemplo: Se revisaron 20 historias clínicas del servicio de Hospitalización y en 5 de ellas no se encontró registrada la valoración de enfermería al ingreso.'
 // Campos que el auditor puede ajustar en los pasos 2 a 6, incluidos los PDF agregados en el 4 (se guardan al cambiar de paso)
 const CAMPOS = [
-  'clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_anexos', 'severidad',
+  'clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_archivo', 'evidencia_anexos', 'severidad',
   'riesgo_descripcion', 'riesgo_dimension', 'riesgo_probabilidad', 'riesgo_impacto', 'riesgo_justificacion', 'controles',
 ]
 const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
@@ -49,6 +49,7 @@ export default function HallazgoNuevo() {
   const [texto, setTexto] = useState('')
   const [notas, setNotas] = useState('')
   const [archivo, setArchivo] = useState(null)
+  const [importado, setImportado] = useState('') // texto que trajo el PDF, para quitarlo con él
   const [tocado, setTocado] = useState(false)
   const [fase, setFase] = useState('inicio') // inicio | analizando | error | analizado
   const [error, setError] = useState(null)
@@ -175,6 +176,40 @@ export default function HallazgoNuevo() {
     notificar('Resultado descartado. Tu texto sigue aquí por si quieres reescribirlo.', 'info')
   }
 
+  // Después del análisis, el PDF del paso 1 es el que quedó registrado en los hallazgos (se puede quitar de todos)
+  const pdfAnalizado = analizado ? hallazgos.find((x) => x.evidencia_archivo)?.evidencia_archivo ?? null : null
+
+  /** Quita el PDF analizado de los hallazgos de este análisis (0014: se puede quitar, no reemplazar). */
+  const quitarPdfAnalizado = async () => {
+    setGuardando(true)
+    const nuevos = [...guardados]
+    const actuales = [...hallazgos]
+    for (let i = 0; i < hallazgos.length; i++) {
+      if (!hallazgos[i].evidencia_archivo) continue
+      const cambios = { evidencia_archivo: null, ...((guardados[i].estado ?? 'generado') === 'generado' ? { estado: 'editado' } : {}) }
+      const { data, error: err } = await actualizarHallazgo(hallazgos[i].id, cambios)
+      if (err) {
+        setGuardando(false)
+        return notificar(err, 'error')
+      }
+      nuevos[i] = data
+      actuales[i] = { ...actuales[i], evidencia_archivo: null, estado: data.estado, editado_por_usuario: data.editado_por_usuario }
+    }
+    setGuardando(false)
+    setGuardados(nuevos)
+    setHallazgos(actuales)
+    setArchivo(null)
+    notificar('PDF quitado del hallazgo. El texto ya analizado se conserva en su registro original.', 'exito')
+  }
+
+  /** Quitar el PDF antes del análisis también quita el texto que trajo, si el auditor no lo editó. */
+  const quitarPdf = () => {
+    setArchivo(null)
+    if (importado && texto.includes(importado)) setTexto((t) => t.replace(importado, '').replace(/\n{3,}/g, '\n\n').trim())
+    else if (importado) notificar('Quitaste el PDF. Su texto se conserva porque lo editaste: bórralo del cuadro si no lo necesitas.', 'info')
+    setImportado('')
+  }
+
   const pasoActual = PASOS[paso - 1]
 
   return (
@@ -209,12 +244,17 @@ export default function HallazgoNuevo() {
               </span>
             </p>
             <CargarPdf
-              archivo={archivo}
+              archivo={analizado ? pdfAnalizado : archivo}
+              detalle={analizado ? 'analizado con la IA' : undefined}
               maximo={MAXIMO}
               deshabilitado={fase === 'analizando' || analizado || cerrada}
+              permitirQuitar={!cerrada && fase !== 'analizando' && !guardando}
               alImportar={(r) => {
-                setArchivo(r?.archivo ?? null)
-                if (r?.texto) setTexto((t) => (t.trim() ? `${t.trim()}\n\n${r.texto}` : r.texto))
+                if (!r) return analizado ? quitarPdfAnalizado() : quitarPdf()
+                if (archivo) quitarPdf() // un PDF nuevo reemplaza al anterior (y a su texto)
+                setArchivo(r.archivo)
+                setImportado(r.texto)
+                if (r.texto) setTexto((t) => (t.trim() ? `${t.trim()}\n\n${r.texto}` : r.texto))
               }}
             />
             <AreaTexto

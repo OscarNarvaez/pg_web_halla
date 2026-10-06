@@ -212,8 +212,9 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
 
 - **El PDF de evidencia no sale del navegador.** Se lee con pdf.js en el equipo del auditor; al servidor solo
   llega el texto que el auditor revisó (que pasa por `anonimizar()` como cualquier entrada, S1) y la huella
-  `{nombre, paginas, sha256}`. No hay almacenamiento de archivos que proteger. La huella es inmutable y su
-  formato lo valida un check de la base de datos. pdf.js se configura con `isEvalSupported: false`: la CSP no
+  `{nombre, paginas, sha256}`. No hay almacenamiento de archivos que proteger. La huella no se puede reemplazar
+  (desde la 0014 el auditor puede quitarla, y el historial conserva cuál era) y su formato lo valida un check de la
+  base de datos. pdf.js se configura con `isEvalSupported: false`: la CSP no
   permite `eval` y no se relajó. *Pruebas:* `probar-bd` (huella inmutable y formato) y `probar-interfaz`
   (ninguna petición lleva el PDF; viaja solo la huella).
 - **Controles íntegros.** El trigger `validar_controles` verifica que un control que cita un criterio apunte
@@ -238,8 +239,8 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
   cerrar la auditoría. *Prueba:* `probar-bd` (sección «Lista de verificación»).
 - **PDF de evidencia al editar (0012).** Sigue la misma regla que en el paso 1: el archivo se lee en el navegador
   y nunca se sube; al servidor llegan su texto (dentro de la evidencia que edita el auditor) y su huella. El
-  trigger solo guarda nombre saneado, páginas, SHA-256 y fecha del servidor, y la huella del PDF que analizó la IA
-  sigue siendo inmutable. *Prueba:* `probar-bd` («PDF agregados al editar») y `probar-interfaz`.
+  trigger solo guarda nombre saneado, páginas, SHA-256 y fecha del servidor. La huella del PDF que analizó la IA no
+  se puede reemplazar; quitarla (0014) queda en el historial con la huella anterior. *Prueba:* `probar-bd` («PDF agregados al editar») y `probar-interfaz`.
 - **El Excel se genera en el navegador** con los datos que el auditor ya puede leer por RLS: no hay un
   endpoint de exportación nuevo que proteger.
 

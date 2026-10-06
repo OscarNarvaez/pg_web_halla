@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las trece migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe).
+- [ ] `supabase db push` aplicó las catorce migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe; la 0014, quitar el PDF analizado).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -353,6 +353,9 @@ supabase secrets set PROMPT_VERSION=1.3.0
 supabase functions deploy clasificar-hallazgo      # guía de redacción en el mensaje y V3 con «porque» / «para lo cual»
 git push origin main
 ```
+
+**Quitar documentos cargados (5/10/2026):** `supabase db push` (0014) y luego `git push origin main`. No cambia
+ninguna Edge Function.
 
 **Plantilla del informe con «Revisión de indicadores» y sin RECOMENDACIONES (5/10/2026):**
 

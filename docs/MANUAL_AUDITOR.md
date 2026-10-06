@@ -129,7 +129,10 @@ Ejemplo pobre (le falta evidencia):
 - Si el PDF tiene texto, el sistema lo extrae y lo pone en el cuadro de evidencia. Revíselo y borre lo que no
   sea evidencia (encabezados, firmas, datos personales).
 - Si el PDF es **escaneado** (una imagen), no tiene texto que extraer: describa su contenido en el cuadro.
-- Si el texto pasa de 6 000 caracteres, elija qué páginas importar y analice el resto como otro hallazgo.
+- Si el texto pasa de 6 000 caracteres, elija qué páginas importar y analice el resto como otro hallazgo, o pulse
+  **Cancelar** para descartarlo.
+- **¿Se equivocó de archivo?** Quítelo cuando quiera con el botón **Quitar** del documento, o con la **X** que aparece
+  al pasar el mouse por encima. Antes del análisis, también se quita el texto que trajo (si no lo editó).
 - **El PDF no sale de su computador**: se lee en el navegador. En el hallazgo solo quedan el nombre del
   archivo, el número de páginas y una huella digital (SHA-256) que permite comprobar después cuál archivo fue.
 - **También puede cargar un PDF al editar el hallazgo** (paso 4 o **Ver y editar**, ver §6).
@@ -273,8 +276,10 @@ la matriz), debajo de la evidencia está **Cargar un PDF de evidencia**:
 - Si el PDF tiene texto, se agrega al final del cuadro de evidencia, que se abre para que lo revise. Borre lo que no
   sea evidencia y pulse **Aplicar**: se guardan la evidencia y el PDF. **Cancelar** (o Esc) descarta los dos.
 - Si es escaneado, describa su contenido en el cuadro y pulse **Aplicar** para registrarlo.
-- Debajo aparecen los **PDF de evidencia registrados**: el que analizó la IA (no se puede quitar) y los que agregó
-  al editar, con su fecha; estos se pueden quitar. Un mismo PDF no se registra dos veces.
+- Debajo aparecen los **PDF de evidencia registrados**: el que analizó la IA y los que agregó al editar, con su
+  fecha. **Cualquiera se puede quitar** en el momento que quiera, con **Quitar** o con la **X** que aparece al pasar
+  el mouse. Del PDF analizado, el registro del hallazgo conserva cuál era (para la trazabilidad); el texto que se
+  analizó no cambia. Un mismo PDF no se registra dos veces.
 - Todos aparecen en «Archivos adjuntos» de la Ficha Técnica del informe. Como cualquier edición, agregar o quitar
   un PDF devuelve a Pendiente un hallazgo validado.
 

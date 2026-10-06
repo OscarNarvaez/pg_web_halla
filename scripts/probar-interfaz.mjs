@@ -31,6 +31,7 @@ const { jsPDF } = await import('jspdf')
 const ENTRADA7 = motor.resultados.find((r) => r.caso.n === 7).caso.entrada
 const PDF_TEXTO = `${SALIDA}/evidencia.pdf`
 const PDF_ESCANEADO = `${SALIDA}/escaneado.pdf`
+const PDF_LARGO = `${SALIDA}/largo.pdf`
 {
   const conTexto = new jsPDF()
   conTexto.setFontSize(11)
@@ -39,6 +40,14 @@ const PDF_ESCANEADO = `${SALIDA}/escaneado.pdf`
   const sinTexto = new jsPDF()
   sinTexto.rect(20, 20, 120, 80, 'F')
   writeFileSync(PDF_ESCANEADO, Buffer.from(sinTexto.output('arraybuffer')))
+  // Un PDF que supera el máximo de un análisis: obliga a elegir páginas
+  const largo = new jsPDF()
+  for (let n = 1; n <= 4; n++) {
+    if (n > 1) largo.addPage()
+    largo.setFontSize(10)
+    largo.text(largo.splitTextToSize(`Página ${n}. ${'Se revisó el registro de la valoración de enfermería en el servicio. '.repeat(30)}`, 180), 15, 20)
+  }
+  writeFileSync(PDF_LARGO, Buffer.from(largo.output('arraybuffer')))
 }
 const servidor = await preview({ root: REPO, logLevel: 'error', preview: { port: 4173, strictPort: true }, build: { outDir: `${SALIDA}/dist` } })
 
@@ -203,7 +212,7 @@ async function postgrest(route) {
       // el trigger de la 0012 fecha los PDF agregados al editar
       if (Array.isArray(cuerpo.evidencia_anexos)) f.evidencia_anexos = cuerpo.evidencia_anexos.map((a) => ({ ...a, agregado_en: a.agregado_en ?? new Date().toISOString() }))
       // el trigger de la BD marca editado_por_usuario
-      const contenido = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_anexos', 'severidad', 'riesgo_descripcion',
+      const contenido = ['clasificacion', 'justificacion', 'hallazgo_corregido', 'criterio_requisito', 'evidencia', 'evidencia_archivo', 'evidencia_anexos', 'severidad', 'riesgo_descripcion',
         'riesgo_dimension', 'riesgo_probabilidad', 'riesgo_impacto', 'riesgo_justificacion', 'controles']
       if (tabla === 'hallazgos' && contenido.some((c) => c in cuerpo)) {
         f.editado_por_usuario = true
@@ -478,7 +487,13 @@ ok((await navPasos.getByRole('button').count()) === 7 && await p.getByRole('butt
 await p.getByRole('button', { name: 'Analizar con IA' }).click()
 ok(await p.getByText(/al menos 25 caracteres/).isVisible(), 'exige al menos 25 caracteres')
 
-// PDF de evidencia: se lee en el navegador; un PDF sin texto (escaneado) pide describirlo
+// PDF de evidencia: se lee en el navegador; un PDF largo pide elegir páginas, y se puede cancelar
+await p.locator('input[type="file"]').setInputFiles(PDF_LARGO)
+await p.getByText(/Elige qué páginas importar/).waitFor()
+await p.getByRole('button', { name: 'Cancelar' }).click()
+ok((await p.getByText(/Elige qué páginas importar/).count()) === 0 && await p.getByRole('button', { name: 'Cargar un PDF de evidencia' }).isVisible()
+  && !(await p.getByLabel('Describe lo que observaste durante la auditoría').inputValue()), 'con un PDF largo, «Cancelar» lo descarta sin importar nada')
+// Un PDF sin texto (escaneado) pide describirlo
 await p.locator('input[type="file"]').setInputFiles(PDF_ESCANEADO)
 await p.getByText(/El PDF parece escaneado/).waitFor()
 ok(await p.getByText('escaneado.pdf').isVisible(), 'un PDF escaneado queda adjunto y se pide describir su contenido')
@@ -487,6 +502,22 @@ await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
 await p.getByText(/Se importó el texto/).waitFor()
 const importado = await p.getByLabel('Describe lo que observaste durante la auditoría').inputValue()
 ok(importado.replace(/\s+/g, ' ').includes('extintor vencido en el área de urgencias'), 'el texto del PDF se extrae en el navegador y llena la evidencia', importado.slice(0, 120))
+// Quitar el PDF: con el botón «Quitar» o con la X que aparece al pasar el puntero; su texto se va con él
+const tarjetaPdf = p.locator('div.group', { hasText: 'evidencia.pdf' })
+const equisPdf = tarjetaPdf.locator('button[aria-hidden="true"]')
+const opacidad = () => equisPdf.evaluate((el) => getComputedStyle(el).opacity)
+await p.mouse.move(0, 0) // el puntero quedó sobre el documento tras el clic anterior
+await p.waitForTimeout(300)
+ok(await opacidad() === '0' && await p.getByRole('button', { name: 'Quitar el PDF evidencia.pdf' }).isVisible(), 'el botón «Quitar» siempre está a la vista; la X, no')
+await tarjetaPdf.hover()
+await p.waitForTimeout(300) // transición de la X
+ok(await opacidad() === '1', 'al pasar el puntero por el documento aparece la X')
+await p.screenshot({ path: `${CAPTURAS}05b-quitar-pdf.png`, clip: await tarjetaPdf.evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x - 16, y: r.y - 16, width: r.width + 32, height: r.height + 32 } }) })
+await equisPdf.click()
+await p.getByRole('button', { name: 'Cargar un PDF de evidencia' }).waitFor()
+ok(!(await p.getByLabel('Describe lo que observaste durante la auditoría').inputValue()).trim(), 'la X quita el PDF y el texto que trajo')
+await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
+await p.getByText(/Se importó el texto/).waitFor()
 const antesAnalisis = peticiones.length
 await p.getByRole('button', { name: 'Analizar con IA' }).click()
 await p.getByText('Buscando criterios aplicables…').waitFor()
@@ -522,7 +553,8 @@ await p.getByRole('button', { name: 'Aplicar' }).click()
 ok(await p.getByText(nuevoTexto).isVisible(), 'edición en el sitio del hallazgo corregido')
 ok(await p.getByText('Sigue la fórmula de la no conformidad:').isVisible(), 'la redacción editada se verifica en vivo contra la fórmula de su categoría')
 // PDF de evidencia también al editar: el ya analizado no se repite; uno escaneado se registra al aplicar
-ok(await p.getByText('analizado con la IA').isVisible(), 'el paso 4 muestra el PDF que analizó la IA')
+ok(await p.getByText('analizado con la IA').isVisible() && await p.getByRole('button', { name: 'Quitar el PDF evidencia.pdf' }).isVisible(),
+  'el paso 4 muestra el PDF que analizó la IA, y también se puede quitar')
 await p.locator('input[type="file"]').setInputFiles(PDF_TEXTO)
 await p.getByText('El PDF evidencia.pdf ya está registrado en este hallazgo.').waitFor()
 ok(true, 'el PDF que ya analizó la IA no se registra dos veces')
@@ -682,6 +714,12 @@ await modalH01.getByText(/agregado el \d\d\/\d\d\/\d{4}/).waitFor()
 const h01 = db.hallazgos.find((h) => h.consecutivo === 1)
 ok(h01.evidencia_anexos[0]?.nombre === 'evidencia.pdf' && h01.evidencia.includes('extintor vencido') && h01.estado === 'editado',
   'al aplicar se guardan la evidencia y la huella del PDF; el hallazgo validado vuelve a Pendiente', JSON.stringify({ estado: h01.estado, anexos: h01.evidencia_anexos }))
+// Quitar un documento ya guardado, con la X que aparece al pasar el puntero
+const docH01 = modalH01.locator('li.group', { hasText: 'evidencia.pdf' })
+await docH01.hover()
+await docH01.locator('button[aria-hidden="true"]').click()
+await modalH01.getByText('evidencia.pdf').waitFor({ state: 'detached' })
+ok(!h01.evidencia_anexos.length, 'un PDF ya guardado se quita en cualquier momento con la X')
 // Si el auditor corrige la clasificación, la redacción debe pasar a la fórmula de la nueva categoría
 ok(await modalH01.getByText('Sigue la fórmula de la fortaleza:').isVisible(), 'la fortaleza real sigue la fórmula del dueño (qué es relevante + porque + beneficio)')
 const corregirA = async (valor) => {
@@ -701,6 +739,16 @@ await modalH01.getByRole('button', { name: 'Validar hallazgo' }).click()
 await p.getByText('Hallazgo validado').waitFor()
 await p.keyboard.press('Escape')
 await modalH01.waitFor({ state: 'hidden' })
+// También el PDF que analizó la IA se puede quitar (0014): deja de ser evidencia y adjunto del informe
+const h05 = db.hallazgos.find((h) => h.consecutivo === 5)
+await p.locator('article[aria-label="Hallazgo 5"]').getByRole('button', { name: 'Ver y editar' }).click()
+const modalH05 = p.getByRole('dialog', { name: /^Hallazgo H-05/ })
+await modalH05.getByRole('button', { name: 'Quitar el PDF evidencia.pdf' }).click()
+for (let i = 0; i < 50 && h05.evidencia_archivo; i++) await p.waitForTimeout(100)
+ok(h05.evidencia_archivo === null && peticiones.some((x) => x.metodo === 'PATCH' && x.tabla === 'hallazgos' && 'evidencia_archivo' in (x.cuerpo ?? {}) && x.cuerpo.evidencia_archivo === null),
+  'el PDF analizado por la IA también se puede quitar del hallazgo')
+await p.keyboard.press('Escape')
+await modalH05.waitFor({ state: 'hidden' })
 
 // Filtro por clasificación desde los contadores
 await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()

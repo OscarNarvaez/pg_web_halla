@@ -1,7 +1,8 @@
 import { useId, useRef, useState } from 'react'
-import { FileText, Upload, X } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 import { ErrorPdf, MAX_MB_PDF, leerPdf, textoDeRango } from '../../../lib/pdf-evidencia'
 import { Boton } from '../../ui/Boton'
+import { DocumentoAdjunto } from '../DocumentoAdjunto'
 
 /**
  * Carga de un PDF de evidencia. El archivo se lee en el navegador y no se sube: solo su texto pasa al cuadro
@@ -12,8 +13,10 @@ import { Boton } from '../../ui/Boton'
  * @param {number} props.maximo Máximo de caracteres de la evidencia.
  * @param {boolean} [props.deshabilitado]
  * @param {'analisis'|'edicion'} [props.momento='analisis'] Antes del análisis (paso 1) o al editar la evidencia de un hallazgo.
+ * @param {boolean} [props.permitirQuitar] Quitar el PDF aunque ya no se pueda cargar otro (p. ej. después del análisis).
+ * @param {string} [props.detalle] Texto junto al PDF adjunto (p. ej. «analizado con la IA»).
  */
-export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, momento = 'analisis' }) {
+export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, momento = 'analisis', permitirQuitar = !deshabilitado, detalle }) {
   const enEdicion = momento === 'edicion'
   const entrada = useRef(null)
   const id = useId()
@@ -50,6 +53,7 @@ export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, 
     }
   }
 
+  const reiniciar = () => setEstado({ fase: 'inactivo', pdf: null, mensaje: '' })
   const pdf = estado.pdf
   const seleccion = pdf && estado.fase === 'rango' ? textoDeRango(pdf.textos, rango.desde, rango.hasta) : ''
   const paginas = pdf ? Array.from({ length: pdf.paginas }, (_, i) => i + 1) : []
@@ -58,17 +62,13 @@ export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, 
     <div className="space-y-2">
       <input ref={entrada} id={id} type="file" accept="application/pdf,.pdf" onChange={elegir} className="sr-only" disabled={deshabilitado} tabIndex={-1} aria-hidden="true" />
       {archivo ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-halla-100 bg-halla-50 px-3 py-2 text-sm">
-          <FileText className="size-4 shrink-0 text-halla-700" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate font-medium text-tinta-900" title={archivo.nombre}>{archivo.nombre}</span>
-          <span className="text-xs text-tinta-500">{archivo.paginas} pág.</span>
-          {!deshabilitado && (
-            <button type="button" onClick={() => { alImportar(null); setEstado({ fase: 'inactivo', pdf: null, mensaje: '' }) }}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium text-tinta-700 hover:bg-white" aria-label={`Quitar el PDF ${archivo.nombre}`}>
-              <X className="size-3.5" aria-hidden="true" /> Quitar
-            </button>
-          )}
-        </div>
+        <DocumentoAdjunto
+          nombre={archivo.nombre}
+          paginas={archivo.paginas}
+          sha256={archivo.sha256}
+          detalle={detalle}
+          alQuitar={permitirQuitar ? () => { alImportar(null); reiniciar() } : undefined}
+        />
       ) : (
         <Boton
           variante="secundario"
@@ -136,6 +136,7 @@ export function CargarPdf({ alImportar, archivo, maximo, deshabilitado = false, 
               >
                 Importar páginas
               </Boton>
+              <Boton tamano="sm" variante="secundario" icono={X} onClick={reiniciar}>Cancelar</Boton>
             </div>
             <p className="text-xs tabular-nums">
               Selección: {seleccion.length.toLocaleString('es-CO')} caracteres{seleccion.length > maximo ? ' — demasiados, reduce el rango.' : '.'}
