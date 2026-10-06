@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { AlertTriangle, Eye, FilePlus2, FileSpreadsheet } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Eye, FilePlus2, FileSpreadsheet, FileText } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { actualizarHallazgo, useHallazgos } from '../hooks/useHallazgos'
 import { useToast } from '../contexts/ToastContext'
@@ -93,6 +93,9 @@ export default function MatrizConsolidada() {
   const a = auditoria.datos
   const cuantos = (estado) => vigentes.filter((h) => estadoMatriz(h.estado) === estado).length
   const validados = cuantos('confirmado')
+  // El informe necesita al menos un hallazgo validado (la Edge Function lo exige igual)
+  const rutaInforme = `/app/auditorias/${id}/informe`
+  const sinValidados = 'Valida al menos un hallazgo para generar el informe'
 
   const reemplazar = (nuevo) => {
     setDatos((lista) => lista.map((h) => (h.id === nuevo.id ? nuevo : h)))
@@ -156,6 +159,9 @@ export default function MatrizConsolidada() {
           <>
             <BotonEnlace a={`/app/auditorias/${id}/hallazgos/nuevo`} icono={FilePlus2} variante="secundario" deshabilitado={a.estado === 'cerrada'}>Nuevo hallazgo</BotonEnlace>
             <Boton icono={FileSpreadsheet} onClick={descargar} cargando={descargando}>Descargar matriz (Excel)</Boton>
+            <BotonEnlace a={rutaInforme} icono={FileText} variante="secundario" deshabilitado={!validados} title={validados ? undefined : sinValidados}>
+              Generar informe
+            </BotonEnlace>
           </>
         }
       />
@@ -263,6 +269,26 @@ export default function MatrizConsolidada() {
 
       {/* Consolidado de resultados, justo debajo de la matriz (también vacío, con su aviso) */}
       {!cargando && !error && <ResultadosAuditoria hallazgos={vigentes} />}
+
+      {/* Siguiente paso del recorrido: matriz validada → informe final */}
+      {!cargando && !error && (
+        <section aria-labelledby="titulo-siguiente" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-halla-100 bg-halla-50 p-5">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-halla-700">Siguiente paso</p>
+            <h2 id="titulo-siguiente" className="text-lg font-semibold text-tinta-900">Informe final de la auditoría</h2>
+            <p className="mt-1 max-w-2xl text-sm text-tinta-700">
+              {!validados
+                ? `${sinValidados}: el informe toma la redacción validada de cada hallazgo.`
+                : validados === vigentes.length
+                  ? 'Todos los hallazgos están validados. Genera el informe con el formato oficial del hospital.'
+                  : `${validados} de ${vigentes.length} hallazgos validados. Puedes generar el informe ya; los que sigan pendientes saldrán marcados como sin validar.`}
+            </p>
+          </div>
+          <BotonEnlace a={rutaInforme} icono={ArrowRight} deshabilitado={!validados} title={validados ? undefined : sinValidados}>
+            Generar informe
+          </BotonEnlace>
+        </section>
+      )}
 
       <ModalHallazgo hallazgo={abierto} irAFaltante={irAFaltante} alCerrar={() => setAbierto(null)} alCambiar={editar} alValidar={validar} guardando={guardando} conteo={conteo} />
 

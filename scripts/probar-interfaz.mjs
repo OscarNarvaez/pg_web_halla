@@ -687,6 +687,16 @@ ok(JSON.stringify(filasNormas) === JSON.stringify(esperado.normas.map((f) => f.n
   && await resultados.getByRole('heading', { name: 'Distribución de hallazgos por norma o documento' }).isVisible(),
   `y la distribución por norma o documento (${filasNormas.join(', ')})`)
 await resultados.screenshot({ path: `${CAPTURAS}06h-resultados.png` })
+// «Generar informe» también en la matriz: arriba y como siguiente paso, para un recorrido lineal
+const enlacesInforme = p.getByRole('link', { name: 'Generar informe' })
+const siguiente = p.getByRole('region', { name: 'Informe final de la auditoría' })
+ok((await enlacesInforme.count()) === 2 && (await enlacesInforme.first().getAttribute('href')) === `/app/auditorias/${A1}/informe`
+  && await siguiente.getByText('Todos los hallazgos están validados').isVisible(),
+  'la matriz ofrece «Generar informe» arriba y al final, como siguiente paso')
+await siguiente.screenshot({ path: `${CAPTURAS}06j-siguiente-paso.png` })
+await siguiente.getByRole('link', { name: 'Generar informe' }).click()
+await p.getByRole('heading', { name: 'Informe de auditoría' }).first().waitFor()
+ok(p.url().endsWith(`/app/auditorias/${A1}/informe`), 'desde la matriz se pasa directo al informe')
 
 await p.goto(`${BASE}/app/auditorias/${A1}`)
 await p.locator('article[aria-label^="Hallazgo"]').nth(4).waitFor()
@@ -1063,6 +1073,9 @@ ok(await resultadosVacios.getByText('Aún no hay hallazgos registrados. Analice 
   && (await resultadosVacios.getByRole('list', { name: 'Resumen por sigla' }).innerText()).replace(/\s+/g, ' ').includes('NC: 0'),
   'sin hallazgos, el consolidado muestra el aviso, el anillo vacío y todo en cero')
 await resultadosVacios.screenshot({ path: `${CAPTURAS}06i-resultados-vacio.png` })
+ok((await p.getByRole('link', { name: 'Generar informe' }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-disabled')))).join() === 'true,true'
+  && await p.getByRole('region', { name: 'Informe final de la auditoría' }).getByText(/Valida al menos un hallazgo/).isVisible(),
+  'sin hallazgos validados, «Generar informe» aparece desactivado y explica por qué')
 
 // Cerrar la sesión con cambios recién escritos: se guardan antes de salir
 await p.goto(`${BASE}/app/auditorias/${A1}/lista`)

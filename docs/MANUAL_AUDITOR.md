@@ -326,6 +326,10 @@ descartados no cuentan):
   «Requisito pendiente de identificación».
 - Sin hallazgos, el consolidado avisa que aún no hay datos para los gráficos.
 
+**Siguiente paso: el informe.** La matriz también tiene **Generar informe**, arriba junto a la descarga y al final de
+la página, para seguir el recorrido sin volver al detalle: registrar hallazgos → validarlos en la matriz → generar el
+informe (§8). Se activa con al menos un hallazgo validado; los que sigan pendientes salen marcados como sin validar.
+
 ## 8. Generar el informe
 
 El informe final sigue **exactamente** el formato oficial del hospital (el documento
