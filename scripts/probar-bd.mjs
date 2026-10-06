@@ -403,8 +403,17 @@ await ponerAnexos([dosAnexos.evidencia_anexos[1]])
 const { rows: histAnexos } = await db.query(`select 1 from public.hallazgos_historial where hallazgo_id = $1
   and jsonb_array_length(antes->'evidencia_anexos') = 2 and jsonb_array_length(despues->'evidencia_anexos') = 1`, [h2.id])
 ok(histAnexos.length === 1, 'quitar un PDF agregado queda en el historial')
-const errPdfTrasAnexos = await falla(comoA(`update public.hallazgos set evidencia_archivo = null where id = $1`, [conArchivo.id]))
-ok(errPdfTrasAnexos?.includes('no se pueden modificar'), 'la huella del PDF analizado sigue sin poder cambiarse', errPdfTrasAnexos)
+// 0014: el PDF analizado se puede QUITAR (no reemplazar); el historial conserva cuál era
+const errPdfOtro = await falla(comoA(`update public.hallazgos set evidencia_archivo = $2 where id = $1`, [conArchivo.id, JSON.stringify(anexo('9', { nombre: 'otro.pdf' }))]))
+ok(errPdfOtro?.includes('no se pueden modificar'), 'el PDF analizado no se puede reemplazar por otro (0014)', errPdfOtro)
+await db.query(`update public.hallazgos set estado = 'confirmado' where id = $1`, [conArchivo.id])
+const errQuitarPdf = await falla(comoA(`update public.hallazgos set evidencia_archivo = null where id = $1`, [conArchivo.id]))
+const { rows: [sinPdf] } = await db.query('select evidencia_archivo, estado from public.hallazgos where id = $1', [conArchivo.id])
+const { rows: histPdf } = await db.query(`select cambiado_por from public.hallazgos_historial where hallazgo_id = $1
+  and antes->'evidencia_archivo'->>'sha256' = $2 and despues->'evidencia_archivo' = 'null'::jsonb`, [conArchivo.id, 'f'.repeat(64)])
+ok(errQuitarPdf === null && sinPdf.evidencia_archivo === null && sinPdf.estado === 'editado' && histPdf[0]?.cambiado_por === A,
+  'el auditor puede quitar el PDF analizado: el historial guarda cuál era y quién lo quitó, y vuelve a Pendiente (0014)', `${errQuitarPdf} | ${JSON.stringify(sinPdf)}`)
+await db.query('delete from public.hallazgos_historial where hallazgo_id = $1', [conArchivo.id])
 await db.query('delete from public.hallazgos where id = $1', [conArchivo.id]) // solo era para esta prueba
 const { rows: columnaUmbrales } = await db.query(`select 1 from information_schema.columns where table_schema = 'public' and table_name = 'auditorias' and column_name = 'umbrales_riesgo'`)
 const errUmbrales = await falla(comoA(`update public.auditorias set umbrales_riesgo = '{"bajo": 1, "moderado": 2, "alto": 3}' where id = $1`, [audA.id]))

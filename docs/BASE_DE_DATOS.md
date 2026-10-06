@@ -17,6 +17,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0011_lista_verificacion.sql` | `listas_verificacion`: la hoja de trabajo del auditor (una por auditoría), validada por trigger, con RLS del dueño, sin borrado y en solo lectura si la auditoría está cerrada |
 | `0012_pdf_evidencia_al_editar.sql` | `hallazgos.evidencia_anexos`: huellas de los PDF que el auditor carga al editar la evidencia (validadas por trigger); entran en el historial y en la regla «editar un validado lo devuelve a pendiente» |
 | `0013_indicadores_revisados.sql` | `auditorias.indicadores_revisados`: indicadores priorizados del proceso que revisó el auditor (hasta 15 × nombre, meta, resultado y observación, validados por trigger), para la sección «Indicadores» del informe |
+| `0014_quitar_pdf_analizado.sql` | El PDF analizado (`evidencia_archivo`) se puede quitar —no reemplazar— y entra en el historial y en la regla «editar un validado lo devuelve a pendiente» |
 
 ## Modelo
 
@@ -147,7 +148,8 @@ erDiagram
 - **Validación de la matriz (0007):** `confirmado` es «Validado». Si cambia el contenido de un hallazgo
   validado (redacción, riesgo o controles), `proteger_hallazgo` lo devuelve a `editado` (Pendiente).
 - **PDF de evidencia (0007):** `evidencia_archivo` solo guarda `{nombre, paginas, sha256}` (check
-  `evidencia_archivo_valida`) y es inmutable: el archivo nunca llega al servidor.
+  `evidencia_archivo_valida`); el archivo nunca llega al servidor. Desde la 0014 se puede quitar (pasar a null),
+  nunca reemplazar por otro, y `hallazgos_historial` registra la huella anterior y quién la quitó.
 - **PDF agregados al editar (0012):** `evidencia_anexos` es una lista de hasta 10 `{nombre, paginas, sha256,
   agregado_en}`. El trigger `validar_evidencia_anexos` sanea el nombre, exige páginas enteras de 1 a 500 y un
   SHA-256 válido, descarta cualquier otro campo (nada del contenido del PDF), no admite repetidos ni el PDF ya
