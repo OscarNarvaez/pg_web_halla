@@ -173,24 +173,21 @@ const errFechasReales = await fijarFechasReales('2026-10-10', '2026-10-01')
 ok(errFechasReales?.includes('fechas_reales_coherentes'), 'la terminación real no puede ser anterior al inicio real (0010)', errFechasReales)
 const errFechasRealesOk = await fijarFechasReales('2026-10-01', '2026-10-03')
 ok(errFechasRealesOk === null, 'el auditor registra las fechas reales de su auditoría', errFechasRealesOk)
-// 0013: indicadores priorizados del proceso que revisa el auditor
+// 0013 y 0015: indicadores priorizados del proceso (solo el nombre corto de cada uno)
 const ponerIndicadores = (como_, lista) => falla(comoUsuario(db, como(como_), (tx) => tx.query(
   `update public.auditorias set indicadores_revisados = $2 where id = $1`, [audA.id, JSON.stringify(lista)])))
-const indicador = (extra = {}) => ({ nombre: '  Oportunidad en triage II ', meta: '≤ 30 minutos', resultado: '42 minutos', observacion: '', ...extra })
-const errIndicadores = await ponerIndicadores(A, [indicador({ extra: 'no se guarda' })])
+const errIndicadores = await ponerIndicadores(A, [{ nombre: '  Oportunidad en triage II. ', meta: '≤ 30 minutos', extra: 'no se guarda' }])
 const { rows: [conIndicadores] } = await db.query('select indicadores_revisados from public.auditorias where id = $1', [audA.id])
-const [guardado] = conIndicadores.indicadores_revisados
-ok(errIndicadores === null && conIndicadores.indicadores_revisados.length === 1 && guardado.nombre === 'Oportunidad en triage II' && guardado.meta === '≤ 30 minutos'
-  && guardado.resultado === '42 minutos' && guardado.observacion === '' && Object.keys(guardado).sort().join() === 'meta,nombre,observacion,resultado',
-  'el auditor registra los indicadores que revisó: solo nombre, meta, resultado y observación, sin espacios sobrantes (0013)', `${errIndicadores} | ${JSON.stringify(conIndicadores.indicadores_revisados)}`)
-const errSinNombre = await ponerIndicadores(A, [indicador({ nombre: '   ' })])
-const errMetaLarga = await ponerIndicadores(A, [indicador({ meta: 'x'.repeat(121) })])
-const errObsLarga = await ponerIndicadores(A, [indicador({ observacion: 'x'.repeat(501) })])
-const errMuchosInd = await ponerIndicadores(A, Array.from({ length: 16 }, (_, i) => indicador({ nombre: `Indicador ${i + 1}` })))
+ok(errIndicadores === null && JSON.stringify(conIndicadores.indicadores_revisados) === JSON.stringify([{ nombre: 'Oportunidad en triage II' }]),
+  'el auditor registra los indicadores: solo su nombre corto, sin espacios ni punto final (0015)', `${errIndicadores} | ${JSON.stringify(conIndicadores.indicadores_revisados)}`)
+const errSinNombre = await ponerIndicadores(A, [{ nombre: '   ' }])
+const errLargo = await ponerIndicadores(A, [{ nombre: 'x'.repeat(61) }])
+const errComa = await ponerIndicadores(A, [{ nombre: 'oportunidad, reingresos' }])
+const errMuchosInd = await ponerIndicadores(A, Array.from({ length: 16 }, (_, i) => ({ nombre: `Indicador ${i + 1}` })))
 const errNoLista = await falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set indicadores_revisados = '{"nombre":"x"}' where id = $1`, [audA.id])))
-ok(errSinNombre?.includes('nombre') && errMetaLarga?.includes('120') && errObsLarga?.includes('500') && errMuchosInd?.includes('15') && errNoLista?.includes('lista'),
-  'los indicadores se validan: nombre obligatorio, meta y resultado de hasta 120, observación de hasta 500, máximo 15 y siempre una lista',
-  [errSinNombre, errMetaLarga, errObsLarga, errMuchosInd, errNoLista].join(' | '))
+ok(errSinNombre?.includes('nombre corto') && errLargo?.includes('60') && errComa?.includes('comas') && errMuchosInd?.includes('15') && errNoLista?.includes('lista'),
+  'los indicadores se validan: nombre de 1 a 60 caracteres, sin comas (el sistema pone los separadores), máximo 15 y siempre una lista',
+  [errSinNombre, errLargo, errComa, errMuchosInd, errNoLista].join(' | '))
 const errIndAjeno = await comoUsuario(db, como(B), (tx) => tx.query(`update public.auditorias set indicadores_revisados = '[]' where id = $1`, [audA.id]))
 const { rows: [trasAjeno] } = await db.query('select jsonb_array_length(indicadores_revisados) as n from public.auditorias where id = $1', [audA.id])
 ok(errIndAjeno.affectedRows === 0 && trasAjeno.n === 1, 'B no puede cambiar los indicadores de una auditoría de A')
@@ -457,6 +454,26 @@ ok(updAdmin.affectedRows === 0, 'un admin lee pero no modifica hallazgos ajenos'
 await db.query(`update public.profiles set aprobado = false where id = $1`, [B])
 const { rows: adminInactivo } = await comoUsuario(db, como(B), (tx) => tx.query('select id from public.hallazgos'))
 ok(adminInactivo.length === 0, 'un admin desactivado pierde el acceso')
+
+console.log('\n▸ Indicadores registrados con la 0013 al aplicar la 0015 (solo el nombre)')
+{
+  const vieja = await crearBaseLocal({ hasta: '0015', silencioso: true })
+  const usuario = await registrarUsuario(vieja, 'ind@hila.test', {
+    nombre_completo: 'Irene Indicadores', cedula: '1085000009', celular: '3001234567', tipo_evaluador: 'AUDITORES_INTERNOS', cargos: ['Coordinadora'],
+    equipo_auditor: [{ nombre: 'Laura Gómez', cargos: ['Enfermería'] }], alcance: 'PROCESOS', proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
+  })
+  const { rows: [aud] } = await vieja.query(`insert into public.auditorias (user_id, codigo, titulo, alcance, proceso, indicadores_revisados)
+    values ($1, 'AI-2026-009', 'Con indicadores 0013', 'PROCESOS', 'Urgencias', $2) returning id`, [usuario, JSON.stringify([
+    { nombre: 'Oportunidad en triage II', meta: '≤ 30 minutos', resultado: '42 minutos', observacion: 'Dato del trimestre.' },
+    { nombre: 'Reingresos, antes de 72 horas', meta: '', resultado: '', observacion: '' },
+  ])])
+  await aplicarMigraciones(vieja, { desde: '0015', silencioso: true })
+  const { rows: [convertida] } = await vieja.query('select indicadores_revisados from public.auditorias where id = $1', [aud.id])
+  ok(JSON.stringify(convertida.indicadores_revisados.map((x) => x.nombre)) === JSON.stringify(['Oportunidad en triage II', 'Reingresos antes de 72 horas'])
+    && convertida.indicadores_revisados.every((x) => Object.keys(x).join() === 'nombre'),
+    'los indicadores de la 0013 conservan solo su nombre, sin comas', JSON.stringify(convertida.indicadores_revisados))
+  await vieja.close()
+}
 
 console.log('\n▸ Perfiles existentes al aplicar la 0009 (cargo escrito a mano → lista)')
 {
