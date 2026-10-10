@@ -183,9 +183,7 @@ export async function exportarPdf(informe) {
     parrafo(s.titulo, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: estilo === 'subrayado', centrado: estilo === 'centrado' })
     if (s.antes) parrafo(s.antes, { escala: s.escalaAntes ?? 1.1 })
     const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
-    const vinetas = s.vinetas ?? []
-    if (!contenido.length && !vinetas.length) parrafo('No informado.')
-    vinetas.forEach((t) => parrafo(`• ${t}`))
+    if (!contenido.length && !s.completa) parrafo('No informado.')
     contenido.forEach((t) => parrafo(s.tipo === 'vinetas' ? `• ${t}` : t))
     vacios(s.titulo)
   }

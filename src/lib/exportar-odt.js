@@ -140,12 +140,15 @@ function llenarCuerpo(doc, c) {
   for (const s of seccionesFormato(c)) {
     const ancla = s.antes ? buscar(s.antesPlantilla ?? s.antes) : buscar(s.titulo, { titulo: true })
     // Campos de la plantilla («(area auditada)»): se llenan en su sitio, con el estilo que traen
+    let completa = false
     for (const [campo, valor] of Object.entries(s.campos ?? {})) {
-      if (!reemplazarFragmento(ancla, campo, valor)) reemplazarTexto(ancla, s.antes)
+      if (!reemplazarFragmento(ancla, campo, valor)) completa = Boolean(reemplazarTexto(ancla, s.antes))
     }
+    // Lo que se agrega al final de la misma línea de la plantilla («: a, b y c.»)
+    if (s.agregar && !completa) ancla.appendChild(ancla.ownerDocument.createTextNode(s.agregar))
     const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
-    const lineas = [...conVinetas(s.vinetas ?? []), ...(s.tipo === 'vinetas' ? conVinetas(contenido) : contenido)]
-    rellenar(ancla, lineas.length ? lineas : ['No informado.'], estiloCuerpo, automaticos)
+    const lineas = s.tipo === 'vinetas' ? conVinetas(contenido) : contenido
+    if (lineas.length || !s.completa) rellenar(ancla, lineas.length ? lineas : ['No informado.'], estiloCuerpo, automaticos)
   }
 }
 

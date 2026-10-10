@@ -48,8 +48,8 @@ export function mensajeError(error) {
     [/equipo auditor/i, 'Revisa el equipo auditor: de 1 a 10 personas, cada una con su nombre y al menos un cargo.'],
     [/no verificable/i, 'Una de las citas normativas no corresponde a un criterio cargado.'],
     // Indicadores revisados (0013) y PDF agregados al editar (0012)
-    [/indicadores? (revisados|inválid)|nombre de hasta 200|meta y el resultado de un indicador|observación de un indicador/i,
-      'Revisa los indicadores: hasta 15, cada uno con su nombre (hasta 200 caracteres), meta y resultado de hasta 120 y observación de hasta 500.'],
+    [/indicadores? (revisados|inválid)|indicador necesita un nombre corto|indicador no lleva comas/i,
+      'Revisa los indicadores: hasta 15, cada uno con un nombre corto (máximo 60 caracteres) y sin comas.'],
     [/ya está registrado en el hallazgo/i, 'Ese PDF ya está registrado en el hallazgo.'],
     [/no se pueden modificar/i, 'La entrada original del auditor y la trazabilidad de la IA no se pueden modificar.'],
     [/jwt expired|invalid jwt|session.*(expired|missing)/i, 'Tu sesión expiró. Vuelve a ingresar.'],

@@ -1,6 +1,6 @@
 // POST /functions/v1/generar-informe
 // Consolida los hallazgos en el informe con el formato oficial. Las estadísticas se calculan en código; la IA solo
-// redacta las secciones narrativas (incluida la revisión de los indicadores que registró el auditor), en UNA llamada.
+// redacta las secciones narrativas, en UNA llamada. Los indicadores los registra el auditor y no pasan por la IA.
 import { preflight, respuestaError, respuestaJson } from '../_shared/cors.ts'
 import { autenticar, clienteAdmin, config, finalizarEvento, leerCuerpo, MENSAJE_NO_APROBADO, RE_UUID, reservarUso } from '../_shared/supabase.ts'
 import { anonimizar } from '../_shared/anonimizar.ts'
@@ -82,10 +82,7 @@ Deno.serve(async (req) => {
     ...auditoria,
     titulo: anonimizar(auditoria.titulo).texto,
     objetivo: auditoria.objetivo ? anonimizar(auditoria.objetivo).texto : null,
-    // Los indicadores los escribe el auditor: también pasan por la anonimización
-    indicadores_revisados: revisados(auditoria).map((i) => ({
-      nombre: anonimizar(i.nombre).texto, meta: anonimizar(i.meta).texto, resultado: anonimizar(i.resultado).texto, observacion: anonimizar(i.observacion).texto,
-    })),
+    indicadores_revisados: [], // no van a la IA: el informe solo lista sus nombres
   }
   try {
     if ('error' in reserva) throw new ErrorGemini('límite de uso de la IA', 429, reserva.error, 0)
@@ -108,7 +105,6 @@ Deno.serve(async (req) => {
       oportunidades: texto(s.oportunidades) || respaldo.oportunidades,
       observaciones: texto(s.observaciones) || respaldo.observaciones,
       conclusiones: texto(s.conclusiones, 2500) || respaldo.conclusiones,
-      indicadores: revisados(auditoria).length ? texto(s.indicadores, 2500) || respaldo.indicadores : '',
     }
     const cifras = cifrasNoRastreables(narrativa, auditoria, lista, estadisticas)
     if (cifras.length) avisos.push(`La narrativa menciona cifras que no están en los hallazgos ni en las estadísticas (${cifras.join(', ')}): revísala antes de firmar.`)

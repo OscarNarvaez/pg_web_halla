@@ -122,15 +122,17 @@ export const esquemaFechasReales = z
   .object({ fecha_inicio_real: z.string().optional().default(''), fecha_fin_real: z.string().optional().default('') })
   .superRefine(validarFechasReales)
 
-// Indicadores priorizados del proceso que revisó el auditor (0013): van en la sección «Indicadores» del informe
+// Indicadores priorizados del proceso (0013, 0015): solo el nombre corto de cada uno. En el informe se agregan después
+// del texto de la plantilla, separados por comas y con «y» antes del último (los separadores los pone el sistema).
 export const MAX_INDICADORES = 15
-export const indicadorVacio = () => ({ nombre: '', meta: '', resultado: '', observacion: '' })
+export const MAX_NOMBRE_INDICADOR = 60
+export const indicadorVacio = () => ({ nombre: '' })
 export const esquemaIndicadores = z.object({
   indicadores: z.array(z.object({
-    nombre: z.string().trim().min(1, 'Escribe el nombre del indicador').max(200, 'Máximo 200 caracteres'),
-    meta: z.string().trim().max(120, 'Máximo 120 caracteres'),
-    resultado: z.string().trim().max(120, 'Máximo 120 caracteres'),
-    observacion: z.string().trim().max(500, 'Máximo 500 caracteres'),
+    // Vacío se permite: el campo en blanco simplemente no se guarda
+    nombre: z.string().trim().transform((t) => t.replace(/\.+$/, '').trim())
+      .pipe(z.string().max(MAX_NOMBRE_INDICADOR, `Escribe solo el nombre corto del indicador (máximo ${MAX_NOMBRE_INDICADOR} caracteres)`)
+        .refine((t) => !/[,;]/.test(t), 'Sin comas: escribe cada indicador en su propio campo con «Agregar otro indicador»')),
   })).max(MAX_INDICADORES, `Máximo ${MAX_INDICADORES} indicadores`),
 })
 

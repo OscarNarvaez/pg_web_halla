@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarCheck, FileDown, FileText, Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
@@ -8,13 +8,13 @@ import { useConsulta } from '../hooks/useConsulta'
 import { useToast } from '../contexts/ToastContext'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { fechaHora } from '../lib/formato'
-import { MAX_INDICADORES, esquemaFechasReales, esquemaIndicadores, indicadorVacio } from '../lib/esquemas'
-import { TEXTOS_FORMATO, esFormatoOficial } from '../lib/formato-informe'
+import { MAX_INDICADORES, MAX_NOMBRE_INDICADOR, esquemaFechasReales, esquemaIndicadores, indicadorVacio } from '../lib/esquemas'
+import { esFormatoOficial, lineaIndicadores } from '../lib/formato-informe'
 import { objetoAuditado } from '../lib/catalogos'
 import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { VistaInforme } from '../components/informe/VistaInforme'
-import { AreaTexto, Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
+import { Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
 
 /** Fechas reales de la auditoría: la Ficha Técnica del formato las pide junto a las planeadas. */
 function FechasReales({ auditoria, alGuardar }) {
@@ -42,43 +42,52 @@ function FechasReales({ auditoria, alGuardar }) {
 }
 
 /**
- * Indicadores priorizados del proceso que revisó el auditor (0013). La plantilla los pide bajo «Indicadores»:
- * «Revisión de indicadores priorizados en el proceso de (area auditada)». La IA redacta la revisión con estos datos.
+ * Indicadores priorizados del proceso (0013, 0015): el auditor escribe solo el nombre corto de cada uno. En el informe
+ * van después del texto de la plantilla, separados por comas y con «y» antes del último. No pasan por la IA.
  */
 function IndicadoresRevisados({ auditoria, alGuardar }) {
+  const guardados = auditoria.indicadores_revisados ?? []
   const { register, control, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm({
     resolver: zodResolver(esquemaIndicadores),
-    defaultValues: { indicadores: auditoria.indicadores_revisados ?? [] },
+    defaultValues: { indicadores: guardados.length ? guardados.map(({ nombre }) => ({ nombre })) : [indicadorVacio()] },
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'indicadores' })
+  const escritos = useWatch({ control, name: 'indicadores' })
   const area = auditoria.area_auditada?.trim() || objetoAuditado(auditoria)
+  const vista = lineaIndicadores({ indicadores: { area, revisados: (escritos ?? []).map((x) => x?.nombre?.trim().replace(/\.+$/, '')).filter(Boolean) } })
   const enviar = async (d) => {
-    if (await alGuardar({ indicadores_revisados: d.indicadores })) reset(d)
+    const indicadores = d.indicadores.filter((x) => x.nombre)
+    if (await alGuardar({ indicadores_revisados: indicadores })) reset({ indicadores: indicadores.length ? indicadores : [indicadorVacio()] })
   }
-  const error = (i, campo) => errors.indicadores?.[i]?.[campo]?.message
   return (
     <Tarjeta titulo="Indicadores priorizados del proceso" className="mb-6">
       <form onSubmit={handleSubmit(enviar)} noValidate className="space-y-4">
         <p className="text-sm text-tinta-500">
-          Van en la sección «Indicadores» del informe: «{TEXTOS_FORMATO.revisionIndicadores.replace(TEXTOS_FORMATO.marcadorArea, area)}».
-          Registra los que revisaste con su meta y su resultado; la IA redacta la revisión comparándolos, sin inventar cifras.
+          Escribe solo el nombre corto de cada indicador que revisaste. En el informe se agregan al final de la línea de
+          la plantilla, separados por comas y con «y» antes del último.
         </p>
-        {fields.map((f, i) => (
-          <fieldset key={f.id} className="grid gap-3 rounded-lg border border-tinta-100 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start">
-            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-tinta-500">Indicador {i + 1}</legend>
-            <Campo etiqueta="Nombre" required placeholder="Oportunidad en la atención de triage II" error={error(i, 'nombre')} {...register(`indicadores.${i}.nombre`)} />
-            <Campo etiqueta="Meta" placeholder="≤ 30 minutos" error={error(i, 'meta')} {...register(`indicadores.${i}.meta`)} />
-            <Campo etiqueta="Resultado" placeholder="42 minutos" error={error(i, 'resultado')} {...register(`indicadores.${i}.resultado`)} />
-            <Boton variante="fantasma" icono={Trash2} onClick={() => remove(i)} aria-label={`Quitar el indicador ${i + 1}`} className="sm:mt-6">
-              <span className="sm:sr-only">Quitar</span>
-            </Boton>
-            <AreaTexto etiqueta="Observación (opcional)" rows={2} className="sm:col-span-3" error={error(i, 'observacion')}
-              placeholder="Por ejemplo: el resultado del último trimestre; se analizó con el líder del proceso." {...register(`indicadores.${i}.observacion`)} />
-          </fieldset>
-        ))}
-        {!fields.length && <p className="text-sm italic text-tinta-500">Aún no registras indicadores: el informe dirá que no se registraron.</p>}
+        <ol className="space-y-3">
+          {fields.map((f, i) => (
+            <li key={f.id} className="flex items-start gap-2">
+              <Campo
+                etiqueta={`Indicador ${i + 1}`}
+                className="min-w-0 flex-1"
+                maxLength={MAX_NOMBRE_INDICADOR}
+                placeholder={['oportunidad en triage', 'reingresos', 'satisfacción del usuario'][i] ?? 'nombre corto del indicador'}
+                error={errors.indicadores?.[i]?.nombre?.message}
+                {...register(`indicadores.${i}.nombre`)}
+              />
+              <Boton variante="fantasma" icono={Trash2} onClick={() => (fields.length > 1 ? remove(i) : reset({ indicadores: [indicadorVacio()] }, { keepDefaultValues: true }))}
+                aria-label={`Quitar el indicador ${i + 1}`} className="mt-6 shrink-0" />
+            </li>
+          ))}
+        </ol>
+        <div className="rounded-md border border-tinta-100 bg-tinta-50 px-3 py-2 text-sm">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-tinta-500">Así quedará en el informe</span>
+          <span className="mt-1 block text-tinta-900" aria-live="polite">{vista}</span>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <Boton variante="secundario" icono={Plus} onClick={() => append(indicadorVacio())} disabled={fields.length >= MAX_INDICADORES}>Agregar indicador</Boton>
+          <Boton variante="secundario" icono={Plus} onClick={() => append(indicadorVacio())} disabled={fields.length >= MAX_INDICADORES}>Agregar otro indicador</Boton>
           <Boton type="submit" variante="secundario" icono={Save} cargando={isSubmitting} disabled={!isDirty}>Guardar indicadores</Boton>
         </div>
       </form>
@@ -158,7 +167,7 @@ export default function Informe() {
         <Encabezado
           antetitulo={a.codigo}
           titulo="Informe de auditoría"
-          descripcion="Informe final con el formato oficial del hospital. Los hallazgos y la Ficha Técnica los llena el sistema; la IA redacta las secciones narrativas y la revisión de los indicadores que registres."
+          descripcion="Informe final con el formato oficial del hospital. Los hallazgos, la Ficha Técnica y los indicadores que registres los llena el sistema; la IA redacta las secciones narrativas."
           volver={{ a: `/app/auditorias/${id}`, etiqueta: a.titulo }}
           acciones={
             <>

@@ -772,24 +772,29 @@ await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
 await p.getByRole('button', { name: 'Guardar fechas' }).click()
 await p.getByText(/Fechas reales guardadas/).waitFor()
 ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
-// Indicadores priorizados del proceso (plantilla del 5/10/2026): los registra el auditor y la IA redacta la revisión
-ok(await p.getByText('«Revisión de indicadores priorizados en el proceso de Servicio de Urgencias»').isVisible(), 'la tarjeta muestra la línea de la plantilla con el área de la auditoría')
-await p.getByRole('button', { name: 'Agregar indicador' }).click()
+// Indicadores priorizados del proceso: solo el nombre corto de cada uno, uno por campo con «Agregar otro indicador»
+const LINEA_IND = 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias: oportunidad en triage II, reingresos e infecciones asociadas.'
+const vistaPrevia = p.getByText(/^Revisión de indicadores priorizados en el proceso de Servicio de Urgencias/)
+const campoInd = (n) => p.getByRole('textbox', { name: `Indicador ${n}`, exact: true })
+ok(await campoInd(1).isVisible() && (await campoInd(2).count()) === 0
+  && (await vistaPrevia.innerText()) === 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
+  'la tarjeta trae un campo para el primer indicador y muestra la línea de la plantilla con el área')
+await campoInd(1).fill('oportunidad en triage II, reingresos')
 await p.getByRole('button', { name: 'Guardar indicadores' }).click()
-await p.getByText('Escribe el nombre del indicador').waitFor()
-ok(true, 'un indicador sin nombre no se guarda')
-const indicador1 = p.getByRole('group', { name: 'Indicador 1' })
-await indicador1.getByLabel('Nombre').fill('Oportunidad en la atención de triage II')
-await indicador1.getByLabel('Meta').fill('≤ 30 minutos')
-await indicador1.getByLabel('Resultado').fill('42 minutos')
-await indicador1.getByLabel('Observación (opcional)').fill('Dato del último trimestre.')
-await p.getByRole('button', { name: 'Agregar indicador' }).click()
-await p.getByRole('group', { name: 'Indicador 2' }).getByLabel('Nombre').fill('Proporción de reingresos a urgencias')
+await p.getByText(/Sin comas: escribe cada indicador en su propio campo/).waitFor()
+ok(!db.auditorias[0].indicadores_revisados?.length, 'dos indicadores en un mismo campo (con coma) no se guardan: cada uno va en su campo')
+await campoInd(1).fill('oportunidad en triage II')
+await p.getByRole('button', { name: 'Agregar otro indicador' }).click()
+await campoInd(2).fill('reingresos')
+await p.getByRole('button', { name: 'Agregar otro indicador' }).click()
+await campoInd(3).fill('infecciones asociadas.')
+ok((await vistaPrevia.innerText()) === LINEA_IND, 'la vista previa separa con comas y pone «y» (o «e» ante i-) antes del último', await vistaPrevia.innerText())
 await p.getByRole('button', { name: 'Guardar indicadores' }).click()
 await p.getByText(/Indicadores guardados/).waitFor()
 const indicadoresDb = db.auditorias[0].indicadores_revisados
-ok(indicadoresDb?.length === 2 && indicadoresDb[0].resultado === '42 minutos' && indicadoresDb[1].meta === '' && Object.keys(indicadoresDb[0]).sort().join() === 'meta,nombre,observacion,resultado',
-  'el auditor registra los indicadores que revisó (nombre, meta, resultado y observación)', JSON.stringify(indicadoresDb))
+ok(JSON.stringify(indicadoresDb) === JSON.stringify([{ nombre: 'oportunidad en triage II' }, { nombre: 'reingresos' }, { nombre: 'infecciones asociadas' }]),
+  'se guardan solo los nombres, en su orden y sin punto final', JSON.stringify(indicadoresDb))
+await p.locator('form').filter({ has: campoInd(1) }).screenshot({ path: `${CAPTURAS}07b-indicadores.png` })
 await p.getByRole('button', { name: 'Generar informe' }).click()
 const hoja = p.getByRole('article', { name: 'Informe final de auditoría' })
 await hoja.waitFor()
@@ -800,9 +805,7 @@ const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 
   'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
-  'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias', '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos. Dato del último trimestre.',
-  '• Proporción de reingresos a urgencias: meta no definida; resultado no informado.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones',
-  'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
+  LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
 const enOrden = (texto, partes) => {
   let desde = 0
   for (const parte of partes) {
@@ -848,8 +851,7 @@ const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2
   'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
-  'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias', '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos. Dato del último trimestre.',
-  '• Proporción de reingresos a urgencias: meta no definida; resultado no informado.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones',
+  'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones',
   'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia']
 const faltaOdt = enOrden(textoLlenado, ORDEN_ODT) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)/.test(textoLlenado) ? 'RECOMENDACIONES, cifras o campo sin llenar' : '')
 ok(!faltaOdt, 'el ODT llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar', faltaOdt)
@@ -893,7 +895,7 @@ const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria 
   'Evaluador', 'Auditores Internos', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
   'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
-  '• Oportunidad en la atención de triage II: meta ≤ 30 minutos; resultado 42 minutos.', 'Se revisaron dos indicadores priorizados', 'Oportunidades', 'Observaciones', 'Conclusiones'])
+  'oportunidad en triage II, reingresos e infecciones asociadas.', 'Oportunidades', 'Observaciones', 'Conclusiones'])
   || (/RECOMENDACIONES|Hallazgos registrados:/.test(textoPdf) ? 'RECOMENDACIONES o cifras de la auditoría' : '')
 ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
 ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),

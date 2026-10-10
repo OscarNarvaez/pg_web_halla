@@ -21,11 +21,26 @@ export const TEXTOS_FORMATO = {
   marcadorArea: '(area auditada)',
 }
 
-/** Un indicador revisado: «Nombre: meta ≥ 95 %; resultado 92 %. Observación del auditor». */
-export function lineaIndicador(i) {
-  const datos = `meta ${i.meta || 'no definida'}; resultado ${i.resultado || 'no informado'}`
-  return `${i.nombre}: ${datos}.${i.observacion ? ` ${i.observacion}` : ''}`
+export const SIN_INDICADORES = 'No se registraron indicadores priorizados del proceso para esta auditoría.'
+
+/**
+ * «a, b y c»: comas entre los elementos y «y» antes del último. Ante una palabra que suena /i/ (i-, hi-, sin diptongo)
+ * la conjunción es «e», como manda la ortografía: «oportunidad e infecciones», pero «agua y hielo».
+ */
+export function unirLista(items) {
+  const lista = items.map((t) => String(t ?? '').trim()).filter(Boolean)
+  if (lista.length < 2) return lista[0] ?? ''
+  const ultimo = lista.at(-1)
+  const inicio = ultimo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  return `${lista.slice(0, -1).join(', ')} ${/^h?i(?![aeiou])/.test(inicio) ? 'e' : 'y'} ${ultimo}`
 }
+
+/** Lo que se agrega después del texto de la plantilla bajo «Indicadores»: «: a, b y c.» (vacío si no hay). */
+export const complementoIndicadores = (c) => (c.indicadores.revisados.length ? `: ${unirLista(c.indicadores.revisados)}.` : '')
+
+/** «Revisión de indicadores priorizados en el proceso de Urgencias: oportunidad en triage, reingresos y satisfacción.» */
+export const lineaIndicadores = (c) =>
+  `${TEXTOS_FORMATO.revisionIndicadores.replace(TEXTOS_FORMATO.marcadorArea, c.indicadores.area)}${complementoIndicadores(c)}`
 
 // Listas de hallazgos, en el orden de la plantilla
 export const LISTAS_HALLAZGOS = [
@@ -37,10 +52,11 @@ export const LISTAS_HALLAZGOS = [
 
 /**
  * Secciones del formato después de las listas de hallazgos, en su orden. `tipo`: párrafo o viñetas. `antes` es el
- * texto fijo que la plantilla trae entre el título y el contenido; si lleva un campo por llenar, `antesPlantilla` es
- * el texto tal como está en la plantilla y `campos` lo que se reemplaza. `vinetas` va antes del contenido. `titulo`
- * sigue el estilo de la plantilla: negrita subrayada (los títulos de sección) o negrita centrada (Conclusiones).
- * @param {object} c contenido del informe (version_estructura 4)
+ * texto fijo que la plantilla trae entre el título y el contenido (ya completo); si lleva un campo por llenar,
+ * `antesPlantilla` es el texto tal como está en la plantilla, `campos` lo que se reemplaza y `agregar` lo que se
+ * escribe al final de esa misma línea. `completa`: la línea ya lleva el contenido. `titulo` sigue el estilo de la
+ * plantilla: negrita subrayada (los títulos de sección) o negrita centrada (Conclusiones).
+ * @param {object} c contenido del informe (version_estructura 5)
  */
 export function seccionesFormato(c) {
   return [
@@ -54,12 +70,13 @@ export function seccionesFormato(c) {
     {
       titulo: 'Indicadores',
       tipo: 'parrafo',
-      antes: TEXTOS_FORMATO.revisionIndicadores.replace(TEXTOS_FORMATO.marcadorArea, c.indicadores.area),
+      antes: lineaIndicadores(c),
       antesPlantilla: TEXTOS_FORMATO.revisionIndicadores,
       campos: { [TEXTOS_FORMATO.marcadorArea]: c.indicadores.area },
+      agregar: complementoIndicadores(c),
       escalaAntes: 1,
-      vinetas: c.indicadores.revisados.map(lineaIndicador),
-      contenido: c.indicadores.revision,
+      completa: c.indicadores.revisados.length > 0,
+      contenido: c.indicadores.revisados.length ? [] : [SIN_INDICADORES],
     },
     { titulo: 'Oportunidades', tipo: 'parrafo', contenido: c.oportunidades },
     { titulo: 'Observaciones', tipo: 'parrafo', contenido: c.observaciones },
@@ -92,7 +109,7 @@ export const personaFicha = (p) => [p?.nombre, p?.cargo].filter(Boolean).join(' 
 export const parrafos = (texto) => String(texto ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean)
 
 /**
- * ¿El informe tiene la estructura de la plantilla oficial vigente? Las versiones anteriores (la 3 traía
- * recomendaciones y otros indicadores) se deben regenerar.
+ * ¿El informe tiene la estructura de la plantilla oficial vigente? Las versiones anteriores (la 3 traía recomendaciones;
+ * la 4, meta y resultado de cada indicador) se deben regenerar.
  */
-export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 4
+export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 5
