@@ -238,6 +238,17 @@ export function cifrasAuditoria(e: Estadisticas): string[] {
 
 // ─── Narrativa con la IA ────────────────────────────────────────────────────
 
+/**
+ * La conclusión del informe es UN párrafo que valora la adecuación, la conveniencia y la eficacia (decisión del dueño,
+ * 12/10/2026). Devuelve los conceptos que el texto no nombra (vacío si están los tres).
+ */
+export const CONCEPTOS_CONCLUSION = [
+  { nombre: 'la adecuación', patron: /adecuaci[oó]n|adecuad[oa]s?\b/i },
+  { nombre: 'la conveniencia', patron: /convenien(?:cia|tes?)\b/i },
+  { nombre: 'la eficacia', patron: /eficacia|eficaz/i },
+]
+export const faltanEnConclusion = (texto: string) => CONCEPTOS_CONCLUSION.filter((c) => !c.patron.test(texto ?? '')).map((c) => c.nombre)
+
 /** Instrucciones del informe según el grupo del auditor: auditoría interna o externa (decisión del dueño, 13/10/2026). */
 export const sistemaInforme = (tipoEvaluador?: string | null) => {
   const t = textosAuditoria(tipoEvaluador)
@@ -250,7 +261,7 @@ Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría ${t
 - "riesgos_oportunidades": un párrafo con los riesgos y las oportunidades del programa de auditoría que se derivan de los riesgos evaluados y de las oportunidades de mejora entregadas.
 - "oportunidades": un párrafo que resuma las oportunidades de mejora identificadas y su beneficio esperado.
 - "observaciones": un párrafo de resumen general de la auditoría (propósito, alcance y resultados principales).
-- "conclusiones": uno o dos párrafos que valoren la adecuación, la conveniencia y la eficacia del proceso o sistema frente a los criterios aplicados.
+- "conclusiones": UN SOLO párrafo, sin saltos de línea ni viñetas, que concluya sobre la adecuación, la conveniencia y la eficacia del proceso o sistema auditado frente a los criterios aplicados. Nombra expresamente los tres términos y sustenta cada uno en los hallazgos entregados: la adecuación (si lo establecido cumple los requisitos de los criterios aplicados), la conveniencia (si es apropiado para el propósito y el contexto del proceso o sistema) y la eficacia (si se logran los resultados planificados).
 
 Es una auditoría ${t.tipo}: cuando la nombres, escribe «auditoría ${t.tipo}», nunca la otra.
 Si mencionas indicadores del proceso, nómbralos exactamente como los registró el auditor (sección INDICADORES); no inventes otros indicadores, metas ni resultados.
@@ -345,7 +356,7 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas, tipoEval
 
   const adecuacion = c.NO_CONFORMIDAD
     ? `presenta una adecuación parcial frente a los criterios aplicados, toda vez que se ${c.NO_CONFORMIDAD === 1 ? 'identificó' : 'identificaron'} ${cuantas(c.NO_CONFORMIDAD, 'no conformidad', 'no conformidades')}`
-    : 'es adecuado frente a los criterios aplicados, al no evidenciarse incumplimientos de los requisitos evaluados'
+    : 'presenta una adecuación total frente a los criterios aplicados, al no evidenciarse incumplimientos de los requisitos evaluados'
   const conveniencia = c.FORTALEZA
     ? `su conveniencia se sustenta en ${cuantas(c.FORTALEZA, 'fortaleza identificada', 'fortalezas identificadas')}`
     : 'su conveniencia requiere fortalecerse, al no identificarse fortalezas'

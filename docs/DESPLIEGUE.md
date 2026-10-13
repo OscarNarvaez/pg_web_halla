@@ -362,6 +362,14 @@ supabase functions deploy clasificar-hallazgo completar-auditoria generar-inform
 git push origin main
 ```
 
+**Conclusión sobre adecuación, conveniencia y eficacia (12/10/2026):** cambian las instrucciones del informe.
+
+```bash
+supabase secrets set PROMPT_VERSION=1.7.0
+supabase functions deploy generar-informe          # un solo párrafo; si falta un concepto, va la de plantilla con aviso
+git push origin main
+```
+
 **Líder del equipo por auditoría (12/10/2026):** el líder se escribe a mano en cada auditoría y ya no se toma del perfil.
 El frontend y `generar-informe` piden la columna nueva, así que la 0017 va antes:
 

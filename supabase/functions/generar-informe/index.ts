@@ -8,7 +8,7 @@ import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
   calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, equipoDe, equipoIncompletoInforme, liderDe, liderIncompletoInforme,
-  narrativaRespaldo, perfilIncompletoInforme, revisados, sistemaInforme, type HallazgoInforme, type Narrativa, type PerfilInforme,
+  faltanEnConclusion, narrativaRespaldo, perfilIncompletoInforme, revisados, sistemaInforme, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto, recortarEnOracion } from '../_shared/validar-salida.ts'
 import { TIPOS_EVALUADOR } from '../_shared/catalogos.ts'
@@ -116,7 +116,14 @@ Deno.serve(async (req) => {
       riesgos_oportunidades: texto(s.riesgos_oportunidades) || respaldo.riesgos_oportunidades,
       oportunidades: texto(s.oportunidades) || respaldo.oportunidades,
       observaciones: texto(s.observaciones) || respaldo.observaciones,
+      // limpiarTexto une las líneas: la conclusión queda en un solo párrafo
       conclusiones: texto(s.conclusiones, 2500) || respaldo.conclusiones,
+    }
+    // La conclusión debe valorar la adecuación, la conveniencia y la eficacia; si a la de la IA le falta alguna, va la de plantilla
+    const faltan = faltanEnConclusion(narrativa.conclusiones)
+    if (faltan.length) {
+      narrativa.conclusiones = respaldo.conclusiones
+      avisos.push(`La conclusión que redactó la IA no valoraba ${faltan.join(', ').replace(/, ([^,]*)$/, ' ni $1')}: se usó la conclusión de plantilla, que valora la adecuación, la conveniencia y la eficacia. Revísala.`)
     }
     const cifras = cifrasNoRastreables(narrativa, auditoria, lista, estadisticas)
     if (cifras.length) avisos.push(`La narrativa menciona cifras que no están en los hallazgos ni en las estadísticas (${cifras.join(', ')}): revísala antes de firmar.`)

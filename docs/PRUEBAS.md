@@ -284,7 +284,7 @@ pnpm probar          # todo lo siguiente, en orden
 | Comando | Qué verifica | Resultado |
 |---|---|---|
 | `pnpm verificar:prompt` | El prompt del sistema es el ANEXO A literal | ✓ 15 600 caracteres idénticos |
-| `pnpm probar:validacion` | V1–V7, guía de redacción por categoría (y que la app verifique igual que el servidor), anonimización antes de la IA, coherencia de catálogos (cargos, evaluador y escala de riesgo) contenido del informe oficial y consolidado de resultados | ✓ 120 comprobaciones |
+| `pnpm probar:validacion` | V1–V7, guía de redacción por categoría (y que la app verifique igual que el servidor), anonimización antes de la IA, coherencia de catálogos (cargos, evaluador y escala de riesgo) contenido del informe oficial y consolidado de resultados | ✓ 122 comprobaciones |
 | `pnpm probar:gemini` | Cascada de modelos, reintentos 1 s/4 s/10 s, cuota diaria, 400, MAX_TOKENS | ✓ 14 comprobaciones |
 | `pnpm probar:bd` | Migraciones, RLS, aprobación de cuentas, ataques de integridad, cuota de IA, riesgo, controles, cargos, equipo auditor, evaluador, fechas reales, lista de verificación, PDF agregados al editar, indicadores revisados (y su conversión en la 0015) , quitar el PDF analizado, equipo por auditoría (incluida la conversión de perfiles existentes) y líder por auditoría (vacío, nunca el del perfil) | ✓ 153 comprobaciones |
 | `pnpm probar:busqueda` | Ingesta de las normas y recuperación (9.3.3 primero, con y sin tildes) | ✓ 8 consultas |

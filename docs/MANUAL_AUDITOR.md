@@ -379,6 +379,9 @@ El informe tiene, en este orden:
 | Criterios de auditoría y Métodos a emplear | Las normas (con los numerales citados) y los métodos de la auditoría | El sistema |
 | Indicadores | «Revisión de indicadores priorizados en el proceso de <indicadores separados por comas y «y»>» | Usted (la IA no interviene) |
 
+- **La conclusión** es un solo párrafo que valora la **adecuación**, la **conveniencia** y la **eficacia** del proceso
+  o sistema frente a los criterios, apoyada en los hallazgos. Si la IA no valora alguno de los tres, el informe trae una
+  conclusión de plantilla que sí lo hace, y se le avisa para que la revise.
 - **Las cifras las calcula el sistema**, no la IA. Si la IA escribe una cifra que no está en los datos (hallazgos o
   estadísticas), se le avisa.
 - El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.

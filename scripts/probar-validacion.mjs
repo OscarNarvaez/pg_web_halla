@@ -266,6 +266,15 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     && !JSON.stringify(nExt).includes('interna') && informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditoría externa')
     && !informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditor interno') && msg.includes('Tipo: auditoría externa'),
     'la narrativa de respaldo y las instrucciones de la IA hablan de auditoría externa cuando el auditor es externo')
+  // Conclusión: un solo párrafo sobre la adecuación, la conveniencia y la eficacia (decisión del dueño, 12/10/2026)
+  const nSinNc = informe.narrativaRespaldo(aud, informe.calcularEstadisticas([{ ...base, id: 'x', consecutivo: 1, clasificacion: 'FORTALEZA', hallazgo_corregido: 'F', controles: [] }]))
+  ok([n, nExt, nSinNc].every((x) => !informe.faltanEnConclusion(x.conclusiones).length && !/\n/.test(x.conclusiones))
+    && /"conclusiones": UN SOLO párrafo/.test(informe.sistemaInforme()) && ['la adecuación', 'la conveniencia', 'la eficacia'].every((t) => informe.sistemaInforme('AUDITORES_EXTERNOS').includes(t)),
+    'la conclusión es un solo párrafo que valora la adecuación, la conveniencia y la eficacia (también la de plantilla, con o sin no conformidades)', nSinNc.conclusiones)
+  ok(JSON.stringify(informe.faltanEnConclusion('El proceso es conveniente y eficaz.')) === '["la adecuación"]'
+    && JSON.stringify(informe.faltanEnConclusion('Se cumplen los requisitos.')) === '["la adecuación","la conveniencia","la eficacia"]'
+    && !informe.faltanEnConclusion('Presenta una adecuación parcial; su conveniencia se sustenta en fortalezas; y su eficacia depende de las acciones.').length,
+    'se detecta la conclusión que no valora alguno de los tres conceptos (entonces va la de plantilla, con aviso)')
   ok(formato.seccionesFormato(cInd).at(-1).titulo === 'Conclusiones' && !formato.esFormatoOficial({ version_estructura: 4 }) && formato.esFormatoOficial(cInd),
     'termina en Conclusiones; los informes de versiones anteriores (con meta y resultado de cada indicador) se regeneran')
   // Cada texto que el sistema busca en la plantilla tiene que estar en ella (avisa si el dueño la vuelve a cambiar)

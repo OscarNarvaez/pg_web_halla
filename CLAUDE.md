@@ -138,6 +138,9 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   de» (sin «SIG»); justo después de «de» va lo auditado, el proceso o el sistema: «Auditoria interna de Urgencias».
   Excepción: el prompt del sistema de clasificación (ANEXO A literal, «auditor interno») no se toca.
   Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.
+- Conclusiones (decisión del dueño, 12/10/2026): UN SOLO párrafo que valora la adecuación, la conveniencia y la eficacia
+  (instrucción en `sistemaInforme`). `generar-informe` lo comprueba con `faltanEnConclusion`: si a la de la IA le falta
+  alguno de los tres conceptos, usa la de plantilla (`narrativaRespaldo`, que siempre los tiene) y deja un aviso.
   `probar:validacion` lee la plantilla y avisa si falta un texto que el sistema busca.
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el Word usan la imagen de la
   propia plantilla. Siempre sobre fondo blanco: su texto perimetral es oscuro.
