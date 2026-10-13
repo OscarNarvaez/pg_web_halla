@@ -15,7 +15,7 @@ const REPO = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 const SALIDA = `${REPO}/.e2e`
 const CAPTURAS = `${SALIDA}/capturas/`
 mkdirSync(CAPTURAS, { recursive: true })
-const { calcularEstadisticas, construirContenido, narrativaRespaldo } = await import(`${REPO}/supabase/functions/_shared/informe.ts`)
+const { calcularEstadisticas, construirContenido, liderIncompletoInforme, narrativaRespaldo } = await import(`${REPO}/supabase/functions/_shared/informe.ts`)
 const { resultadosAuditoria } = await import(`${REPO}/src/lib/resultados.js`)
 const motor = JSON.parse(readFileSync(`${REPO}/scripts/fixtures/motor-casos.json`, 'utf8'))
 
@@ -250,6 +250,8 @@ async function funciones(route) {
   }
   if (nombre === 'generar-informe') {
     const a = db.auditorias.find((x) => x.id === cuerpo.auditoria_id)
+    // Como la Edge Function: el líder se registra a mano en la auditoría (0017)
+    if (liderIncompletoInforme(a)) return json({ ok: false, error: 'Registra el líder del equipo auditor de esta auditoría (en la página del informe) antes de generarlo: va en la Ficha Técnica.', codigo: 'lider_incompleto' }, 409)
     const lista = db.hallazgos.filter((h) => h.auditoria_id === a.id && h.estado !== 'descartado').sort((x, y) => x.consecutivo - y.consecutivo)
     const estadisticas = calcularEstadisticas(lista)
     const narrativa = narrativaRespaldo(a, estadisticas, perfil.tipo_evaluador)
@@ -772,6 +774,19 @@ await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
 await p.getByRole('button', { name: 'Guardar fechas' }).click()
 await p.getByText(/Fechas reales guardadas/).waitFor()
 ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
+// Líder del equipo auditor (0017): se escribe a mano y empieza vacío, aunque el dueño de la cuenta tenga cargos de líder
+const botonGenerar = p.getByRole('button', { name: 'Generar informe' })
+ok(await p.getByLabel('Nombre del líder').inputValue() === '' && (await p.getByRole('button', { name: /^Cargos del líder/ }).innerText()).includes('Elige uno o varios cargos')
+  && await botonGenerar.isDisabled() && await p.getByText(/registra el líder del equipo auditor/).isVisible(),
+  'el líder empieza vacío (no se propone al dueño de la cuenta) y sin él no se puede generar el informe')
+await p.locator('form').filter({ has: p.getByLabel('Nombre del líder') }).screenshot({ path: `${CAPTURAS}07a-lider.png` })
+await p.getByLabel('Nombre del líder').fill('Carlos Mora Díaz')
+await elegirCargos(p, /^Cargos del líder/, ['Subgerente de cirugía', 'Líder equipo'])
+await p.getByRole('button', { name: 'Guardar líder' }).click()
+await p.getByText(/Líder del equipo guardado/).waitFor()
+ok(JSON.stringify(db.auditorias[0].lider_auditor) === JSON.stringify({ nombre: 'Carlos Mora Díaz', cargos: ['Subgerente de cirugía', 'Líder equipo'] })
+  && JSON.stringify(perfil.cargos) === JSON.stringify(['Auditor médico', 'Coordinadora']) && await botonGenerar.isEnabled(),
+  'el líder se registra a mano en la auditoría, sin tocar el perfil, y entonces se puede generar el informe', JSON.stringify(db.auditorias[0].lider_auditor))
 // Equipo auditor de esta auditoría (0016): empieza con el del perfil; se agrega a quien también participó
 ok(await p.getByText('Por ahora se usa tu equipo habitual (el de tu perfil).').isVisible() && await p.getByLabel('Nombre de la persona 2').inputValue() === 'Pedro Pérez Ortiz',
   'el informe propone el equipo del perfil cuando la auditoría aún no tiene uno propio')
@@ -812,7 +827,7 @@ const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
 const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
   'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
   'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor Marta Ruiz Ortega - Médico especialista pediatra',
-  'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Líder equipo Carlos Mora Díaz - Subgerente de cirugía, Líder equipo', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
   LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
@@ -880,7 +895,7 @@ const ORDEN_DOCX = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '
   'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
   'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
   'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor | Marta Ruiz Ortega - Médico especialista pediatra',
-  'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
+  'Líder equipo | Carlos Mora Díaz - Subgerente de cirugía, Líder equipo',
   'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias',
   'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
@@ -941,7 +956,7 @@ const textoPdf = execSync(`pdftotext "${rutaPdf}" -`).toString().replace(/\s+/g,
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
 ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño A4, como la plantilla')
 const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
-  'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Ana María Rodríguez Peña',
+  'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Carlos Mora Díaz - Subgerente de cirugía, Líder equipo',
   'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
   'Riesgos y oportunidades del programa auditoria', 'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones'])

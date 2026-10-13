@@ -106,6 +106,12 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   del perfil. El del perfil es el equipo habitual: se copia al crear la auditoría (formulario y trigger) y se puede
   cambiar al crearla o en la página del informe. El informe usa `equipoDe(auditoria, perfil)` (el de la auditoría; si
   está vacío, el del perfil). A la IA solo le llegan los cargos.
+- Líder del equipo POR AUDITORÍA (decisión del dueño, 12/10/2026, 0017): `auditorias.lider_auditor` {nombre, cargos de
+  `CARGOS_LIDER`}, escrito a mano en la página del informe (`LiderAuditoria`). Empieza VACÍO y NUNCA se copia del perfil
+  ni se propone al dueño de la cuenta: el líder no siempre es quien registra la auditoría. Sin líder no se genera el
+  informe (botón desactivado y 409 `lider_incompleto`). «Líder equipo» de la Ficha = `liderDe(auditoria)`; «Generado
+  por» sigue siendo el dueño de la cuenta. A la IA solo le llegan los cargos del líder. Los cargos del perfil ya no
+  van en el informe (`perfilIncompletoInforme` solo exige el grupo de evaluador).
 - Informe final = formato oficial `src/formato_de_informe_final/Auditoria_interna.docx` (decisión del dueño, 4/10/2026;
   desde el 12/10/2026 la plantilla es un Word, antes era `.odt`): «es tal cual ese formato, no debe cambiar». NUNCA edites
   la plantilla ni su orden; el dueño la reemplaza. El Word («Documento (editable)») se llena SOBRE la plantilla

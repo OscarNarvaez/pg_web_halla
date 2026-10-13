@@ -146,6 +146,20 @@ export function perfilIncompleto(p) {
 /** Integrante vacío del equipo auditor, para el formulario. */
 export const integranteVacio = () => ({ nombre: '', cargos: [] })
 
+/**
+ * Líder del equipo auditor de una auditoría (0017, decisión del dueño, 12/10/2026): nombre escrito a mano y cargos de
+ * la lista de líderes. Empieza vacío: no se toma del perfil, porque el líder no siempre es el dueño de la cuenta.
+ */
+export const esquemaLiderAuditoria = z.object({
+  lider_auditor: z.object({
+    nombre: texto(3, 'Escribe el nombre del líder del equipo auditor').max(120, 'El nombre admite como máximo 120 caracteres'),
+    cargos: reglaCargos(CARGOS_LIDER, 'Elige al menos un cargo del líder'),
+  }),
+})
+
+/** Líder con el que empieza el formulario: el registrado en la auditoría o vacío (nunca el dueño de la cuenta). */
+export const liderInicial = (auditoria) => ({ nombre: auditoria?.lider_auditor?.nombre ?? '', cargos: [...(auditoria?.lider_auditor?.cargos ?? [])] })
+
 /** Equipo auditor de una auditoría ya creada (0016): solo el equipo, con las reglas del perfil. */
 export const esquemaEquipoAuditoria = z.object({ equipo_auditor: camposEquipoYAlcance.equipo_auditor })
 

@@ -232,7 +232,7 @@ diseñaron estos controles desde el inicio, con su prueba de regresión:
   las personas del equipo que registra el auditor.
 - **Informe con la plantilla oficial.** El Word y el PDF se arman en el navegador con datos que el auditor ya
   puede leer por RLS: no hay un servicio nuevo que proteger. A la IA del informe llegan los hallazgos anonimizados y
-  los cargos del equipo, nunca sus nombres. Los metadatos del Word llevan como autor a quien genera el informe: el
+  los cargos del equipo y del líder, nunca sus nombres. Los metadatos del Word llevan como autor a quien genera el informe: el
   autor de la plantilla no se copia a los informes, y el pie «Generado por…» lleva a quien lo genera. *Prueba:* `probar-interfaz`.
 - **Lista de verificación (0011).** Las anotaciones del auditor pueden traer datos sensibles de la visita: se
   guardan solo en la base propia (no pasan por la IA), con RLS del dueño, sin borrado físico y en solo lectura al

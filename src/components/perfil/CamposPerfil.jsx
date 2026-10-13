@@ -96,8 +96,22 @@ export function CamposAuditor({ register, errors, control }) {
       <CampoEvaluador errors={errors} control={control} />
       <div className="sm:col-span-2">
         <CampoCargos control={control} name="cargos" etiqueta="Cargos" opciones={CARGOS_LIDER}
-          ayuda={`Elige uno o varios de la lista de líderes (hasta ${MAX_CARGOS}). Aparecen en tu firma del informe.`} />
+          ayuda={`Elige uno o varios de la lista de líderes (hasta ${MAX_CARGOS}).`} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * Líder del equipo auditor de una auditoría (0017): su nombre, escrito a mano, y sus cargos de la lista de líderes.
+ * Sin autocompletar: el líder no siempre es el dueño de la cuenta.
+ */
+export function CamposLider({ register, errors, control }) {
+  return (
+    <div className="grid gap-4">
+      <Campo etiqueta="Nombre del líder" autoComplete="off" maxLength={120} required error={errors.lider_auditor?.nombre?.message} {...register('lider_auditor.nombre')} />
+      <CampoCargos control={control} name="lider_auditor.cargos" etiqueta="Cargos del líder" opciones={CARGOS_LIDER}
+        ayuda={`Elige uno o varios de la lista de líderes (hasta ${MAX_CARGOS}).`} />
     </div>
   )
 }

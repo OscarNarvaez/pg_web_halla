@@ -7,8 +7,8 @@ import { anonimizar } from '../_shared/anonimizar.ts'
 import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
-  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, equipoDe, equipoIncompletoInforme, narrativaRespaldo, perfilIncompletoInforme,
-  revisados, sistemaInforme, type HallazgoInforme, type Narrativa, type PerfilInforme,
+  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, equipoDe, equipoIncompletoInforme, liderDe, liderIncompletoInforme,
+  narrativaRespaldo, perfilIncompletoInforme, revisados, sistemaInforme, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto, recortarEnOracion } from '../_shared/validar-salida.ts'
 import { TIPOS_EVALUADOR } from '../_shared/catalogos.ts'
@@ -43,11 +43,15 @@ Deno.serve(async (req) => {
     .maybeSingle()
   if (!perfil) return respuestaError(req, 'Completa tu perfil de auditor antes de generar el informe.', 409, 'sin_perfil')
   if (perfilIncompletoInforme(perfil as PerfilInforme)) {
-    return respuestaError(req, 'Completa en «Mi perfil» tu grupo de auditores y tus cargos antes de generar el informe: van en la Ficha Técnica.', 409, 'perfil_incompleto')
+    return respuestaError(req, 'Completa en «Mi perfil» tu grupo de auditores antes de generar el informe: va en la Ficha Técnica como «Evaluador».', 409, 'perfil_incompleto')
   }
   // El equipo de esta auditoría (0016) o, si no tiene, el del perfil
   if (equipoIncompletoInforme(auditoria, perfil as PerfilInforme)) {
     return respuestaError(req, 'Registra el equipo auditor de esta auditoría (en la página del informe) antes de generarlo: va en la Ficha Técnica.', 409, 'equipo_incompleto')
+  }
+  // El líder se escribe a mano en cada auditoría (0017): no se toma del perfil
+  if (liderIncompletoInforme(auditoria)) {
+    return respuestaError(req, 'Registra el líder del equipo auditor de esta auditoría (en la página del informe) antes de generarlo: va en la Ficha Técnica.', 409, 'lider_incompleto')
   }
 
   const { data: hallazgos, error } = await admin
@@ -82,7 +86,7 @@ Deno.serve(async (req) => {
   // Del equipo auditor a la IA solo llegan los cargos, nunca los nombres
   const p = perfil as PerfilInforme
   const equipoIa = {
-    lider: p.cargos, integrantes: equipoDe(auditoria, p).map((m) => m.cargos),
+    lider: liderDe(auditoria)?.cargos ?? [], integrantes: equipoDe(auditoria, p).map((m) => m.cargos),
     evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '', tipoEvaluador: p.tipo_evaluador,
   }
   const auditoriaIa = {

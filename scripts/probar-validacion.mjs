@@ -194,7 +194,8 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const informe = await import('../supabase/functions/_shared/informe.ts')
   const aud = { id: 'a1', codigo: 'AI-2026-001', titulo: 'Auditoría a Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null, objetivo: '',
     criterios: ['NTC-ISO 9001:2015', 'PR13-GQ'], area_auditada: 'Urgencias', auditado_nombre: null, auditado_cargo: null,
-    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', fecha_inicio_real: '2026-10-02', fecha_fin_real: null }
+    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', fecha_inicio_real: '2026-10-02', fecha_fin_real: null,
+    lider_auditor: { nombre: 'Carlos Mora Díaz', cargos: ['Subgerente de cirugía', 'Líder equipo'] } }
   const perfilInf = { nombre_completo: 'Ana Pérez', cedula: '1085123456', cargos: ['Auditor médico', 'Coordinadora'], equipo_auditor: [{ nombre: 'Luis Ruiz', cargos: ['Médico'] }], tipo_evaluador: 'AUDITORES_EXTERNOS' }
   const pdf = { nombre: 'acta.pdf', paginas: 2, sha256: 'a'.repeat(64) }
   const base = { severidad: null, estado: 'confirmado', criterio_requisito: 'c', evidencia: 'e', criterios_citados: [], controles: [{ descripcion: 'x', tipo: 'PREVENTIVO', origen: 'ia', adoptado: true }] }
@@ -212,8 +213,10 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   ok(JSON.stringify(c.hallazgos.map((g) => g.clasificacion)) === '["FORTALEZA","OPORTUNIDAD_DE_MEJORA","OBSERVACION","NO_CONFORMIDAD"]', 'las listas siguen el orden del formato: fortalezas, oportunidades, observaciones, no conformidades')
   ok(c.ficha.evaluador === 'Auditores Externos' && c.encabezado.evaluador === 'Auditores Externos' && c.encabezado.anio === '2026' && c.encabezado.objeto === 'Urgencias',
     'el evaluador y el título de la portada salen del perfil y de la auditoría')
-  ok(c.ficha.inicio_planeada === '2026-10-01' && c.ficha.inicio_real === '2026-10-02' && c.ficha.fin_real === '' && c.ficha.lider.cargo === 'Auditor médico, Coordinadora'
-    && c.ficha.equipo[0].nombre === 'Luis Ruiz', 'la Ficha Técnica lleva fechas planeadas y reales, el líder y el equipo')
+  ok(c.ficha.inicio_planeada === '2026-10-01' && c.ficha.inicio_real === '2026-10-02' && c.ficha.fin_real === ''
+    && JSON.stringify(c.ficha.lider) === JSON.stringify({ nombre: 'Carlos Mora Díaz', cargo: 'Subgerente de cirugía, Líder equipo' })
+    && c.ficha.equipo[0].nombre === 'Luis Ruiz' && c.generado.por === 'Ana Pérez',
+    'la Ficha Técnica lleva fechas planeadas y reales, el líder registrado en la auditoría (no el dueño de la cuenta) y el equipo')
   ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)","registro-firmas.pdf (1 página)"]',
     'los PDF de evidencia (analizados y agregados al editar) van en «Archivos adjuntos», sin repetir', JSON.stringify(c.ficha.adjuntos))
   ok(c.objetivo === n.objetivo && n.objetivo.startsWith('Evaluar'), 'si la auditoría no trae objetivo, se redacta uno')
@@ -294,6 +297,15 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   ok(informe.equipoIncompletoInforme({ ...aud, equipo_auditor: [] }, { ...perfilInf, equipo_auditor: [] }) && !informe.equipoIncompletoInforme(audEquipo, { ...perfilInf, equipo_auditor: [] })
     && !informe.perfilIncompletoInforme({ ...perfilInf, equipo_auditor: [] }),
     'sin equipo en la auditoría ni en el perfil el informe no se genera; con equipo en la auditoría basta')
+  // 0017: el líder se escribe a mano en cada auditoría; sin registrarlo, el informe no se genera
+  const audSinLider = { ...aud, lider_auditor: null }
+  const cSinLider = informe.construirContenido({ auditoria: audSinLider, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-12T10:00:00Z', version: 4, avisos: [] })
+  ok(informe.liderIncompletoInforme(audSinLider) && informe.liderIncompletoInforme({ ...aud, lider_auditor: { nombre: 'Carlos Mora Díaz', cargos: [] } })
+    && !informe.liderIncompletoInforme(aud) && cSinLider.ficha.lider.nombre === '' && !JSON.stringify(cSinLider.ficha).includes('Ana Pérez'),
+    'sin líder registrado el informe no se genera, y nunca se pone en su lugar al dueño de la cuenta (0017)')
+  const msgLider = informe.construirMensajeInforme(aud, hs, e, { lider: informe.liderDe(aud).cargos, integrantes: [['Médico']], evaluador: 'x' })
+  ok(msgLider.includes('Líder del equipo: Subgerente de cirugía, Líder equipo') && !msgLider.includes('Carlos'), 'a la IA solo llegan los cargos del líder, nunca su nombre')
+  ok(!informe.perfilIncompletoInforme({ ...perfilInf, cargos: [] }), 'los cargos del perfil ya no son requisito del informe: el líder tiene los suyos')
 }
 
 console.log('\n▸ Resultados de la auditoría (consolidado bajo la matriz)')

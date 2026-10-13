@@ -342,17 +342,21 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
 
 1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
    escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
-2. **Revise el equipo auditor** en el recuadro «Equipo auditor de esta auditoría»: es el que aparece en la Ficha
+2. **Registre el líder del equipo auditor** en el recuadro «Líder del equipo auditor»: escriba su nombre y elija sus
+   cargos de la lista de líderes, y pulse **Guardar líder**. Va como «Líder equipo» en la Ficha Técnica. El recuadro
+   empieza vacío en cada auditoría y no toma su nombre del perfil, porque el líder no siempre es quien registra la
+   auditoría en la plataforma: si el líder es usted, escriba su nombre. Sin líder no se puede generar el informe.
+3. **Revise el equipo auditor** en el recuadro «Equipo auditor de esta auditoría»: es el que aparece en la Ficha
    Técnica, con sus cargos. Agregue o quite personas si hace falta y pulse **Guardar equipo**. Las auditorías creadas
    antes del 12 de octubre de 2026 tomaron el equipo que tenía su perfil en ese momento.
-3. **Registre los indicadores priorizados del proceso** que revisó, en el recuadro «Indicadores priorizados del
+4. **Registre los indicadores priorizados del proceso** que revisó, en el recuadro «Indicadores priorizados del
    proceso»: **solo el nombre corto** de cada uno, uno por campo. Para otro, pulse **Agregar otro indicador** (hasta
    15). No escriba comas: el sistema separa los indicadores con comas y pone «y» antes del último («e» si el último
    empieza por i- o hi-). En el informe van justo después de «…en el proceso de», y nada más: «Revisión de
    indicadores priorizados en el proceso de oportunidad en triage, reingresos y satisfacción». El recuadro muestra
    cómo quedará. Si no registra ninguno, la sección dice que no se registraron.
-4. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
-5. Desde que hay informe, la barra de abajo queda **siempre a la vista** mientras recorre la página, con
+5. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
+6. Desde que hay informe, la barra de abajo queda **siempre a la vista** mientras recorre la página, con
    **Generar nueva versión**, **Documento (editable)** y **PDF**, y la versión que está viendo.
 
 **Interna o externa.** Todo el informe se adapta al grupo de auditores de su perfil (el que eligió al registrarse o
@@ -368,7 +372,7 @@ El informe tiene, en este orden:
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
 | Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso» (o «Auditoria Externa…»), su grupo de auditores, el año y «Auditoria interna de <proceso o sistema>» (o «externa») | El sistema |
-| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
+| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), el líder del equipo que registró y archivos adjuntos (los PDF de evidencia) | El sistema, con lo que usted registra |
 | Auditoria interna de <proceso o sistema> | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
 | Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones y Conclusiones | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
@@ -378,7 +382,7 @@ El informe tiene, en este orden:
 - **Las cifras las calcula el sistema**, no la IA. Si la IA escribe una cifra que no está en los datos (hallazgos o
   estadísticas), se le avisa.
 - El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.
-- A la IA no llegan los nombres del equipo auditor, solo sus cargos.
+- A la IA no llegan los nombres del equipo auditor ni el del líder, solo sus cargos.
 - Si cambia los hallazgos, las fechas, el equipo o los indicadores, genere una **nueva versión**: las anteriores se conservan.
 - Descárguelo como **Documento (editable)**, que es la plantilla oficial llena en formato Word (.docx) y se abre y se
   edita en Word y en LibreOffice, o en **PDF**, que reproduce el mismo formato.

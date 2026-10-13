@@ -46,6 +46,8 @@ export interface AuditoriaInforme {
   indicadores_revisados?: IndicadorRevisado[] | null
   /** Equipo auditor de esta auditoría (0016); vacío → el del perfil */
   equipo_auditor?: IntegranteEquipo[] | null
+  /** Líder del equipo auditor de esta auditoría, escrito a mano (0017); sin registrar → null, nunca el del perfil */
+  lider_auditor?: IntegranteEquipo | null
 }
 
 export interface IntegranteEquipo {
@@ -77,11 +79,20 @@ export const equipoDe = (a: AuditoriaInforme, p: PerfilInforme): IntegranteEquip
 
 const equipoIncompleto = (equipo: IntegranteEquipo[]) => !equipo.length || equipo.some((m) => !m?.nombre || !m?.cargos?.length)
 
-/** Sin grupo de evaluador ni cargos del líder no se puede llenar la Ficha Técnica (el equipo se revisa aparte). */
-export const perfilIncompletoInforme = (p: PerfilInforme) => !p.tipo_evaluador || !p.cargos?.length
+/** Sin grupo de evaluador no se puede llenar la Ficha Técnica («Evaluador»); el equipo y el líder se revisan aparte. */
+export const perfilIncompletoInforme = (p: PerfilInforme) => !p.tipo_evaluador
 
 /** El equipo auditor de la Ficha Técnica: al menos una persona, cada una con nombre y cargos. */
 export const equipoIncompletoInforme = (a: AuditoriaInforme, p: PerfilInforme) => equipoIncompleto(equipoDe(a, p))
+
+/**
+ * Líder del equipo auditor (0017, decisión del dueño, 12/10/2026): el que se registró a mano en la auditoría. No se
+ * toma del perfil, porque el líder no siempre es el dueño de la cuenta.
+ */
+export const liderDe = (a: AuditoriaInforme): IntegranteEquipo | null => a.lider_auditor ?? null
+
+/** El «Líder equipo» de la Ficha Técnica: registrado, con nombre y cargos. */
+export const liderIncompletoInforme = (a: AuditoriaInforme) => equipoIncompleto(liderDe(a) ? [liderDe(a) as IntegranteEquipo] : [])
 
 /** Secciones que redacta la IA (o la plantilla de respaldo si la IA no está disponible). */
 export interface Narrativa {
@@ -427,7 +438,7 @@ export function construirContenido(opciones: {
       sistema_referencia: a.alcance === 'SISTEMAS' ? `${a.sistema} · ${normasDe(a).join(', ')}` : normasDe(a).join(', '),
       evaluador,
       equipo: equipoDe(a, p).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) })),
-      lider: { nombre: p.nombre_completo, cargo: unirCargos(p.cargos) },
+      lider: { nombre: liderDe(a)?.nombre ?? '', cargo: unirCargos(liderDe(a)?.cargos) },
       adjuntos,
     },
     hallazgos: ORDEN_FORMATO.map((c) => ({

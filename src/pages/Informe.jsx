@@ -2,19 +2,22 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarCheck, FileDown, FileText, Plus, RefreshCw, Save, Trash2, Users } from 'lucide-react'
+import { CalendarCheck, FileDown, FileText, Plus, RefreshCw, Save, Trash2, UserCheck, Users } from 'lucide-react'
 import { useAuditoria } from '../hooks/useAuditorias'
 import { useConsulta } from '../hooks/useConsulta'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { fechaHora } from '../lib/formato'
-import { MAX_INDICADORES, MAX_NOMBRE_INDICADOR, equipoInicial, esquemaEquipoAuditoria, esquemaFechasReales, esquemaIndicadores, indicadorVacio } from '../lib/esquemas'
+import {
+  MAX_INDICADORES, MAX_NOMBRE_INDICADOR, equipoInicial, esquemaEquipoAuditoria, esquemaFechasReales, esquemaIndicadores, esquemaLiderAuditoria, indicadorVacio,
+  liderInicial,
+} from '../lib/esquemas'
 import { esFormatoOficial, lineaIndicadores } from '../lib/formato-informe'
 import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { VistaInforme } from '../components/informe/VistaInforme'
-import { CamposEquipo } from '../components/perfil/CamposPerfil'
+import { CamposEquipo, CamposLider } from '../components/perfil/CamposPerfil'
 import { BarraFija, Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
 
 /** Fechas reales de la auditoría: la Ficha Técnica del formato las pide junto a las planeadas. */
@@ -37,6 +40,33 @@ function FechasReales({ auditoria, alGuardar }) {
         <Campo etiqueta="Fecha inicio (real)" type="date" className="w-full sm:w-52" error={errors.fecha_inicio_real?.message} {...register('fecha_inicio_real')} />
         <Campo etiqueta="Fecha terminación (real)" type="date" className="w-full sm:w-52" error={errors.fecha_fin_real?.message} {...register('fecha_fin_real')} />
         <Boton type="submit" variante="secundario" icono={CalendarCheck} cargando={isSubmitting} disabled={!isDirty}>Guardar fechas</Boton>
+      </form>
+    </Tarjeta>
+  )
+}
+
+/**
+ * Líder del equipo auditor de esta auditoría (0017, decisión del dueño, 12/10/2026): el «Líder equipo» de la Ficha
+ * Técnica. Se escribe a mano y empieza vacío: no se toma del perfil, porque el líder no siempre es el dueño de la cuenta.
+ */
+function LiderAuditoria({ auditoria, alGuardar }) {
+  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm({
+    resolver: zodResolver(esquemaLiderAuditoria),
+    defaultValues: { lider_auditor: liderInicial(auditoria) },
+  })
+  const enviar = async (d) => {
+    if (await alGuardar({ lider_auditor: d.lider_auditor })) reset(d)
+  }
+  return (
+    <Tarjeta titulo="Líder del equipo auditor" className="mb-6">
+      <form onSubmit={handleSubmit(enviar)} noValidate className="space-y-4">
+        <p className="text-sm text-tinta-500">
+          Quien lideró esta auditoría: va como «Líder equipo» en la Ficha Técnica del informe, con sus cargos. Escribe su
+          nombre aunque seas tú: no se toma de tu perfil.
+          {!auditoria.lider_auditor && ' Aún no está registrado: hay que registrarlo para generar el informe.'}
+        </p>
+        <CamposLider register={register} errors={errors} control={control} />
+        <Boton type="submit" variante="secundario" icono={UserCheck} cargando={isSubmitting} disabled={!isDirty}>Guardar líder</Boton>
       </form>
     </Tarjeta>
   )
@@ -149,7 +179,9 @@ export default function Informe() {
   const a = auditoria.datos
   const lista = informes.datos ?? []
   const informe = lista.find((i) => i.version === versionElegida) ?? lista[0]
-  const puedeGenerar = confirmados.datos > 0
+  // El líder se registra a mano en cada auditoría (0017): sin él la Ficha Técnica queda incompleta
+  const sinLider = !a.lider_auditor?.nombre
+  const puedeGenerar = confirmados.datos > 0 && !sinLider
 
   const generar = async () => {
     setGenerando(true)
@@ -202,9 +234,10 @@ export default function Informe() {
           )}
         />
         {!puedeGenerar && (
-          <p className="mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
-            Para generar el informe necesitas al menos un hallazgo validado.
-          </p>
+          <div className="mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
+            {!confirmados.datos && <p>Para generar el informe necesitas al menos un hallazgo validado.</p>}
+            {sinLider && <p>Para generar el informe registra el líder del equipo auditor (más abajo, en «Líder del equipo auditor»).</p>}
+          </div>
         )}
         {lista.length > 1 && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -216,6 +249,8 @@ export default function Informe() {
         )}
         {informes.error && <EstadoError mensaje={informes.error} alReintentar={informes.recargar} className="mb-4" />}
         <FechasReales key={a.id} auditoria={a} alGuardar={guardarAuditoria('Fechas reales guardadas. Genera una nueva versión para incluirlas en el informe.')} />
+        <LiderAuditoria key={`lider-${a.id}`} auditoria={a}
+          alGuardar={guardarAuditoria('Líder del equipo guardado. Genera una nueva versión para incluirlo en el informe.')} />
         <EquipoAuditoria key={`equipo-${a.id}`} auditoria={a} perfil={perfil}
           alGuardar={guardarAuditoria('Equipo auditor guardado. Genera una nueva versión para incluirlo en el informe.')} />
         <IndicadoresRevisados key={`indicadores-${a.id}`} auditoria={a}

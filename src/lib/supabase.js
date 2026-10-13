@@ -44,6 +44,8 @@ export function mensajeError(error) {
     [/Auditores Internos o a los Auditores Externos/i, 'Elige si perteneces a los Auditores Internos o a los Auditores Externos.'],
     [/fechas_reales_coherentes/i, 'La terminación real no puede ser anterior al inicio real.'],
     [/Cargo no permitido/i, 'Uno de los cargos elegidos no está en la lista institucional. Elígelos de nuevo.'],
+    // Líder del equipo auditor de la auditoría (0017)
+    [/líder del equipo auditor/i, 'Revisa el líder del equipo auditor: su nombre (de 3 a 120 caracteres) y de 1 a 5 cargos de la lista.'],
     [/entre 1 y 5 cargos/i, 'Cada persona debe tener entre 1 y 5 cargos de la lista.'],
     [/equipo auditor/i, 'Revisa el equipo auditor: de 1 a 10 personas, cada una con su nombre y al menos un cargo.'],
     [/no verificable/i, 'Una de las citas normativas no corresponde a un criterio cargado.'],

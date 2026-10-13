@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las dieciséis migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe; la 0014, quitar el PDF analizado; la 0015, indicadores con solo su nombre; la 0016, el equipo auditor de cada auditoría).
+- [ ] `supabase db push` aplicó las diecisiete migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe; la 0014, quitar el PDF analizado; la 0015, indicadores con solo su nombre; la 0016, el equipo auditor de cada auditoría; la 0017, el líder de cada auditoría, escrito a mano).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -359,6 +359,15 @@ git push origin main
 ```bash
 supabase secrets set PROMPT_VERSION=1.6.0
 supabase functions deploy clasificar-hallazgo completar-auditoria generar-informe
+git push origin main
+```
+
+**Líder del equipo por auditoría (12/10/2026):** el líder se escribe a mano en cada auditoría y ya no se toma del perfil.
+El frontend y `generar-informe` piden la columna nueva, así que la 0017 va antes:
+
+```bash
+supabase db push                                   # 0017
+supabase functions deploy generar-informe          # «Líder equipo» = el registrado en la auditoría; sin él, 409
 git push origin main
 ```
 
