@@ -1,4 +1,4 @@
-// Utilidades compartidas por las exportaciones del informe (ODT y PDF).
+// Utilidades compartidas por las exportaciones del informe (Word y PDF).
 import { fechaArchivo } from './formato'
 
 export const hexARgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))

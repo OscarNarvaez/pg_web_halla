@@ -10,7 +10,7 @@ inventar numerales**, clasifica el hallazgo (no conformidad, observación, oport
 fortaleza), lo redacta con la estructura técnica de la categoría, evalúa el riesgo con las escalas del
 PR13_GQ (mapa de calor 5 × 5) y propone controles. Todo llega a una matriz consolidada que el auditor valida
 y descarga en Excel, y al final se genera el informe con el formato oficial del hospital (la plantilla
-`src/formato_de_informe_final/Auditoria_interna.odt`, llena tal cual), en ODT y PDF.
+`src/formato_de_informe_final/Auditoria_interna.docx`, llena tal cual), en Word y PDF.
 
 - Frontend: React 18 + Vite + Tailwind CSS, en GitHub Pages.
 - Backend: Supabase (PostgreSQL con RLS, Auth y Edge Functions).

@@ -66,7 +66,7 @@ export const ESQUEMA_SALIDA = {
   required: ['hallazgos'],
 }
 
-/** Secciones narrativas del formato oficial del informe (src/formato_de_informe_final/Auditoria_interna.odt). */
+/** Secciones narrativas del formato oficial del informe (src/formato_de_informe_final/Auditoria_interna.docx). */
 export const ESQUEMA_INFORME = {
   type: 'object',
   properties: {

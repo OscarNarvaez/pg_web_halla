@@ -254,11 +254,11 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const perfilExt = { ...perfilInf, tipo_evaluador: 'AUDITORES_EXTERNOS' }
   const nExt = informe.narrativaRespaldo(aud, e, 'AUDITORES_EXTERNOS')
   const cExt = informe.construirContenido({ auditoria: aud, perfil: perfilExt, hallazgos: hs, estadisticas: e, narrativa: nExt, generadoEn: '2026-10-13T10:00:00Z', version: 4, avisos: [] })
-  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoria Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoria externa de SIG'
+  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoria Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoria externa de Urgencias'
     && formato.tituloAuditoria({ encabezado: { ...cExt.encabezado, tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoria Interna - 2026 - Urgencias'
-    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoria interna de SIG'
+    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Sistema de Seguridad y Salud en el Trabajo' } }) === 'Auditoria interna de Sistema de Seguridad y Salud en el Trabajo'
     && formato.tituloAuditoria({ encabezado: { anio: '2026', objeto: 'Urgencias' } }) === 'Auditoria Interna - 2026 - Urgencias',
-    'con un auditor externo el informe dice «Auditoria Externa» y «Auditoria externa de SIG» (sin grupo, interna)')
+    'con un auditor externo el informe dice «Auditoria Externa»; después de «Auditoria interna/externa de» va lo auditado (sin grupo, interna)')
   ok(nExt.observaciones.startsWith('La auditoría externa AI-2026-001') && nExt.criterios_seleccion_equipo.some((x) => x.includes('auditor externo'))
     && !JSON.stringify(nExt).includes('interna') && informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditoría externa')
     && !informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditor interno') && msg.includes('Tipo: auditoría externa'),
@@ -267,14 +267,20 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     'termina en Conclusiones; los informes de versiones anteriores (con meta y resultado de cada indicador) se regeneran')
   // Cada texto que el sistema busca en la plantilla tiene que estar en ella (avisa si el dueño la vuelve a cambiar)
   const { unzipSync, strFromU8 } = await import('fflate')
-  const odt = unzipSync(readFileSync(new URL('../src/formato_de_informe_final/Auditoria_interna.odt', import.meta.url)))
-  const textoPlantilla = ['content.xml', 'styles.xml'].map((x) => strFromU8(odt[x])).join(' ')
-    .replace(/<text:s text:c="(\d+)"\/>/g, (_, k) => ' '.repeat(Number(k))).replace(/<text:s\/>/g, ' ').replace(/<\/text:(p|h)>/g, '\n').replace(/<[^>]+>/g, '')
-  const lineasPlantilla = textoPlantilla.split('\n').map((l) => l.replace(/\s+/g, ' ').trim())
+  const docx = unzipSync(readFileSync(new URL('../src/formato_de_informe_final/Auditoria_interna.docx', import.meta.url)))
+  // Texto de cada párrafo: solo lo que va en <w:t> (las posiciones de los cuadros también son texto en el XML)
+  const textoWord = (ruta) => strFromU8(docx[ruta]).split('</w:p>')
+    .map((p) => [...p.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)].map((m) => m[1]).join('')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim())
+  const lineasPlantilla = textoWord('word/document.xml')
+  const lineasEncabezadoPie = Object.keys(docx).filter((r) => /^word\/(header|footer)\d*\.xml$/.test(r)).flatMap(textoWord)
   const buscados = [...Object.values(formato.TEXTOS_FORMATO),
     ...formato.LISTAS_HALLAZGOS.map((l) => l.titulo), ...formato.seccionesFormato(cInd).map((x) => x.titulo)]
   const faltan = buscados.filter((t) => !lineasPlantilla.some((l) => l === t || l.startsWith(`${t} `) || l.includes(t)))
-  ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
+  ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial (Word) tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
+  ok(lineasPlantilla.filter((l) => l === formato.TEXTOS_FORMATO.programa).length === 2 && lineasPlantilla.some((l) => /^Auditoria Interna - \d{4} - /.test(l))
+    && ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - ', 'Generado por ', 'Página'].every((t) => lineasEncabezadoPie.some((l) => l.startsWith(t))),
+  'la plantilla trae «Auditoria interna de» en la portada y antes de las listas, y el encabezado y el pie que se llenan')
   ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
   // 0016: el equipo de la auditoría; si no tiene, el del perfil

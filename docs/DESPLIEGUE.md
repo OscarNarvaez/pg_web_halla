@@ -339,7 +339,7 @@ supabase functions deploy generar-informe          # narrativa y Ficha Técnica 
 git push origin main
 ```
 
-La plantilla `src/formato_de_informe_final/Auditoria_interna.odt` se publica con el sitio (Vite la copia a
+La plantilla `src/formato_de_informe_final/Auditoria_interna.docx` se publica con el sitio (Vite la copia a
 `dist/assets/`). Si el dueño la reemplaza, basta con un `git push`; si cambia algún título o rótulo, hay que
 cambiarlo también en `src/lib/formato-informe.js` (la prueba `pnpm probar:interfaz` avisa si no coincide).
 
@@ -361,6 +361,11 @@ supabase secrets set PROMPT_VERSION=1.6.0
 supabase functions deploy clasificar-hallazgo completar-auditoria generar-informe
 git push origin main
 ```
+
+**Plantilla del informe en Word (12/10/2026):** el dueño reemplazó `Auditoria_interna.odt` por `Auditoria_interna.docx`.
+«Documento (editable)» descarga ahora un Word lleno sobre esa plantilla. En `generar-informe` solo cambia el nombre de la
+plantilla que se guarda en el contenido (`formato`): va con el despliegue de las tres funciones de arriba. Los informes
+ya generados se descargan en Word sin regenerarlos.
 
 **Equipo auditor por auditoría (12/10/2026):**
 

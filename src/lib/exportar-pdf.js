@@ -1,4 +1,4 @@
-// Informe final en PDF con el formato oficial (src/formato_de_informe_final/Auditoria_interna.odt): A4, portada
+// Informe final en PDF con el formato oficial (src/formato_de_informe_final/Auditoria_interna.docx): A4, portada
 // con el logo de la plantilla, Ficha Técnica y las secciones en el mismo orden, con el encabezado y el pie de la
 // plantilla en cada página. Las medidas salen de la plantilla (en pulgadas × 72). Se importa bajo demanda.
 //
@@ -197,7 +197,8 @@ export async function exportarPdf(informe) {
     fuente('normal', 8, GRIS_PIE)
     doc.text(TEXTOS_FORMATO.institucion, pt(0.7729), pt(0.198) + 8)
     doc.splitTextToSize(titulo, pt(2.0333)).forEach((l, i) => doc.text(l, pt(5.0861), pt(0.198) + 8 + i * 9.2))
-    doc.splitTextToSize(pie, pt(3.0333)).forEach((l, i) => doc.text(l, pt(0.7729), pt(11.3543) + 8 + i * 9.2))
+    // Hasta 6,2 pulgadas, como en el Word: «Generado por <nombre> - <fecha>» cabe en una línea
+    doc.splitTextToSize(pie, pt(6.2)).forEach((l, i) => doc.text(l, pt(0.7729), pt(11.3543) + 8 + i * 9.2))
     doc.text(`Página ${n}/${total}`, pt(7.2756), pt(11.3543) + 8)
   }
   doc.save(nombreArchivo(informe, 'pdf'))

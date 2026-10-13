@@ -765,7 +765,7 @@ await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 ok((await p.locator('article[aria-label^="Hallazgo"]').count()) === 1, 'el contador de no conformidades filtra la lista')
 await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 
-// Informe final con el formato oficial (src/formato_de_informe_final/Auditoria_interna.odt)
+// Informe final con el formato oficial (src/formato_de_informe_final/Auditoria_interna.docx)
 await p.getByRole('link', { name: 'Generar informe' }).click()
 await p.getByLabel('Fecha inicio (real)').fill('2026-10-01')
 await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
@@ -809,10 +809,10 @@ await p.getByRole('button', { name: 'Generar informe' }).click()
 const hoja = p.getByRole('article', { name: 'Informe final de auditoría' })
 await hoja.waitFor()
 const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
-const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
+const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
   'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
   'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor Marta Ruiz Ortega - Médico especialista pediatra',
-  'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
   LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
@@ -855,65 +855,81 @@ await p.screenshot({ path: `${CAPTURAS}07-informe.png`, fullPage: true })
   await p.screenshot({ path: `${CAPTURAS}07c-informe-acciones.png` })
 }
 
-// ODT: la plantilla oficial llena
-const [descargaOdt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
-const rutaOdt = `${CAPTURAS}${descargaOdt.suggestedFilename()}`
-await descargaOdt.saveAs(rutaOdt)
-ok(/^Informe_AI-2026-001_\d{8}\.odt$/.test(descargaOdt.suggestedFilename()), `nombre del documento: ${descargaOdt.suggestedFilename()}`)
-const listado = execSync(`unzip -v "${rutaOdt}"`).toString().split('\n').filter((l) => /\s(Stored|Defl:\w)\s/.test(l))
-ok(/\sStored\s.*\smimetype$/.test(listado[0] ?? '') && execSync(`unzip -p "${rutaOdt}" mimetype`).toString() === 'application/vnd.oasis.opendocument.text',
-  'el archivo es un ODT válido (mimetype primero y sin comprimir)')
-const textoOdf = (xml) => xml.replace(/<text:s\/>/g, ' ').replace(/<text:s text:c="(\d+)"\/>/g, (_, n) => ' '.repeat(Number(n)))
-  .replace(/<\/(text:p|text:h)>/g, '\n').replace(/<\/table:table-cell>/g, ' | ').replace(/<[^>]+>/g, '')
+// Word: la plantilla oficial llena
+const [descargaDocx] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
+const rutaDocx = `${CAPTURAS}${descargaDocx.suggestedFilename()}`
+await descargaDocx.saveAs(rutaDocx)
+ok(/^Informe_AI-2026-001_\d{8}\.docx$/.test(descargaDocx.suggestedFilename()), `nombre del documento: ${descargaDocx.suggestedFilename()}`)
+const parteDocx = (ruta, x) => execSync(`unzip -p "${ruta}" "${x}"`).toString()
+ok(/wordprocessingml\.document\.main\+xml/.test(parteDocx(rutaDocx, '\\[Content_Types\\].xml')) && /<w:body>/.test(parteDocx(rutaDocx, 'word/document.xml')),
+  'el archivo es un documento de Word válido (.docx)')
+// Una línea por párrafo (solo el texto de <w:t>); las celdas de una fila de tabla se unen con « | »
+const lineasWord = (xml) => [...xml.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|(<\/w:p>)(?=\s*<\/w:tc>)|(<\/w:p>)|(<\/w:tc>)|(<\/w:tr>)/g)]
+  .map((m) => (m[1] !== undefined ? m[1] : m[2] ? '' : m[4] ? ' | ' : '\n')).join('')
   .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-// Una línea por párrafo; las celdas de una fila de tabla se unen con « | »
-const lineas = (xml) => textoOdf(xml.replace(/<\/text:p>(?=\s*<\/table:table-cell>)/g, '').replace(/<table:table-row[^>]*>|<\/table:table>/g, '\n'))
   .split('\n').map((l) => l.replace(/\s+/g, ' ').replace(/(\s*\|\s*)+$/, '').replace(/^(\s*\|\s*)+/, '').trim()).filter(Boolean)
-const PLANTILLA = `${REPO}/src/formato_de_informe_final/Auditoria_interna.odt`
-const original = lineas(execSync(`unzip -p "${PLANTILLA}" content.xml`).toString())
-const llenado = lineas(execSync(`unzip -p "${rutaOdt}" content.xml`).toString())
+const PLANTILLA = `${REPO}/src/formato_de_informe_final/Auditoria_interna.docx`
+const original = lineasWord(parteDocx(PLANTILLA, 'word/document.xml'))
+const llenado = lineasWord(parteDocx(rutaDocx, 'word/document.xml'))
 const textoLlenado = llenado.join('\n')
 // Todos los textos de la plantilla siguen ahí, en el mismo orden (menos el título y el año de la portada, que se llenan)
-const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
+const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.split(' | ')[0])
 const faltaFijo = enOrden(textoLlenado, fijos)
 ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
-const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
+const ORDEN_DOCX = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Auditoria interna de Urgencias',
+  'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
   'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
   'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor | Marta Ruiz Ortega - Médico especialista pediatra',
   'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
-  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
+  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias',
+  'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
   'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones',
   'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia']
-const faltaOdt = enOrden(textoLlenado, ORDEN_ODT) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)/.test(textoLlenado) ? 'RECOMENDACIONES, cifras o campo sin llenar' : '')
-ok(!faltaOdt, 'el ODT llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar', faltaOdt)
-const estilosOdt = execSync(`unzip -p "${rutaOdt}" styles.xml`).toString()
-ok(/Auditoria Interna - 2026 - Urgencias/.test(textoOdf(estilosOdt)) && /Generado por Ana María Rodríguez Peña - 20\d\d-\d\d-\d\d \d{1,2}:\d\d [AP]M/.test(textoOdf(estilosOdt))
-  && /<text:page-number[^>]*>/.test(estilosOdt) && /<text:page-count/.test(estilosOdt), 'encabezado y pie de la plantilla con la auditoría, quien lo generó y el número de página')
-const posicionesPie = [...estilosOdt.matchAll(/draw:name="Textbox \d+"[^>]*?svg:y="([\d.]+in)"|svg:y="([\d.]+in)"[^>]*?draw:name="Textbox \d+"/g)].map((m) => m[1] ?? m[2])
-ok(new Set(posicionesPie).size <= 2, 'el encabezado y el pie quedan en el mismo lugar en todas las páginas', posicionesPie.join(', '))
-ok(!/tatis6661212/.test(execSync(`unzip -p "${rutaOdt}" meta.xml`).toString()), 'los metadatos no arrastran datos personales de quien elaboró la plantilla')
-const imagenesOdt = execSync(`unzip -l "${rutaOdt}"`).toString()
-ok(/(media|Pictures)\/[^\s]+\.jpe?g/.test(imagenesOdt) && !/Thumbnails\//.test(imagenesOdt), 'el logo de la plantilla se conserva (y no la miniatura de la plantilla vacía)')
-const xmlInvalido = ['content.xml', 'styles.xml', 'meta.xml', 'META-INF/manifest.xml'].filter((x) => {
+const faltaDocx = enOrden(textoLlenado, ORDEN_DOCX) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)|Auditoria interna de SIG/.test(textoLlenado) ? 'RECOMENDACIONES, SIG, cifras o campo sin llenar' : '')
+ok(!faltaDocx && llenado.filter((l) => l === 'Auditoria interna de Urgencias').length === 2,
+  'el Word llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar; después de «Auditoria interna de» va lo auditado', faltaDocx)
+const partesDocx = execSync(`unzip -Z1 "${rutaDocx}"`).toString().split('\n').filter((r) => /^word\/(header|footer)\d*\.xml$/.test(r))
+const encabezadosPies = partesDocx.map((r) => parteDocx(rutaDocx, r))
+const textoEncabezadoPie = encabezadosPies.flatMap(lineasWord).join('\n')
+ok(/Auditoria Interna - 2026 - Urgencias/.test(textoEncabezadoPie) && !/Hospitalización|Roberto Carlos/.test(textoEncabezadoPie)
+  && /Generado por Ana María Rodríguez Peña - 20\d\d-\d\d-\d\d \d{1,2}:\d\d [AP]M/.test(textoEncabezadoPie)
+  && encabezadosPies.some((x) => /w:instr=" PAGE "/.test(x) && /w:instr=" NUMPAGES "/.test(x)), 'encabezado y pie de la plantilla con la auditoría, quien lo generó y el número de página')
+// Desde la página 2 la plantilla traía coordenadas de hoja horizontal: el pie a mitad de página y el texto sobre el encabezado
+const cuadro = (xml, texto) => [...xml.matchAll(/<wp:anchor[\s\S]*?<\/wp:anchor>/g)].map((m) => m[0]).find((a) => a.includes(texto))
+const posicion = (a, eje) => a?.match(new RegExp(`<wp:position${eje} relativeFrom="(\\w+)"><wp:posOffset>(-?\\d+)<`))?.slice(1).join(':')
+const pies = encabezadosPies.map((x) => cuadro(x, '>Generado por ')).filter(Boolean)
+const titulos = encabezadosPies.map((x) => cuadro(x, '>Auditoria Interna - ')).filter(Boolean)
+const margenesArriba = [...parteDocx(rutaDocx, 'word/document.xml').matchAll(/<w:pgMar [^>]*w:top="(\d+)"/g)].map((m) => m[1])
+ok(pies.length >= 2 && new Set(pies.map((a) => posicion(a, 'V'))).size === 1 && new Set(titulos.map((a) => posicion(a, 'H'))).size === 1 && new Set(margenesArriba).size === 1,
+  'el encabezado y el pie quedan en el mismo lugar en todas las páginas, y el texto no se monta sobre el encabezado',
+  `${pies.map((a) => posicion(a, 'V'))} · ${titulos.map((a) => posicion(a, 'H'))} · ${margenesArriba}`)
+ok(pies.every((a) => /<a:spAutoFit\/>/.test(a) && Number(a.match(/<wp:extent cx="(\d+)"/)[1]) >= 6 * 914400),
+  'el cuadro de «Generado por…» es lo bastante ancho para un nombre largo y crece en lugar de esconder el texto')
+const core = parteDocx(rutaDocx, 'docProps/core.xml')
+ok(/<dc:title>Auditoria Interna - 2026 - Urgencias<\/dc:title>/.test(core) && /<dc:creator>Ana María Rodríguez Peña<\/dc:creator>/.test(core),
+  'los metadatos del documento llevan la auditoría y a quien lo generó')
+ok(/word\/media\/[^\s]+\.(png|jpe?g)/.test(execSync(`unzip -l "${rutaDocx}"`).toString()), 'el logo de la plantilla se conserva')
+const xmlInvalido = ['word/document.xml', 'docProps/core.xml', ...partesDocx].filter((x) => {
   try {
-    execSync(`unzip -p "${rutaOdt}" ${x} | python3 -c "import sys; from xml.dom import minidom; minidom.parseString(sys.stdin.buffer.read())"`, { stdio: 'ignore' })
+    execSync(`unzip -p "${rutaDocx}" ${x} | python3 -c "import sys; from xml.dom import minidom; minidom.parseString(sys.stdin.buffer.read())"`, { stdio: 'ignore' })
     return false
   } catch {
     return true
   }
 })
 ok(!xmlInvalido.length, 'todos los XML del documento son válidos', xmlInvalido.join(', '))
-// Si LibreOffice está instalado, el ODT se convierte a PDF para ver cómo queda (no es obligatorio en CI)
+// Si LibreOffice está instalado, el Word se convierte a PDF para ver cómo queda (no es obligatorio en CI)
 try {
-  execSync(`timeout 120 soffice --headless --convert-to pdf --outdir "${CAPTURAS}odt" "${rutaOdt}"`, { stdio: 'ignore' })
-  const pdfOdt = `${CAPTURAS}odt/${descargaOdt.suggestedFilename().replace(/\.odt$/, '.pdf')}`
-  const textoPdfOdt = execSync(`pdftotext "${pdfOdt}" -`).toString()
-  ok(/Página 1\/\d/.test(textoPdfOdt) && /FORTALEZAS IDENTIFICADAS/.test(textoPdfOdt), 'LibreOffice abre el ODT y numera las páginas')
-  execSync(`pdftoppm -r 60 -png "${pdfOdt}" "${CAPTURAS}odt/pagina"`)
+  execSync(`timeout 120 soffice --headless --convert-to pdf --outdir "${CAPTURAS}docx" "${rutaDocx}"`, { stdio: 'ignore' })
+  const pdfDocx = `${CAPTURAS}docx/${descargaDocx.suggestedFilename().replace(/\.docx$/, '.pdf')}`
+  const textoPdfDocx = execSync(`pdftotext "${pdfDocx}" -`).toString()
+  ok(/Página 1\/\d/.test(textoPdfDocx) && /FORTALEZAS IDENTIFICADAS/.test(textoPdfDocx) && /HOSPITAL INFANTIL LOS ANGELES/.test(textoPdfDocx),
+    'LibreOffice abre el Word, numera las páginas y el encabezado cabe en una línea')
+  execSync(`pdftoppm -r 60 -png "${pdfDocx}" "${CAPTURAS}docx/pagina"`)
 } catch {
-  console.log('  · LibreOffice no está instalado: se omite la conversión del ODT a PDF')
+  console.log('  · LibreOffice no está instalado: se omite la conversión del Word a PDF')
 }
 
 // PDF con el mismo formato
@@ -924,12 +940,12 @@ ok(/^Informe_AI-2026-001_\d{8}\.pdf$/.test(descargaPdf.suggestedFilename()), `no
 const textoPdf = execSync(`pdftotext "${rutaPdf}" -`).toString().replace(/\s+/g, ' ')
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
 ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño A4, como la plantilla')
-const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
+const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
   'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Ana María Rodríguez Peña',
-  'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
   'Riesgos y oportunidades del programa auditoria', 'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones'])
-  || (/RECOMENDACIONES|Hallazgos registrados:/.test(textoPdf) ? 'RECOMENDACIONES o cifras de la auditoría' : '')
+  || (/RECOMENDACIONES|Hallazgos registrados:|Auditoria interna de SIG/.test(textoPdf) ? 'RECOMENDACIONES, SIG o cifras de la auditoría' : '')
 ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
 ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),
   `encabezado y pie de la plantilla en cada página (${paginasPdf} páginas), con tildes y «ñ»`)
@@ -939,7 +955,7 @@ const imagenesPdf = execSync(`pdfimages -list "${rutaPdf}"`).toString().split('\
 ok(imagenesPdf.length === 1 && /^\s*1\s/.test(imagenesPdf[0]), 'el logo de la plantilla va solo en la portada', imagenesPdf.join(' / '))
 execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
 
-// Auditor externo: el informe dice «Auditoria Externa» en la portada, el encabezado y «Auditoria externa de SIG»
+// Auditor externo: el informe dice «Auditoria Externa» en la portada y el encabezado, y «Auditoria externa de Urgencias»
 {
   perfil.tipo_evaluador = 'AUDITORES_EXTERNOS'
   await p.reload()
@@ -950,14 +966,15 @@ execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
   ok(cajaAviso.y + cajaAviso.height <= cajaBarra.y, 'el aviso de «informe generado» sale encima de la barra y no tapa sus botones',
     `aviso ${Math.round(cajaAviso.y + cajaAviso.height)} · barra ${Math.round(cajaBarra.y)}`)
   const hojaExt = (await p.getByRole('article', { name: 'Informe final de auditoría' }).innerText()).replace(/\s+/g, ' ')
-  const [odtExt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
-  const rutaExt = `${CAPTURAS}externa-${odtExt.suggestedFilename()}`
-  await odtExt.saveAs(rutaExt)
-  const textoExt = ['content.xml', 'styles.xml', 'meta.xml'].map((x) => textoOdf(execSync(`unzip -p "${rutaExt}" ${x}`).toString())).join('\n')
-  ok(hojaExt.includes('Auditoria Externa - 2026 - Urgencias Auditores Externos') && (hojaExt.match(/Auditoria externa de SIG/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(hojaExt)
-    && /Auditoria Externa - 2026 - Urgencias/.test(textoExt) && (textoExt.match(/Auditoria externa de SIG/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(textoExt)
-    && /La auditoría externa AI-2026-001/.test(hojaExt),
-    'con un auditor externo, la vista y el ODT dicen «Auditoria Externa» en todas partes (portada, encabezado, SIG, metadatos y narrativa)')
+  const [docxExt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
+  const rutaExt = `${CAPTURAS}externa-${docxExt.suggestedFilename()}`
+  await docxExt.saveAs(rutaExt)
+  const rutasExt = ['word/document.xml', 'docProps/core.xml', ...execSync(`unzip -Z1 "${rutaExt}"`).toString().split('\n').filter((r) => /^word\/(header|footer)\d*\.xml$/.test(r))]
+  const textoExt = rutasExt.map((x) => parteDocx(rutaExt, x)).flatMap((x) => [...lineasWord(x), ...(x.match(/<dc:title>[^<]*/g) ?? [])]).join('\n')
+  ok(hojaExt.includes('Auditoria Externa - 2026 - Urgencias Auditores Externos') && (hojaExt.match(/Auditoria externa de Urgencias/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(hojaExt)
+    && /Auditoria Externa - 2026 - Urgencias/.test(textoExt) && (textoExt.match(/Auditoria externa de Urgencias/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(textoExt)
+    && /<dc:title>Auditoria Externa - 2026 - Urgencias/.test(textoExt) && /La auditoría externa AI-2026-001/.test(hojaExt),
+    'con un auditor externo, la vista y el Word dicen «Auditoria Externa» en todas partes (portada, encabezado, «…externa de Urgencias», metadatos y narrativa)')
   perfil.tipo_evaluador = 'AUDITORES_INTERNOS'
 }
 

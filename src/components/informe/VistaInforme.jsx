@@ -27,7 +27,7 @@ function Celda({ etiqueta, children, ancho = 1, className }) {
 }
 
 /**
- * Informe final con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.odt): portada,
+ * Informe final con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.docx): portada,
  * Ficha Técnica, listas de hallazgos y las secciones de Objetivo a Recomendaciones, en el orden de la plantilla.
  */
 export function VistaInforme({ informe }) {

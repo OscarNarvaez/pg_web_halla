@@ -1,11 +1,12 @@
-// Formato oficial del informe final (src/formato_de_informe_final/Auditoria_interna.odt, entregado por el dueño).
+// Formato oficial del informe final (src/formato_de_informe_final/Auditoria_interna.docx, entregado por el dueño).
 // Los textos fijos se copian TAL CUAL de la plantilla (incluida la ortografía de la plantilla: «Auditoria», «ANGELES»).
-// El ODT se llena sobre la plantilla misma (exportar-odt.js); la vista en pantalla y el PDF reproducen este orden.
+// El Word se llena sobre la plantilla misma (exportar-docx.js); la vista en pantalla y el PDF reproducen este orden.
 import { textosAuditoria } from './catalogos.js'
 
 export const TEXTOS_FORMATO = {
   institucion: 'HOSPITAL INFANTIL LOS ANGELES',
-  programa: 'Auditoria interna de SIG', // texto de la plantilla; en el informe, programaDe(c) («externa» si corresponde)
+  // Portada y título de las listas (plantilla del 12/10/2026): después de «de» va lo auditado, con programaDe(c)
+  programa: 'Auditoria interna de',
   fichaTecnica: 'Ficha Técnica',
   fechaInicioPlaneada: 'Fecha inicio (planeada)',
   fechaFinPlaneada: 'Fecha terminación (planeada)',
@@ -89,8 +90,11 @@ const tipoDe = (c) => textosAuditoria(c.encabezado?.tipo_evaluador)
 /** «Auditoria Interna - 2026 - Hospitalización» (o «Auditoria Externa…»), como en el encabezado de la plantilla. */
 export const tituloAuditoria = (c) => `Auditoria ${tipoDe(c).Tipo} - ${c.encabezado.anio} - ${c.encabezado.objeto}`
 
-/** «Auditoria interna de SIG» de la plantilla, o «Auditoria externa de SIG» para auditores externos. */
-export const programaDe = (c) => TEXTOS_FORMATO.programa.replace('interna', tipoDe(c).tipo)
+/**
+ * «Auditoria interna de Urgencias» (o «Auditoria externa de…»): justo después de «de» va lo auditado, el proceso o el
+ * sistema (decisión del dueño, 12/10/2026). Va en la portada y como título de las listas de hallazgos.
+ */
+export const programaDe = (c) => `${TEXTOS_FORMATO.programa.replace('interna', tipoDe(c).tipo)} ${c.encabezado.objeto ?? ''}`.trimEnd()
 
 /** «2026-10-04 12:14 PM» en la hora de Colombia, como el pie de la plantilla. */
 export function fechaHoraFormato(iso) {

@@ -106,13 +106,17 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   del perfil. El del perfil es el equipo habitual: se copia al crear la auditoría (formulario y trigger) y se puede
   cambiar al crearla o en la página del informe. El informe usa `equipoDe(auditoria, perfil)` (el de la auditoría; si
   está vacío, el del perfil). A la IA solo le llegan los cargos.
-- Informe final = formato oficial `src/formato_de_informe_final/Auditoria_interna.odt` (decisión del dueño, 4/10/2026):
-  «es tal cual ese formato, no debe cambiar». NUNCA edites la plantilla ni su orden; el dueño la reemplaza. El ODT se
-  llena SOBRE la plantilla (`src/lib/exportar-odt.js`, anclas por TEXTO, no por estilos); el PDF
-  (`exportar-pdf.js`, Liberation Sans OFL) y la vista (`VistaInforme`) la reproducen. Textos fijos en
-  `src/lib/formato-informe.js`. Únicos ajustes al llenar: campos de página en el pie (la plantilla traía «Página /») y
-  la posición del pie de la página maestra 2 (venía a mitad de hoja). Contenido `version_estructura: 5`; las versiones
-  anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
+- Informe final = formato oficial `src/formato_de_informe_final/Auditoria_interna.docx` (decisión del dueño, 4/10/2026;
+  desde el 12/10/2026 la plantilla es un Word, antes era `.odt`): «es tal cual ese formato, no debe cambiar». NUNCA edites
+  la plantilla ni su orden; el dueño la reemplaza. El Word («Documento (editable)») se llena SOBRE la plantilla
+  (`src/lib/exportar-docx.js`, anclas por TEXTO, no por estilos); el PDF (`exportar-pdf.js`, Liberation Sans OFL) y la
+  vista (`VistaInforme`) la reproducen. Textos fijos en `src/lib/formato-informe.js`. Únicos ajustes al llenar: campos de
+  página en el pie (la plantilla traía «Página /»); en la sección 2 (desde la página 2, venía con coordenadas de hoja
+  horizontal) los cuadros del encabezado y el pie toman la posición de los de la portada y el margen superior es el de la
+  portada (el texto se montaba sobre el encabezado); los cuadros del encabezado y el pie crecen con su texto y los de
+  «HOSPITAL INFANTIL LOS ANGELES» y «Generado por…» se ensanchan (no cabían en una línea). Las filas «Ficha Técnica» y
+  «Equipo auditor» traen interlineado 0,69 y se ven recortadas arriba: es de la plantilla, no se toca. Contenido
+  `version_estructura: 5`; las versiones anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
   Plantilla del 5/10/2026 (decisión del dueño): SIN «RECOMENDACIONES». Plantilla del 13/10/2026: bajo «Indicadores» la
   línea es «Revisión de indicadores priorizados en el proceso de» y, justo después de «de», en ESA MISMA línea, van SOLO
   los nombres cortos que registra el auditor: «…en el proceso de a, b y c» (sin el área, sin «:» ni punto). Uno por campo
@@ -121,13 +125,15 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   nombres (anonimizados) para nombrarlos bien si los menciona, sin metas ni resultados.
 - Interna o externa (decisión del dueño, 13/10/2026): TODO texto que diga «interna/interno» se adapta a
   `profiles.tipo_evaluador` con `textosAuditoria()` (`TEXTOS_TIPO_AUDITORIA` en catalogos.js = _shared/catalogos.ts):
-  portada, encabezado, «Auditoria interna de SIG» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
+  portada, encabezado, «Auditoria interna de <lo auditado>» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
   (`sistemaInforme`), «Sugerir con IA», código AI-/AE-, ejemplo del título y autorización de datos. El informe guarda el
   grupo en `encabezado.tipo_evaluador` (sin grupo → interna). La plantilla sigue diciendo «interna»: se reemplaza al llenar.
+  Plantilla del 12/10/2026 (decisión del dueño): en la portada y en el título de las listas dice solo «Auditoria interna
+  de» (sin «SIG»); justo después de «de» va lo auditado, el proceso o el sistema: «Auditoria interna de Urgencias».
   Excepción: el prompt del sistema de clasificación (ANEXO A literal, «auditor interno») no se toca.
   Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.
   `probar:validacion` lee la plantilla y avisa si falta un texto que el sistema busca.
-- Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el ODT usan la imagen de la
+- Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el Word usan la imagen de la
   propia plantilla. Siempre sobre fondo blanco: su texto perimetral es oscuro.
 - Redacción (guía del dueño, 5/10/2026): fórmula por categoría en `GUIA_REDACCION` (`_shared/motor.ts`, va en el MENSAJE
   de usuario con `bloqueRedaccion()`; nunca en el prompt del sistema). Fortaleza = qué es relevante + «porque» + beneficio

@@ -166,7 +166,7 @@ export default function Informe() {
     try {
       // La plantilla, jspdf y fflate se cargan solo al exportar
       if (formato === 'pdf') await (await import('../lib/exportar-pdf')).exportarPdf(informe)
-      else await (await import('../lib/exportar-odt')).exportarOdt(informe)
+      else await (await import('../lib/exportar-docx')).exportarDocx(informe)
     } catch (e) {
       console.error(e)
       notificar(e?.name === 'ErrorPlantilla' || /plantilla/i.test(e?.message ?? '') ? e.message
@@ -248,8 +248,8 @@ export default function Informe() {
           </p>
           <div className="ml-auto flex flex-wrap gap-2">
             <Boton icono={RefreshCw} onClick={generar} cargando={generando} disabled={!puedeGenerar}>Generar nueva versión</Boton>
-            <Boton variante="secundario" icono={FileDown} onClick={() => exportar('odt')} cargando={exportando === 'odt'} disabled={!oficial || generando || Boolean(exportando)}
-              title="Documento ODT con la plantilla oficial: se abre y se edita en LibreOffice y en Word">
+            <Boton variante="secundario" icono={FileDown} onClick={() => exportar('docx')} cargando={exportando === 'docx'} disabled={!oficial || generando || Boolean(exportando)}
+              title="Documento de Word con la plantilla oficial: se abre y se edita en Word y en LibreOffice">
               Documento (editable)
             </Boton>
             <Boton variante="secundario" icono={FileDown} onClick={() => exportar('pdf')} cargando={exportando === 'pdf'} disabled={!oficial || generando || Boolean(exportando)}>PDF</Boton>

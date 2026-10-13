@@ -178,6 +178,8 @@ Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder re
 > y pidió seguirlo tal cual. Reemplaza la estructura de 11 secciones (ISO 19011) que proponía el prompt maestro: portada,
 > Ficha Técnica, listas de hallazgos (fortalezas → oportunidades de mejora → observaciones → no conformidades) y las
 > secciones Objetivo… RECOMENDACIONES. Se descarga como ODT (la plantilla llena) y PDF; el Word (.docx) se retiró.
+> **12/10/2026:** el dueño reemplazó la plantilla por un Word (`Auditoria_interna.docx`): el informe se descarga como Word
+> lleno sobre ella y PDF. En la portada y antes de las listas dice «Auditoria interna de <lo auditado>» (ya no «de SIG»).
 
 - **Riesgo por hallazgo (etapa 5):** probabilidad e impacto de 1 a 5 según el PR13-GQ, riesgo
   inherente = P × I, niveles Bajo/Moderado/Alto/Extremo (en el prototipo los umbrales eran editables; implementado con la escala fija 4/9/16),

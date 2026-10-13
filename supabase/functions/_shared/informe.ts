@@ -1,4 +1,4 @@
-// Informe final de auditoría con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.odt).
+// Informe final de auditoría con el formato oficial del hospital (src/formato_de_informe_final/Auditoria_interna.docx).
 // Los números del informe NUNCA los produce la IA: se calculan aquí. La IA solo redacta las secciones narrativas.
 
 import {
@@ -406,7 +406,7 @@ export function construirContenido(opciones: {
     .map((pdf) => [pdf.sha256, `${pdf.nombre} (${pdf.paginas} ${pdf.paginas === 1 ? 'página' : 'páginas'})`])).values()]
   return {
     version_estructura: 5,
-    formato: 'Auditoria_interna.odt',
+    formato: 'Auditoria_interna.docx',
     identificacion: {
       codigo: a.codigo,
       titulo: a.titulo,

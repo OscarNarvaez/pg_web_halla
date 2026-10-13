@@ -338,7 +338,7 @@ informe (§8). Se activa con al menos un hallazgo validado; los que sigan pendie
 ## 8. Generar el informe
 
 El informe final sigue **exactamente** el formato oficial del hospital (el documento
-`Auditoria_interna.odt` que entregó la oficina de calidad). Con al menos un hallazgo validado:
+`Auditoria_interna.docx` que entregó la oficina de calidad). Con al menos un hallazgo validado:
 
 1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
    escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
@@ -357,16 +357,19 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
 
 **Interna o externa.** Todo el informe se adapta al grupo de auditores de su perfil (el que eligió al registrarse o
 cambió después en **Mi perfil**): si es auditor externo, la portada, el encabezado de las páginas, «Auditoria externa
-de SIG» y los textos que redacta la IA dicen «externa» en lugar de «interna». Se toma el grupo que tenga su perfil al
+de…» y los textos que redacta la IA dicen «externa» en lugar de «interna». Se toma el grupo que tenga su perfil al
 generar el informe; si lo cambia, genere una nueva versión.
+
+**Lo auditado.** En la portada y en el título de las listas de hallazgos, después de «Auditoria interna de» va el proceso
+o el sistema de la auditoría: «Auditoria interna de Urgencias» (o «Auditoria externa de Cirugía»).
 
 El informe tiene, en este orden:
 
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
-| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso» (o «Auditoria Externa…»), su grupo de auditores, el año y «Auditoria interna de SIG» (o «externa») | El sistema |
+| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso» (o «Auditoria Externa…»), su grupo de auditores, el año y «Auditoria interna de <proceso o sistema>» (o «externa») | El sistema |
 | Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
-| Auditoria interna de SIG | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
+| Auditoria interna de <proceso o sistema> | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
 | Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones y Conclusiones | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
 | Criterios de auditoría y Métodos a emplear | Las normas (con los numerales citados) y los métodos de la auditoría | El sistema |
@@ -377,8 +380,8 @@ El informe tiene, en este orden:
 - El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.
 - A la IA no llegan los nombres del equipo auditor, solo sus cargos.
 - Si cambia los hallazgos, las fechas, el equipo o los indicadores, genere una **nueva versión**: las anteriores se conservan.
-- Descárguelo como **Documento (editable)**, que es la plantilla oficial llena en formato ODT y se abre y se edita en
-  LibreOffice y en Word, o en **PDF**, que reproduce el mismo formato.
+- Descárguelo como **Documento (editable)**, que es la plantilla oficial llena en formato Word (.docx) y se abre y se
+  edita en Word y en LibreOffice, o en **PDF**, que reproduce el mismo formato.
 - Un informe generado con una plantilla anterior (por ejemplo, con RECOMENDACIONES) no se descarga: la barra muestra
   **Documento (editable)** y **PDF** desactivados hasta que genere una nueva versión.
 
