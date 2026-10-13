@@ -77,6 +77,7 @@ export default function Registro() {
     mode: 'onTouched',
     defaultValues: { cargos: [], equipo_auditor: [integranteVacio()], alcance: undefined, proceso: '', sistema: '', acepto_tratamiento_datos: false },
   })
+  const tipoEvaluador = useWatch({ control, name: 'tipo_evaluador' })
 
   if (supabaseSinConfigurar) return <AvisoConfiguracion />
   if (!cargando && sesion && !confirmarCorreo) return <Navigate to="/app" replace />
@@ -154,7 +155,7 @@ export default function Registro() {
           <>
             <CamposEquipo register={register} errors={errors} control={control} />
             <CamposAlcance register={register} errors={errors} control={control} setValue={setValue} />
-            <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} />
+            <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} tipoEvaluador={tipoEvaluador} />
           </>
         )}
 

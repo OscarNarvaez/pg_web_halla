@@ -6,7 +6,7 @@
 // (licencia OFL, con las mismas medidas de Arial) para que el PDF se vea igual en cualquier equipo.
 import { jsPDF } from 'jspdf'
 import { logoDePlantilla } from './plantilla-informe'
-import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria } from './formato-informe'
+import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria } from './formato-informe'
 import { hexARgb, nombreArchivo } from './exportar-comun'
 import { registrarFuentes } from './fuentes-pdf'
 
@@ -102,7 +102,7 @@ export async function exportarPdf(informe) {
   lineaPortada(`${tituloAuditoria(c)} ${c.encabezado.evaluador}`.trim(), 12)
   yPortada += 6
   lineaPortada(c.encabezado.anio, 10)
-  lineaPortada(TEXTOS_FORMATO.programa)
+  lineaPortada(programaDe(c))
 
   // ─── Ficha Técnica (desde la página 2) ─────────────────────────────────────
   nuevaPagina()
@@ -168,7 +168,7 @@ export async function exportarPdf(informe) {
 
   // ─── Hallazgos ─────────────────────────────────────────────────────────────
   y += 2
-  parrafo(TEXTOS_FORMATO.programa, { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
+  parrafo(programaDe(c), { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
   for (const lista of LISTAS_HALLAZGOS) {
     parrafo(lista.titulo, { escala: ESCALA_ROTULO })
     const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []

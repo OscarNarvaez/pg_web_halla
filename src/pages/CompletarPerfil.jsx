@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../contexts/AuthContext'
 import { esquemaCompletarPerfil, aFilaAlcance, integranteVacio } from '../lib/esquemas'
@@ -24,6 +24,7 @@ export default function CompletarPerfil() {
       acepto_tratamiento_datos: meta.acepto_tratamiento_datos === 'true',
     },
   })
+  const tipoEvaluador = useWatch({ control, name: 'tipo_evaluador' })
 
   const enviar = async (d) => {
     setError('')
@@ -40,7 +41,7 @@ export default function CompletarPerfil() {
         <CamposAuditor register={register} errors={errors} control={control} />
         <CamposEquipo register={register} errors={errors} control={control} />
         <CamposAlcance register={register} errors={errors} control={control} setValue={setValue} />
-        <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} />
+        <AutorizacionDatos register={register} error={errors.acepto_tratamiento_datos?.message} tipoEvaluador={tipoEvaluador} />
         <div className="flex flex-wrap justify-between gap-3">
           <Boton variante="fantasma" onClick={salir}>Salir</Boton>
           <Boton type="submit" cargando={isSubmitting}>Guardar perfil</Boton>

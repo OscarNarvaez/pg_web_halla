@@ -2,7 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import logo from '../../assets/logo-hila.webp'
 import { cx } from '../../lib/cx'
 import {
-  LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria,
+  LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria,
 } from '../../lib/formato-informe'
 
 // Tipografías de la plantilla (Trebuchet MS en el cuerpo, Arial en la tabla y el encabezado), con equivalentes libres
@@ -63,7 +63,7 @@ export function VistaInforme({ informe }) {
           <p>{tituloAuditoria(c)}</p>
           <p>{c.encabezado.evaluador}</p>
           <p className="mt-3">{c.encabezado.anio}</p>
-          <p>{TEXTOS_FORMATO.programa}</p>
+          <p>{programaDe(c)}</p>
         </section>
 
         {/* Ficha Técnica */}
@@ -94,7 +94,7 @@ export function VistaInforme({ informe }) {
         </table>
 
         {/* Hallazgos */}
-        <Titulo>{TEXTOS_FORMATO.programa}</Titulo>
+        <Titulo>{programaDe(c)}</Titulo>
         {LISTAS_HALLAZGOS.map((lista) => {
           const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []
           return (

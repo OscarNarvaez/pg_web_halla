@@ -6,7 +6,7 @@ import { ArrowRight, ClipboardCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { proponerCodigo } from '../hooks/useAuditorias'
 import { aFilaAlcance, equipoInicial, esquemaAuditoria } from '../lib/esquemas'
-import { DOCUMENTOS, documentosParaAlcance } from '../lib/catalogos'
+import { DOCUMENTOS, documentosParaAlcance, textosAuditoria } from '../lib/catalogos'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { Encabezado } from '../components/layout/Encabezado'
 import { CamposAlcance, CamposEquipo } from '../components/perfil/CamposPerfil'
@@ -18,6 +18,7 @@ const hoy = () => new Date().toISOString().slice(0, 10)
 export default function AuditoriaNueva() {
   const { perfil, usuario } = useAuth()
   const navigate = useNavigate()
+  const t = textosAuditoria(perfil.tipo_evaluador) // «interna» o «externa» según el grupo del auditor
   const [creada, setCreada] = useState(null) // { id, codigo }: abre la pregunta de cómo empezar
   const [sugiriendo, setSugiriendo] = useState(false)
   const [avisoIa, setAvisoIa] = useState('')
@@ -35,10 +36,10 @@ export default function AuditoriaNueva() {
 
   // Código propuesto sin gastar cuota de IA: AI-<año>-<siguiente consecutivo>
   useEffect(() => {
-    proponerCodigo().then((codigo) => {
+    proponerCodigo(t.sigla).then((codigo) => {
       if (!getValues('codigo')) setValue('codigo', codigo)
     })
-  }, [getValues, setValue])
+  }, [getValues, setValue, t.sigla])
 
   const [alcance, sistema, criterios] = useWatch({ control, name: ['alcance', 'sistema', 'criterios'] })
   // Al cambiar el alcance, se proponen las normas aplicables (si el auditor no las ha tocado)
@@ -108,8 +109,8 @@ export default function AuditoriaNueva() {
 
         <Tarjeta titulo="Identificación">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Campo etiqueta="Código" required error={errors.codigo?.message} ayuda="Formato AI-año-consecutivo." {...register('codigo')} />
-            <Campo etiqueta="Título" required error={errors.titulo?.message} className="sm:col-span-2" placeholder="Auditoría interna al proceso de Urgencias" {...register('titulo')} />
+            <Campo etiqueta="Código" required error={errors.codigo?.message} ayuda={`Formato ${t.sigla}-año-consecutivo.`} {...register('codigo')} />
+            <Campo etiqueta="Título" required error={errors.titulo?.message} className="sm:col-span-2" placeholder={`Auditoría ${t.tipo} al proceso de Urgencias`} {...register('titulo')} />
           </div>
           {/* La Ficha Técnica del informe pide fechas planeadas y reales; las reales se pueden completar después */}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">

@@ -8,7 +8,7 @@ import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
   calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, equipoDe, equipoIncompletoInforme, narrativaRespaldo, perfilIncompletoInforme,
-  revisados, SISTEMA_INFORME, type HallazgoInforme, type Narrativa, type PerfilInforme,
+  revisados, sistemaInforme, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto, recortarEnOracion } from '../_shared/validar-salida.ts'
 import { TIPOS_EVALUADOR } from '../_shared/catalogos.ts'
@@ -81,24 +81,28 @@ Deno.serve(async (req) => {
   }))
   // Del equipo auditor a la IA solo llegan los cargos, nunca los nombres
   const p = perfil as PerfilInforme
-  const equipoIa = { lider: p.cargos, integrantes: equipoDe(auditoria, p).map((m) => m.cargos), evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '' }
+  const equipoIa = {
+    lider: p.cargos, integrantes: equipoDe(auditoria, p).map((m) => m.cargos),
+    evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '', tipoEvaluador: p.tipo_evaluador,
+  }
   const auditoriaIa = {
     ...auditoria,
     titulo: anonimizar(auditoria.titulo).texto,
     objetivo: auditoria.objetivo ? anonimizar(auditoria.objetivo).texto : null,
-    indicadores_revisados: [], // no van a la IA: el informe solo lista sus nombres
+    // Solo los nombres de los indicadores, para que la IA los nombre bien si los menciona (anonimizados, como todo texto)
+    indicadores_revisados: revisados(auditoria).map((nombre) => ({ nombre: anonimizar(nombre).texto })),
   }
   try {
     if ('error' in reserva) throw new ErrorGemini('límite de uso de la IA', 429, reserva.error, 0)
     const r = await llamarGemini(
       { apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento, presupuestoMs: 110_000 },
-      { sistema: SISTEMA_INFORME, mensaje: construirMensajeInforme(auditoriaIa, paraIa, estadisticas, equipoIa), esquema: ESQUEMA_INFORME, temperatura: 0.3 },
+      { sistema: sistemaInforme(p.tipo_evaluador), mensaje: construirMensajeInforme(auditoriaIa, paraIa, estadisticas, equipoIa), esquema: ESQUEMA_INFORME, temperatura: 0.3 },
     )
     modelo = r.modelo
     const s = r.json as Partial<Record<keyof Narrativa, unknown>>
     const texto = (v: unknown, max = 1500) => recortarEnOracion(limpiarTexto(typeof v === 'string' ? v : ''), max)
     const textos = (v: unknown, max: number) => (Array.isArray(v) ? v : []).map((x) => texto(x, 400)).filter(Boolean).slice(0, max)
-    const respaldo = narrativaRespaldo(auditoria, estadisticas)
+    const respaldo = narrativaRespaldo(auditoria, estadisticas, p.tipo_evaluador)
     // Cada sección que la IA no entregue se completa con la plantilla de respaldo
     narrativa = {
       objetivo: auditoria.objetivo?.trim() ? '' : texto(s.objetivo, 500) || respaldo.objetivo,
@@ -120,7 +124,7 @@ Deno.serve(async (req) => {
     }
   } catch (e) {
     const err = e as ErrorGemini
-    narrativa = narrativaRespaldo(auditoria, estadisticas)
+    narrativa = narrativaRespaldo(auditoria, estadisticas, p.tipo_evaluador)
     avisos.push('La IA no estuvo disponible: las secciones narrativas se redactaron con una plantilla. Revísalas y ajústalas.')
     if (!('error' in reserva)) {
       await finalizarEvento(admin, reserva.id, {

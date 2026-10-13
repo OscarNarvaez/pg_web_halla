@@ -1,10 +1,11 @@
 // Formato oficial del informe final (src/formato_de_informe_final/Auditoria_interna.odt, entregado por el dueño).
 // Los textos fijos se copian TAL CUAL de la plantilla (incluida la ortografía de la plantilla: «Auditoria», «ANGELES»).
 // El ODT se llena sobre la plantilla misma (exportar-odt.js); la vista en pantalla y el PDF reproducen este orden.
+import { textosAuditoria } from './catalogos.js'
 
 export const TEXTOS_FORMATO = {
   institucion: 'HOSPITAL INFANTIL LOS ANGELES',
-  programa: 'Auditoria interna de SIG',
+  programa: 'Auditoria interna de SIG', // texto de la plantilla; en el informe, programaDe(c) («externa» si corresponde)
   fichaTecnica: 'Ficha Técnica',
   fechaInicioPlaneada: 'Fecha inicio (planeada)',
   fechaFinPlaneada: 'Fecha terminación (planeada)',
@@ -82,8 +83,14 @@ export function seccionesFormato(c) {
   ]
 }
 
-/** «Auditoria Interna - 2026 - Hospitalización», como en el encabezado de la plantilla. */
-export const tituloAuditoria = (c) => `Auditoria Interna - ${c.encabezado.anio} - ${c.encabezado.objeto}`
+/** Textos «interna» o «externa» según el grupo del auditor que generó el informe (decisión del dueño, 13/10/2026). */
+const tipoDe = (c) => textosAuditoria(c.encabezado?.tipo_evaluador)
+
+/** «Auditoria Interna - 2026 - Hospitalización» (o «Auditoria Externa…»), como en el encabezado de la plantilla. */
+export const tituloAuditoria = (c) => `Auditoria ${tipoDe(c).Tipo} - ${c.encabezado.anio} - ${c.encabezado.objeto}`
+
+/** «Auditoria interna de SIG» de la plantilla, o «Auditoria externa de SIG» para auditores externos. */
+export const programaDe = (c) => TEXTOS_FORMATO.programa.replace('interna', tipoDe(c).tipo)
 
 /** «2026-10-04 12:14 PM» en la hora de Colombia, como el pie de la plantilla. */
 export function fechaHoraFormato(iso) {

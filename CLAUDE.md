@@ -117,7 +117,14 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   línea es «Revisión de indicadores priorizados en el proceso de» y, justo después de «de», en ESA MISMA línea, van SOLO
   los nombres cortos que registra el auditor: «…en el proceso de a, b y c» (sin el área, sin «:» ni punto). Uno por campo
   con «Agregar otro indicador», sin comas; `unirLista` pone comas y «y», o «e» ante i-/hi-.
-  `auditorias.indicadores_revisados` = [{nombre}] (0013, 0015). Los indicadores NO pasan por la IA.
+  `auditorias.indicadores_revisados` = [{nombre}] (0013, 0015). La IA no redacta la sección de indicadores; recibe solo sus
+  nombres (anonimizados) para nombrarlos bien si los menciona, sin metas ni resultados.
+- Interna o externa (decisión del dueño, 13/10/2026): TODO texto que diga «interna/interno» se adapta a
+  `profiles.tipo_evaluador` con `textosAuditoria()` (`TEXTOS_TIPO_AUDITORIA` en catalogos.js = _shared/catalogos.ts):
+  portada, encabezado, «Auditoria interna de SIG» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
+  (`sistemaInforme`), «Sugerir con IA», código AI-/AE-, ejemplo del título y autorización de datos. El informe guarda el
+  grupo en `encabezado.tipo_evaluador` (sin grupo → interna). La plantilla sigue diciendo «interna»: se reemplaza al llenar.
+  Excepción: el prompt del sistema de clasificación (ANEXO A literal, «auditor interno») no se toca.
   Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.
   `probar:validacion` lee la plantilla y avisa si falta un texto que el sistema busca.
 - Logo de HILA: `src/assets/logo-hila.webp` en la interfaz (`Marca`, `VistaInforme`); el PDF y el ODT usan la imagen de la

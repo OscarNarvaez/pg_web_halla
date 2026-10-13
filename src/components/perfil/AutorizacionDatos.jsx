@@ -1,11 +1,12 @@
 import { useId } from 'react'
-import { INSTITUCION } from '../../lib/catalogos'
+import { INSTITUCION, textosAuditoria } from '../../lib/catalogos'
 
 /**
  * Autorización de tratamiento de datos personales (Ley 1581 de 2012 y Decreto 1377 de 2013).
  * Texto base: debe validarlo el área jurídica del hospital y enlazar la política oficial de tratamiento.
+ * `tipoEvaluador`: el grupo que eligió el auditor (auditorías internas o externas); sin elegir, ambas.
  */
-export function AutorizacionDatos({ register, error }) {
+export function AutorizacionDatos({ register, error, tipoEvaluador }) {
   const id = useId()
   return (
     <div className="rounded-lg border border-tinta-100 bg-tinta-50 p-4 text-sm">
@@ -15,7 +16,7 @@ export function AutorizacionDatos({ register, error }) {
           <p>
             El {INSTITUCION.nombre}, como responsable, tratará tu nombre, cédula, celular, cargos y correo, el nombre y los
             cargos de las personas de tu equipo auditor, y la información de las auditorías que registres, con la única
-            finalidad de gestionar las auditorías internas de la institución: identificar al equipo auditor, firmar los
+            finalidad de gestionar las auditorías {tipoEvaluador ? textosAuditoria(tipoEvaluador).tipos : 'internas y externas'} de la institución: identificar al equipo auditor, firmar los
             informes y conservar la trazabilidad de los hallazgos. Registra en tu equipo solo a personas que sepan que
             aparecerán en los informes.
           </p>

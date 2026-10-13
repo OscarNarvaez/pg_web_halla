@@ -18,8 +18,8 @@ Entre a **halla.ink → Crear cuenta**. Son tres pasos:
 1. **Cuenta:** correo y contraseña (mínimo 10 caracteres, con mayúscula, minúscula y número).
 2. **Datos del auditor:** nombre completo, cédula, celular, **grupo de auditores** y **cargos**. Puede escribir la
    cédula con puntos (1.085.123.456) y el celular con +57: el sistema los normaliza. En el grupo elija si pertenece
-   a los **Auditores Internos** o a los **Auditores Externos**: es el «Evaluador» de la Ficha Técnica del informe y
-   aparece también en su portada. Los cargos no se escriben: pulse **Cargos**,
+   a los **Auditores Internos** o a los **Auditores Externos**: es el «Evaluador» de la Ficha Técnica del informe, y
+   decide si la plataforma y el informe hablan de auditoría **interna** o **externa**. Los cargos no se escriben: pulse **Cargos**,
    busque en la lista de líderes (no importan las tildes) y marque uno o varios, hasta 5. Cada cargo elegido
    aparece como una etiqueta con una × para quitarlo.
 3. **Equipo auditor y alcance:** las personas que lo acompañan en la auditoría, al menos una y hasta 10. Para
@@ -47,7 +47,8 @@ informe.
 **Auditorías → Nueva auditoría.** Una auditoría agrupa los hallazgos de un proceso o sistema y termina
 en un informe.
 
-- El **código** se propone solo (AI-2026-001, AI-2026-002…). Puede cambiarlo.
+- El **código** se propone solo: AI-2026-001, AI-2026-002… si usted es auditor interno, o AE-2026-001… si es
+  auditor externo. Puede cambiarlo.
 - Escriba el **título**, las fechas de inicio y terminación **planeadas** y confirme el proceso o sistema. Las
   fechas **reales** son opcionales aquí: puede registrarlas al generar el informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
@@ -352,11 +353,16 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
    cómo quedará. Si no registra ninguno, la sección dice que no se registraron.
 4. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
 
+**Interna o externa.** Todo el informe se adapta al grupo de auditores de su perfil (el que eligió al registrarse o
+cambió después en **Mi perfil**): si es auditor externo, la portada, el encabezado de las páginas, «Auditoria externa
+de SIG» y los textos que redacta la IA dicen «externa» en lugar de «interna». Se toma el grupo que tenga su perfil al
+generar el informe; si lo cambia, genere una nueva versión.
+
 El informe tiene, en este orden:
 
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
-| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso», su grupo de auditores, el año y «Auditoria interna de SIG» | El sistema |
+| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso» (o «Auditoria Externa…»), su grupo de auditores, el año y «Auditoria interna de SIG» (o «externa») | El sistema |
 | Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
 | Auditoria interna de SIG | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |

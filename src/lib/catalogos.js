@@ -290,6 +290,15 @@ export const TIPOS_EVALUADOR = {
   AUDITORES_EXTERNOS: 'Auditores Externos',
 }
 
+// Textos que cambian según el grupo del auditor (decisión del dueño, 13/10/2026): «Auditoria Interna» o «Auditoria
+// Externa» en el informe y en la aplicación, el código AI- o AE-, «auditor interno» o «externo». Sin grupo, interna.
+// Igual en src/lib/catalogos.js y supabase/functions/_shared/catalogos.ts (probar:validacion los compara).
+export const TEXTOS_TIPO_AUDITORIA = {
+  AUDITORES_INTERNOS: { Tipo: 'Interna', tipo: 'interna', tipos: 'internas', auditor: 'auditor interno', auditores: 'auditores internos', sigla: 'AI' },
+  AUDITORES_EXTERNOS: { Tipo: 'Externa', tipo: 'externa', tipos: 'externas', auditor: 'auditor externo', auditores: 'auditores externos', sigla: 'AE' },
+}
+export const textosAuditoria = (tipoEvaluador) => TEXTOS_TIPO_AUDITORIA[tipoEvaluador] ?? TEXTOS_TIPO_AUDITORIA.AUDITORES_INTERNOS
+
 // ─── Lista de verificación (migración 0011) ────────────────────────────────
 // Columnas de marca del formato, en su orden (NC, O, OB, F); la leyenda del formato las nombra así.
 export const MARCAS_VERIFICACION = [

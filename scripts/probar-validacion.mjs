@@ -243,10 +243,26 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     && formato.unirLista(['a', 'b', 'c', 'd']) === 'a, b, c y d' && formato.unirLista(['oportunidad', 'infecciones']) === 'oportunidad e infecciones'
     && formato.unirLista(['calidad', 'historias clínicas']) === 'calidad e historias clínicas' && formato.unirLista(['agua', 'hielo']) === 'agua y hielo',
     'la lista lleva comas y «y» antes del último («e» ante i- o hi-, como pide la ortografía)')
-  const msg = informe.construirMensajeInforme(audInd, hs, e, { lider: ['Coordinadora'], integrantes: [['Médico']], evaluador: 'Auditores Externos' })
+  const msg = informe.construirMensajeInforme(audInd, hs, e, { lider: ['Coordinadora'], integrantes: [['Médico']], evaluador: 'Auditores Externos', tipoEvaluador: 'AUDITORES_EXTERNOS' })
+  const msgSin = informe.construirMensajeInforme(aud, hs, e, { lider: ['Coordinadora'], integrantes: [['Médico']], evaluador: 'Auditores Internos' })
   const { ESQUEMA_INFORME } = await import('../supabase/functions/_shared/esquema-salida.ts')
-  ok(!/INDICADORES PRIORIZADOS|reingresos/.test(msg) && !('indicadores' in ESQUEMA_INFORME.properties) && !('recomendaciones' in ESQUEMA_INFORME.properties)
-    && !/recomendaciones|"indicadores"/.test(informe.SISTEMA_INFORME), 'los indicadores no pasan por la IA, y la IA ya no redacta recomendaciones')
+  ok(msg.includes('oportunidad en triage II, reingresos y satisfacción del usuario') && msgSin.includes('Ninguno registrado: no menciones indicadores concretos.')
+    && !('indicadores' in ESQUEMA_INFORME.properties) && !('recomendaciones' in ESQUEMA_INFORME.properties) && /nómbralos exactamente como los registró/.test(informe.sistemaInforme())
+    && !/recomendaciones|"indicadores"/.test(informe.sistemaInforme()),
+    'la IA recibe solo los nombres de los indicadores, para nombrarlos bien si los menciona; no redacta su sección ni recomendaciones')
+  // Auditoría interna o externa según el grupo del auditor (decisión del dueño, 13/10/2026)
+  const perfilExt = { ...perfilInf, tipo_evaluador: 'AUDITORES_EXTERNOS' }
+  const nExt = informe.narrativaRespaldo(aud, e, 'AUDITORES_EXTERNOS')
+  const cExt = informe.construirContenido({ auditoria: aud, perfil: perfilExt, hallazgos: hs, estadisticas: e, narrativa: nExt, generadoEn: '2026-10-13T10:00:00Z', version: 4, avisos: [] })
+  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoria Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoria externa de SIG'
+    && formato.tituloAuditoria({ encabezado: { ...cExt.encabezado, tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoria Interna - 2026 - Urgencias'
+    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoria interna de SIG'
+    && formato.tituloAuditoria({ encabezado: { anio: '2026', objeto: 'Urgencias' } }) === 'Auditoria Interna - 2026 - Urgencias',
+    'con un auditor externo el informe dice «Auditoria Externa» y «Auditoria externa de SIG» (sin grupo, interna)')
+  ok(nExt.observaciones.startsWith('La auditoría externa AI-2026-001') && nExt.criterios_seleccion_equipo.some((x) => x.includes('auditor externo'))
+    && !JSON.stringify(nExt).includes('interna') && informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditoría externa')
+    && !informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditor interno') && msg.includes('Tipo: auditoría externa'),
+    'la narrativa de respaldo y las instrucciones de la IA hablan de auditoría externa cuando el auditor es externo')
   ok(formato.seccionesFormato(cInd).at(-1).titulo === 'Conclusiones' && !formato.esFormatoOficial({ version_estructura: 4 }) && formato.esFormatoOficial(cInd),
     'termina en Conclusiones; los informes de versiones anteriores (con meta y resultado de cada indicador) se regeneran')
   // Cada texto que el sistema busca en la plantilla tiene que estar en ella (avisa si el dueño la vuelve a cambiar)
@@ -297,6 +313,10 @@ console.log('\n▸ Resultados de la auditoría (consolidado bajo la matriz)')
 }
 
 console.log('\n▸ Catálogos del cliente y del servidor')
+ok(JSON.stringify(catalogosServidor.TEXTOS_TIPO_AUDITORIA) === JSON.stringify(catalogosCliente.TEXTOS_TIPO_AUDITORIA)
+  && Object.keys(catalogosCliente.TEXTOS_TIPO_AUDITORIA).join() === Object.keys(catalogosCliente.TIPOS_EVALUADOR).join()
+  && catalogosCliente.textosAuditoria(null).sigla === 'AI' && catalogosCliente.textosAuditoria('AUDITORES_EXTERNOS').sigla === 'AE',
+  'los textos «interna/externa» coinciden entre el frontend y las Edge Functions, uno por cada grupo de auditores')
 ok(JSON.stringify(catalogosServidor.PROCESOS) === JSON.stringify(catalogosCliente.PROCESOS), 'los 19 procesos coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.SISTEMAS) === JSON.stringify(catalogosCliente.SISTEMAS), 'los 6 sistemas coinciden entre el frontend y las Edge Functions')
 ok(JSON.stringify(catalogosServidor.DOCUMENTOS_POR_ALCANCE) === JSON.stringify(catalogosCliente.DOCUMENTOS_POR_ALCANCE), 'el mapa de documentos por alcance coincide')

@@ -39,12 +39,12 @@ export default function Landing() {
             className="absolute inset-0 -z-10 bg-tinta-900/75 lg:bg-transparent lg:bg-gradient-to-r lg:from-tinta-900/90 lg:via-tinta-900/75 lg:via-70% lg:to-tinta-900/25"
           />
           <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24 lg:py-32">
-            <p className="text-sm font-semibold uppercase tracking-widest text-halla-100">Auditoría interna · {INSTITUCION.nombre}</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-halla-100">Auditoría interna y externa · {INSTITUCION.nombre}</p>
             <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight sm:text-5xl">
               Halla. Sistema Auditor
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-tinta-100">
-              La inteligencia artificial ayuda a los auditores internos a redactar hallazgos con la estructura técnica de cada categoría, verificando cada requisito citado normativamente.
+              La inteligencia artificial ayuda a los auditores internos y externos a redactar hallazgos con la estructura técnica de cada categoría, verificando cada requisito citado normativamente.
             </p>
 
             <p className="mt-6 max-w-2xl text-lg text-tinta-100">

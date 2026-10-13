@@ -7,7 +7,7 @@
 import { strFromU8, strToU8, zipSync } from 'fflate'
 import { saveAs } from 'file-saver'
 import { cargarPlantilla } from './plantilla-informe'
-import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, seccionesFormato, tituloAuditoria } from './formato-informe'
+import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria } from './formato-informe'
 import { nombreArchivo } from './exportar-comun'
 
 const NS = {
@@ -100,12 +100,16 @@ function llenarCuerpo(doc, c) {
     return n
   }
 
-  // Portada: «Auditoria Interna - <año> - <proceso> <evaluador>» y el año
-  const titulo = elementos().find((x) => es(x, NS.text, 'p') && /^Auditoria Interna - /.test(normal(textoDe(x))))
+  // Portada: «Auditoria Interna - <año> - <proceso> <evaluador>» (o «Externa») y el año
+  const titulo = elementos().find((x) => es(x, NS.text, 'p') && /^Auditoria (Interna|Externa) - /.test(normal(textoDe(x))))
   if (!titulo) throw new ErrorPlantilla('La plantilla del informe no tiene el título de la portada («Auditoria Interna - …»).')
   reemplazarTexto(titulo, `${tituloAuditoria(c)} ${c.encabezado.evaluador}`.trim())
   const anio = elementos().find((x) => es(x, NS.text, 'p') && /^\d{4}$/.test(normal(textoDe(x))))
   if (anio) reemplazarTexto(anio, c.encabezado.anio)
+  // «Auditoria interna de SIG» (portada y título de las listas) dice «externa» si el auditor es externo
+  for (const x of elementos()) {
+    if ((es(x, NS.text, 'p') || es(x, NS.text, 'h')) && normal(textoDe(x)) === TEXTOS_FORMATO.programa) reemplazarTexto(x, programaDe(c))
+  }
 
   // Estilos propios de este documento (los renglones de la plantilla con su espaciado)
   const automaticos = new Set([...doc.getElementsByTagNameNS(NS.office, 'automatic-styles')[0]?.getElementsByTagNameNS(NS.style, 'style') ?? []]
@@ -233,7 +237,7 @@ function marcoDeTexto(forma, parrafo) {
 /** Encabezado y pie (styles.xml): título de la auditoría, «Generado por…» y el número de página. */
 function llenarEncabezadoYPie(doc, c) {
   const tipoDe = (texto) => (/^HOSPITAL /.test(texto) ? 'izquierda_arriba'
-    : /^Auditoria Interna - /.test(texto) ? 'derecha_arriba'
+    : /^Auditoria (Interna|Externa) - /.test(texto) ? 'derecha_arriba'
       : /^Generado por /.test(texto) ? 'izquierda_abajo'
         : /^Página/.test(texto) ? 'derecha_abajo' : null)
   agregarEstiloMarco(doc)

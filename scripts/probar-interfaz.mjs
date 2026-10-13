@@ -252,7 +252,7 @@ async function funciones(route) {
     const a = db.auditorias.find((x) => x.id === cuerpo.auditoria_id)
     const lista = db.hallazgos.filter((h) => h.auditoria_id === a.id && h.estado !== 'descartado').sort((x, y) => x.consecutivo - y.consecutivo)
     const estadisticas = calcularEstadisticas(lista)
-    const narrativa = narrativaRespaldo(a, estadisticas)
+    const narrativa = narrativaRespaldo(a, estadisticas, perfil.tipo_evaluador)
     const version = db.informes.filter((i) => i.auditoria_id === a.id).length + 1
     const contenido = construirContenido({ auditoria: a, perfil, hallazgos: lista, estadisticas, narrativa, generadoEn: new Date().toISOString(), version, avisos: [] })
     const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, resumen_ejecutivo: narrativa.observaciones, conclusiones: narrativa.conclusiones, recomendaciones: null, estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.1.0', generado_en: new Date().toISOString() }
@@ -916,6 +916,24 @@ const imagenesPdf = execSync(`pdfimages -list "${rutaPdf}"`).toString().split('\
 ok(imagenesPdf.length === 1 && /^\s*1\s/.test(imagenesPdf[0]), 'el logo de la plantilla va solo en la portada', imagenesPdf.join(' / '))
 execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
 
+// Auditor externo: el informe dice «Auditoria Externa» en la portada, el encabezado y «Auditoria externa de SIG»
+{
+  perfil.tipo_evaluador = 'AUDITORES_EXTERNOS'
+  await p.reload()
+  await p.getByRole('button', { name: 'Generar nueva versión' }).click()
+  await p.getByText(/Informe versión \d+ generado/).waitFor()
+  const hojaExt = (await p.getByRole('article', { name: 'Informe final de auditoría' }).innerText()).replace(/\s+/g, ' ')
+  const [odtExt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (ODT)' }).click()])
+  const rutaExt = `${CAPTURAS}externa-${odtExt.suggestedFilename()}`
+  await odtExt.saveAs(rutaExt)
+  const textoExt = ['content.xml', 'styles.xml', 'meta.xml'].map((x) => textoOdf(execSync(`unzip -p "${rutaExt}" ${x}`).toString())).join('\n')
+  ok(hojaExt.includes('Auditoria Externa - 2026 - Urgencias Auditores Externos') && (hojaExt.match(/Auditoria externa de SIG/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(hojaExt)
+    && /Auditoria Externa - 2026 - Urgencias/.test(textoExt) && (textoExt.match(/Auditoria externa de SIG/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(textoExt)
+    && /La auditoría externa AI-2026-001/.test(hojaExt),
+    'con un auditor externo, la vista y el ODT dicen «Auditoria Externa» en todas partes (portada, encabezado, SIG, metadatos y narrativa)')
+  perfil.tipo_evaluador = 'AUDITORES_INTERNOS'
+}
+
 // Un informe generado con el formato anterior pide generar una nueva versión
 {
   const viejo = structuredClone(db.informes.at(-1))
@@ -1095,6 +1113,14 @@ await resultadosVacios.screenshot({ path: `${CAPTURAS}06i-resultados-vacio.png` 
 ok((await p.getByRole('link', { name: 'Generar informe' }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-disabled')))).join() === 'true,true'
   && await p.getByRole('region', { name: 'Informe final de la auditoría' }).getByText(/Valida al menos un hallazgo/).isVisible(),
   'sin hallazgos validados, «Generar informe» aparece desactivado y explica por qué')
+
+// Auditor externo: el código propuesto es AE-<año>-<n> y el ejemplo del título dice «Auditoría externa»
+perfil.tipo_evaluador = 'AUDITORES_EXTERNOS'
+await p.goto(`${BASE}/app/auditorias/nueva`)
+await p.waitForFunction(() => document.querySelector('input[name="codigo"]')?.value === 'AE-2026-001')
+ok(await p.getByLabel('Título').getAttribute('placeholder') === 'Auditoría externa al proceso de Urgencias' && await p.getByText('Formato AE-año-consecutivo.').isVisible(),
+  'un auditor externo ve el código AE-2026-001 y «Auditoría externa» en el ejemplo del título')
+perfil.tipo_evaluador = 'AUDITORES_INTERNOS'
 
 // Cerrar la sesión con cambios recién escritos: se guardan antes de salir
 await p.goto(`${BASE}/app/auditorias/${A1}/lista`)

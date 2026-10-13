@@ -17,6 +17,8 @@ export interface Usuario {
   id: string
   aprobado: boolean
   rol: 'auditor' | 'admin'
+  /** AUDITORES_INTERNOS | AUDITORES_EXTERNOS: decide «interna» o «externa» en los textos (0010) */
+  tipoEvaluador: string | null
 }
 
 /**
@@ -28,8 +30,8 @@ export async function autenticar(admin: SupabaseClient, req: Request): Promise<U
   if (!token || token.length > 4096) return null
   const { data, error } = await admin.auth.getUser(token)
   if (error || !data?.user) return null
-  const { data: perfil } = await admin.from('profiles').select('aprobado, rol').eq('id', data.user.id).maybeSingle()
-  return { id: data.user.id, aprobado: Boolean(perfil?.aprobado), rol: perfil?.rol ?? 'auditor' }
+  const { data: perfil } = await admin.from('profiles').select('aprobado, rol, tipo_evaluador').eq('id', data.user.id).maybeSingle()
+  return { id: data.user.id, aprobado: Boolean(perfil?.aprobado), rol: perfil?.rol ?? 'auditor', tipoEvaluador: perfil?.tipo_evaluador ?? null }
 }
 
 export const MENSAJE_NO_APROBADO = 'Tu cuenta está pendiente de aprobación por un administrador.'

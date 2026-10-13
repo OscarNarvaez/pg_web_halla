@@ -28,9 +28,12 @@ export function useAuditoria(id) {
   return useConsulta(() => supabase.from('auditorias').select('*').eq('id', id).maybeSingle(), [id])
 }
 
-/** Propone el siguiente código AI-<año>-<consecutivo> a partir de las auditorías del usuario. */
-export async function proponerCodigo(anio = new Date().getFullYear()) {
-  const { data } = await supabase.from('auditorias').select('codigo').like('codigo', `AI-${anio}-%`)
+/**
+ * Propone el siguiente código <sigla>-<año>-<consecutivo> a partir de las auditorías del usuario: AI (auditoría
+ * interna) o AE (externa), según su grupo de auditores.
+ */
+export async function proponerCodigo(sigla = 'AI', anio = new Date().getFullYear()) {
+  const { data } = await supabase.from('auditorias').select('codigo').like('codigo', `${sigla}-${anio}-%`)
   const max = (data ?? []).reduce((m, a) => Math.max(m, Number(a.codigo.split('-')[2]) || 0), 0)
-  return `AI-${anio}-${String(max + 1).padStart(3, '0')}`
+  return `${sigla}-${anio}-${String(max + 1).padStart(3, '0')}`
 }

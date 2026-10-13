@@ -2,7 +2,7 @@
 // Los números del informe NUNCA los produce la IA: se calculan aquí. La IA solo redacta las secciones narrativas.
 
 import {
-  ETIQUETAS, INSTITUCION, NIVELES_RIESGO, TIPOS_EVALUADOR, documentosParaAlcance, zonaRiesgo, type Clasificacion,
+  ETIQUETAS, INSTITUCION, NIVELES_RIESGO, TIPOS_EVALUADOR, documentosParaAlcance, textosAuditoria, zonaRiesgo, type Clasificacion,
 } from './catalogos.ts'
 
 export interface HallazgoInforme {
@@ -227,8 +227,11 @@ export function cifrasAuditoria(e: Estadisticas): string[] {
 
 // ─── Narrativa con la IA ────────────────────────────────────────────────────
 
-export const SISTEMA_INFORME = `Actúas como auditor interno líder del ${INSTITUCION.nombre} (${INSTITUCION.ciudad}).
-Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría interna, con el formato oficial del hospital:
+/** Instrucciones del informe según el grupo del auditor: auditoría interna o externa (decisión del dueño, 13/10/2026). */
+export const sistemaInforme = (tipoEvaluador?: string | null) => {
+  const t = textosAuditoria(tipoEvaluador)
+  return `Actúas como ${t.auditor} líder de la auditoría al ${INSTITUCION.nombre} (${INSTITUCION.ciudad}).
+Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría ${t.tipo}, con el formato oficial del hospital:
 - "objetivo": solo si la auditoría no trae objetivo; una oración que empiece con un verbo en infinitivo. Si ya trae objetivo, devuelve una cadena vacía.
 - "alcance": un párrafo con el proceso o sistema auditado, el área y el periodo entregados.
 - "criterios_seleccion_equipo": de 3 a 5 aspectos que se tienen en cuenta para seleccionar al equipo auditor (competencia, independencia frente al proceso auditado, conocimiento de las normas, formación como auditor según la ISO 19011, cargos del equipo entregados). Sin nombres de personas.
@@ -238,15 +241,23 @@ Redacta ÚNICAMENTE las secciones narrativas del informe final de auditoría int
 - "observaciones": un párrafo de resumen general de la auditoría (propósito, alcance y resultados principales).
 - "conclusiones": uno o dos párrafos que valoren la adecuación, la conveniencia y la eficacia del proceso o sistema frente a los criterios aplicados.
 
+Es una auditoría ${t.tipo}: cuando la nombres, escribe «auditoría ${t.tipo}», nunca la otra.
+Si mencionas indicadores del proceso, nómbralos exactamente como los registró el auditor (sección INDICADORES); no inventes otros indicadores, metas ni resultados.
 No inventes hallazgos, cifras, fechas, nombres ni requisitos: usa exclusivamente los datos entregados. Si un dato no está, no lo supongas.
 Cita normas o numerales solo si aparecen en los datos entregados.
 Redacta en español técnico de auditoría, en tercera persona, sin adjetivos valorativos.
 Responde únicamente con el JSON del esquema.`
+}
 
-export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas, equipo: { lider: string[]; integrantes: string[][]; evaluador: string }): string {
+export function construirMensajeInforme(
+  a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas,
+  equipo: { lider: string[]; integrantes: string[][]; evaluador: string; tipoEvaluador?: string | null },
+): string {
   const objeto = a.alcance === 'SISTEMAS' ? `Sistema: ${a.sistema}` : `Proceso: ${a.proceso}`
+  const indicadores = revisados(a)
   const lineas = [
     '## AUDITORÍA',
+    `Tipo: auditoría ${textosAuditoria(equipo.tipoEvaluador).tipo}`,
     `Código: ${a.codigo}`,
     `Título: ${a.titulo}`,
     `Alcance: ${a.alcance} · ${objeto}${a.area_auditada ? ` · Área: ${a.area_auditada}` : ''}`,
@@ -259,6 +270,9 @@ export function construirMensajeInforme(a: AuditoriaInforme, hallazgos: Hallazgo
     `Evaluador: ${equipo.evaluador}`,
     `Líder del equipo: ${equipo.lider.join(', ')}`,
     ...equipo.integrantes.map((c, i) => `Integrante ${i + 1}: ${c.join(', ')}`),
+    '',
+    '## INDICADORES (priorizados del proceso, registrados por el auditor; solo sus nombres)',
+    indicadores.length ? enLista(indicadores) : 'Ninguno registrado: no menciones indicadores concretos.',
     '',
     '## ESTADÍSTICAS (calculadas por el sistema; no las modifiques)',
     ...cifrasAuditoria(e),
@@ -286,8 +300,9 @@ export const revisados = (a: AuditoriaInforme): string[] =>
   (Array.isArray(a.indicadores_revisados) ? a.indicadores_revisados : []).map((i) => i?.nombre?.trim()).filter((n): n is string => Boolean(n))
 
 
-/** Narrativa determinista, usada cuando la IA no está disponible. */
-export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrativa {
+/** Narrativa determinista, usada cuando la IA no está disponible (en auditoría interna o externa). */
+export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas, tipoEvaluador?: string | null): Narrativa {
+  const t = textosAuditoria(tipoEvaluador)
   const objeto = a.alcance === 'SISTEMAS' ? `el ${a.sistema}` : `el proceso de ${a.proceso}`
   const c = e.por_clasificacion
   const r = e.por_nivel_riesgo
@@ -308,14 +323,14 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrati
   const altos = r.ALTA + r.EXTREMA
   const priorizacion = altos
     ? `Se priorizó ${objeto} por la presencia de riesgos de nivel alto o extremo según la escala del PR13_GQ, que requieren tratamiento.`
-    : `Se priorizó ${objeto} dentro del programa de auditoría interna para verificar el cumplimiento de los requisitos aplicables y la gestión de sus riesgos.`
+    : `Se priorizó ${objeto} dentro del programa de auditoría ${t.tipo} para verificar el cumplimiento de los requisitos aplicables y la gestión de sus riesgos.`
   const riesgos = altos
     ? `Los riesgos de nivel alto o extremo identificados en los hallazgos requieren reducirse, evitarse, compartirse o transferirse según el PR13_GQ; el programa de auditoría debe hacer seguimiento a sus controles.`
     : `Los riesgos evaluados en los hallazgos se ubican en niveles que permiten asumirlos o reducirlos con los controles adoptados; el programa de auditoría debe verificar su eficacia.`
   const oportunidades = c.OPORTUNIDAD_DE_MEJORA
     ? `Se ${c.OPORTUNIDAD_DE_MEJORA === 1 ? 'identificó' : 'identificaron'} ${cuantas(c.OPORTUNIDAD_DE_MEJORA, 'oportunidad de mejora', 'oportunidades de mejora')} cuya implementación contribuirá a la eficacia ${deObjeto}.`
     : `No se identificaron oportunidades de mejora en esta auditoría.`
-  const observaciones = `La auditoría interna ${a.codigo} evaluó ${objeto} del ${INSTITUCION.nombre}. Como resultado se registraron ${cuantas(e.total, 'hallazgo', 'hallazgos')}: ${lista}.`
+  const observaciones = `La auditoría ${t.tipo} ${a.codigo} evaluó ${objeto} del ${INSTITUCION.nombre}. Como resultado se registraron ${cuantas(e.total, 'hallazgo', 'hallazgos')}: ${lista}.`
 
   const adecuacion = c.NO_CONFORMIDAD
     ? `presenta una adecuación parcial frente a los criterios aplicados, toda vez que se ${c.NO_CONFORMIDAD === 1 ? 'identificó' : 'identificaron'} ${cuantas(c.NO_CONFORMIDAD, 'no conformidad', 'no conformidades')}`
@@ -336,7 +351,7 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrati
     criterios_seleccion_equipo: [
       'Competencia del equipo auditor en las normas aplicables a la auditoría.',
       'Independencia de los auditores frente al proceso o sistema auditado.',
-      'Formación como auditor interno según las directrices de la ISO 19011.',
+      `Formación como ${t.auditor} según las directrices de la ISO 19011.`,
       'Conocimiento del proceso o sistema auditado y de sus riesgos.',
     ],
     priorizacion_procesos: priorizacion,
@@ -358,7 +373,7 @@ export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos
   const permitidas = new Set<string>(['9001', '14001', '45001', '19011', '31000', '2015', '2018', '13'])
   const agregar = (x: unknown) => String(x ?? '').match(/\d+(?:[.,]\d+)*/g)?.forEach((m) => permitidas.add(m))
   ;[...cifrasAuditoria(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_inicio_real, a.fecha_fin_real,
-    a.objetivo, a.area_auditada, ...(a.criterios ?? [])].forEach(agregar)
+    a.objetivo, a.area_auditada, ...(a.criterios ?? []), ...revisados(a)].forEach(agregar)
   hallazgos.forEach((h) => [h.consecutivo, h.hallazgo_corregido, h.criterio_requisito, h.evidencia, h.riesgo_descripcion,
     h.riesgo_probabilidad, h.riesgo_impacto, (h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0)].forEach(agregar))
   const texto = textosNarrativa(n).join(' ')
@@ -401,7 +416,8 @@ export function construirContenido(opciones: {
       version: opciones.version,
     },
     // «Auditoria Interna - <año> - <proceso o sistema>», como en el encabezado y la portada del formato
-    encabezado: { anio: (a.fecha_inicio ?? opciones.generadoEn).slice(0, 4), objeto, evaluador },
+    // tipo_evaluador decide «Auditoria Interna» o «Auditoria Externa» en todo el documento (formato-informe.js)
+    encabezado: { anio: (a.fecha_inicio ?? opciones.generadoEn).slice(0, 4), objeto, evaluador, tipo_evaluador: p.tipo_evaluador ?? null },
     generado: { por: p.nombre_completo, en: opciones.generadoEn },
     ficha: {
       inicio_planeada: a.fecha_inicio ?? '',

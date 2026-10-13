@@ -163,6 +163,16 @@ export const TIPOS_EVALUADOR = {
   AUDITORES_EXTERNOS: 'Auditores Externos',
 }
 
+// Textos que cambian según el grupo del auditor (decisión del dueño, 13/10/2026): «Auditoria Interna» o «Auditoria
+// Externa» en el informe y en la aplicación, el código AI- o AE-, «auditor interno» o «externo». Sin grupo, interna.
+// Igual en src/lib/catalogos.js y supabase/functions/_shared/catalogos.ts (probar:validacion los compara).
+export const TEXTOS_TIPO_AUDITORIA = {
+  AUDITORES_INTERNOS: { Tipo: 'Interna', tipo: 'interna', tipos: 'internas', auditor: 'auditor interno', auditores: 'auditores internos', sigla: 'AI' },
+  AUDITORES_EXTERNOS: { Tipo: 'Externa', tipo: 'externa', tipos: 'externas', auditor: 'auditor externo', auditores: 'auditores externos', sigla: 'AE' },
+}
+export const textosAuditoria = (tipoEvaluador?: string | null) =>
+  TEXTOS_TIPO_AUDITORIA[tipoEvaluador as keyof typeof TEXTOS_TIPO_AUDITORIA] ?? TEXTOS_TIPO_AUDITORIA.AUDITORES_INTERNOS
+
 // ─── Escala de niveles de riesgo (fija, igual a src/lib/catalogos.js) ───────
 // Riesgo inherente = probabilidad × impacto: Bajo 1–4, Moderado 5–9, Alto 10–16, Extremo 17–25.
 export const UMBRALES_RIESGO = { bajo: 4, moderado: 9, alto: 16 }
