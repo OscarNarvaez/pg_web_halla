@@ -11,7 +11,6 @@ import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { fechaHora } from '../lib/formato'
 import { MAX_INDICADORES, MAX_NOMBRE_INDICADOR, equipoInicial, esquemaEquipoAuditoria, esquemaFechasReales, esquemaIndicadores, indicadorVacio } from '../lib/esquemas'
 import { esFormatoOficial, lineaIndicadores } from '../lib/formato-informe'
-import { objetoAuditado } from '../lib/catalogos'
 import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { VistaInforme } from '../components/informe/VistaInforme'
@@ -83,8 +82,7 @@ function IndicadoresRevisados({ auditoria, alGuardar }) {
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'indicadores' })
   const escritos = useWatch({ control, name: 'indicadores' })
-  const area = auditoria.area_auditada?.trim() || objetoAuditado(auditoria)
-  const vista = lineaIndicadores({ indicadores: { area, revisados: (escritos ?? []).map((x) => x?.nombre?.trim().replace(/\.+$/, '')).filter(Boolean) } })
+  const vista = lineaIndicadores({ indicadores: { revisados: (escritos ?? []).map((x) => x?.nombre?.trim().replace(/\.+$/, '')).filter(Boolean) } })
   const enviar = async (d) => {
     const indicadores = d.indicadores.filter((x) => x.nombre)
     if (await alGuardar({ indicadores_revisados: indicadores })) reset({ indicadores: indicadores.length ? indicadores : [indicadorVacio()] })

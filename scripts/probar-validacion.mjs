@@ -222,10 +222,9 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     && nOm.oportunidades.endsWith('la eficacia del proceso de Urgencias.'), 'la plantilla de respaldo concuerda en número y contrae «de el» en «del»', `${n.objetivo} | ${nOm.oportunidades}`)
   ok(c.version_estructura === 5 && !('recomendaciones' in c) && !('recomendaciones' in n), 'la plantilla vigente ya no tiene recomendaciones (versión 5 del contenido)')
   const formato = await import('../src/lib/formato-informe.js')
-  ok(c.indicadores.area === 'Urgencias' && !c.indicadores.revisados.length
-    && formato.lineaIndicadores(c) === 'Revisión de indicadores priorizados en el proceso de Urgencias'
+  ok(JSON.stringify(c.indicadores) === '{"revisados":[]}' && formato.lineaIndicadores(c) === 'Revisión de indicadores priorizados en el proceso de'
     && formato.seccionesFormato(c).find((x) => x.titulo === 'Indicadores').contenido[0] === formato.SIN_INDICADORES,
-    'sin indicadores registrados: la línea de la plantilla con el área y, debajo, que no se registraron', JSON.stringify(c.indicadores))
+    'sin indicadores registrados: solo la línea de la plantilla (sin el área) y, debajo, que no se registraron', JSON.stringify(c.indicadores))
   ok(informe.cifrasAuditoria(e).some((l) => l.includes('Riesgos evaluados con la escala del PR13_GQ: 2 (Bajo 1 · Moderado 0 · Alto 0 · Extremo 1)')) && informe.cifrasAuditoria(e).some((l) => l === 'Controles adoptados: 2.'),
     'las cifras de la auditoría las sigue calculando el código, como contexto para la IA')
   // Con indicadores registrados por el auditor (0015: solo el nombre corto)
@@ -233,13 +232,13 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     { nombre: 'oportunidad en triage II' }, { nombre: 'reingresos' }, { nombre: ' satisfacción del usuario ' }, { nombre: '' },
   ] }
   const cInd = informe.construirContenido({ auditoria: audInd, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-04T17:14:00Z', version: 2, avisos: [] })
-  ok(JSON.stringify(cInd.indicadores) === JSON.stringify({ area: 'Servicio de Urgencias', revisados: ['oportunidad en triage II', 'reingresos', 'satisfacción del usuario'] }),
-    'con indicadores registrados: el área de la plantilla y solo los nombres, en su orden', JSON.stringify(cInd.indicadores))
+  ok(JSON.stringify(cInd.indicadores) === JSON.stringify({ revisados: ['oportunidad en triage II', 'reingresos', 'satisfacción del usuario'] }),
+    'con indicadores registrados: solo sus nombres, en su orden (el área de la auditoría no va)', JSON.stringify(cInd.indicadores))
   const seccionInd = formato.seccionesFormato(cInd).find((x) => x.titulo === 'Indicadores')
-  ok(seccionInd.antes === 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias: oportunidad en triage II, reingresos y satisfacción del usuario.'
-    && seccionInd.agregar === ': oportunidad en triage II, reingresos y satisfacción del usuario.' && seccionInd.antesPlantilla === formato.TEXTOS_FORMATO.revisionIndicadores
-    && seccionInd.completa && !seccionInd.contenido.length,
-    'los indicadores se agregan después del texto de la plantilla, separados por comas y con «y» antes del último', seccionInd.antes)
+  ok(seccionInd.antes === 'Revisión de indicadores priorizados en el proceso de oportunidad en triage II, reingresos y satisfacción del usuario'
+    && seccionInd.agregar === ' oportunidad en triage II, reingresos y satisfacción del usuario' && seccionInd.antesPlantilla === formato.TEXTOS_FORMATO.revisionIndicadores
+    && seccionInd.completa && !seccionInd.contenido.length && !seccionInd.antes.includes('Servicio de Urgencias'),
+    'justo después de «…en el proceso de» van solo los indicadores, separados por comas y con «y» antes del último', seccionInd.antes)
   ok(formato.unirLista(['oportunidad']) === 'oportunidad' && formato.unirLista(['oportunidad', 'reingresos']) === 'oportunidad y reingresos'
     && formato.unirLista(['a', 'b', 'c', 'd']) === 'a, b, c y d' && formato.unirLista(['oportunidad', 'infecciones']) === 'oportunidad e infecciones'
     && formato.unirLista(['calidad', 'historias clínicas']) === 'calidad e historias clínicas' && formato.unirLista(['agua', 'hielo']) === 'agua y hielo',
@@ -256,7 +255,7 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const textoPlantilla = ['content.xml', 'styles.xml'].map((x) => strFromU8(odt[x])).join(' ')
     .replace(/<text:s text:c="(\d+)"\/>/g, (_, k) => ' '.repeat(Number(k))).replace(/<text:s\/>/g, ' ').replace(/<\/text:(p|h)>/g, '\n').replace(/<[^>]+>/g, '')
   const lineasPlantilla = textoPlantilla.split('\n').map((l) => l.replace(/\s+/g, ' ').trim())
-  const buscados = [...Object.entries(formato.TEXTOS_FORMATO).filter(([k]) => k !== 'marcadorArea').map(([, v]) => v),
+  const buscados = [...Object.values(formato.TEXTOS_FORMATO),
     ...formato.LISTAS_HALLAZGOS.map((l) => l.titulo), ...formato.seccionesFormato(cInd).map((x) => x.titulo)]
   const faltan = buscados.filter((t) => !lineasPlantilla.some((l) => l === t || l.startsWith(`${t} `) || l.includes(t)))
   ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))

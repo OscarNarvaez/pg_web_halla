@@ -783,12 +783,12 @@ await p.getByText(/Equipo auditor guardado/).waitFor()
 ok(JSON.stringify(db.auditorias[0].equipo_auditor?.map((m) => [m.nombre, m.cargos])) === JSON.stringify([['Laura Gómez Ñáñez', ['Enfermera']], ['Pedro Pérez Ortiz', ['Médico', 'Tesorera']], ['Marta Ruiz Ortega', ['Médico especialista pediatra']]])
   && perfil.equipo_auditor.length === 2, 'el equipo de la auditoría se guarda en la auditoría, sin tocar el perfil', JSON.stringify(db.auditorias[0].equipo_auditor))
 // Indicadores priorizados del proceso: solo el nombre corto de cada uno, uno por campo con «Agregar otro indicador»
-const LINEA_IND = 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias: oportunidad en triage II, reingresos e infecciones asociadas.'
-const vistaPrevia = p.getByText(/^Revisión de indicadores priorizados en el proceso de Servicio de Urgencias/)
+const LINEA_IND = 'Revisión de indicadores priorizados en el proceso de oportunidad en triage II, reingresos e infecciones asociadas'
+const vistaPrevia = p.getByText(/^Revisión de indicadores priorizados en el proceso de/)
 const campoInd = (n) => p.getByRole('textbox', { name: `Indicador ${n}`, exact: true })
 ok(await campoInd(1).isVisible() && (await campoInd(2).count()) === 0
-  && (await vistaPrevia.innerText()) === 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
-  'la tarjeta trae un campo para el primer indicador y muestra la línea de la plantilla con el área')
+  && (await vistaPrevia.innerText()) === 'Revisión de indicadores priorizados en el proceso de',
+  'la tarjeta trae un campo para el primer indicador y muestra la línea de la plantilla, sin el área')
 await campoInd(1).fill('oportunidad en triage II, reingresos')
 await p.getByRole('button', { name: 'Guardar indicadores' }).click()
 await p.getByText(/Sin comas: escribe cada indicador en su propio campo/).waitFor()
@@ -851,8 +851,7 @@ const original = lineas(execSync(`unzip -p "${PLANTILLA}" content.xml`).toString
 const llenado = lineas(execSync(`unzip -p "${rutaOdt}" content.xml`).toString())
 const textoLlenado = llenado.join('\n')
 // Todos los textos de la plantilla siguen ahí, en el mismo orden (menos el título y el año de la portada, que se llenan)
-// (el renglón con «(area auditada)» se llena con el área: se comprueba abajo, ya lleno)
-const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l) && !l.includes('(area auditada)')).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
+const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.replace(/^\|\s*/, '').split(' | ')[0])
 const faltaFijo = enOrden(textoLlenado, fijos)
 ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
 const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
@@ -906,8 +905,7 @@ const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria 
   'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Ana María Rodríguez Peña',
   'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
-  'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
-  'oportunidad en triage II, reingresos e infecciones asociadas.', 'Oportunidades', 'Observaciones', 'Conclusiones'])
+  'Riesgos y oportunidades del programa auditoria', 'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones'])
   || (/RECOMENDACIONES|Hallazgos registrados:/.test(textoPdf) ? 'RECOMENDACIONES o cifras de la auditoría' : '')
 ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
 ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),

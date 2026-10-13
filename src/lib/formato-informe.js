@@ -16,9 +16,9 @@ export const TEXTOS_FORMATO = {
   liderEquipo: 'Líder equipo',
   archivosAdjuntos: 'Archivos adjuntos',
   principalesAspectos: 'Principales aspectos que se tienen en cuenta:',
-  // Renglón de la plantilla bajo «Indicadores» (5/10/2026); «(area auditada)» se llena con el área de la auditoría
-  revisionIndicadores: 'Revisión de indicadores priorizados en el proceso de (area auditada)',
-  marcadorArea: '(area auditada)',
+  // Renglón de la plantilla bajo «Indicadores» (versión del dueño del 13/10/2026). Justo después de «de» van SOLO los
+  // indicadores que escribió el auditor: «…en el proceso de oportunidad en triage, reingresos y satisfacción»
+  revisionIndicadores: 'Revisión de indicadores priorizados en el proceso de',
 }
 
 export const SIN_INDICADORES = 'No se registraron indicadores priorizados del proceso para esta auditoría.'
@@ -35,12 +35,11 @@ export function unirLista(items) {
   return `${lista.slice(0, -1).join(', ')} ${/^h?i(?![aeiou])/.test(inicio) ? 'e' : 'y'} ${ultimo}`
 }
 
-/** Lo que se agrega después del texto de la plantilla bajo «Indicadores»: «: a, b y c.» (vacío si no hay). */
-export const complementoIndicadores = (c) => (c.indicadores.revisados.length ? `: ${unirLista(c.indicadores.revisados)}.` : '')
-
-/** «Revisión de indicadores priorizados en el proceso de Urgencias: oportunidad en triage, reingresos y satisfacción.» */
-export const lineaIndicadores = (c) =>
-  `${TEXTOS_FORMATO.revisionIndicadores.replace(TEXTOS_FORMATO.marcadorArea, c.indicadores.area)}${complementoIndicadores(c)}`
+/**
+ * «Revisión de indicadores priorizados en el proceso de oportunidad en triage, reingresos y satisfacción»: los
+ * indicadores van justo después de «de», en el lugar del campo de la plantilla, y nada más.
+ */
+export const lineaIndicadores = (c) => `${TEXTOS_FORMATO.revisionIndicadores} ${unirLista(c.indicadores.revisados)}`.trimEnd()
 
 // Listas de hallazgos, en el orden de la plantilla
 export const LISTAS_HALLAZGOS = [
@@ -52,9 +51,9 @@ export const LISTAS_HALLAZGOS = [
 
 /**
  * Secciones del formato después de las listas de hallazgos, en su orden. `tipo`: párrafo o viñetas. `antes` es el
- * texto fijo que la plantilla trae entre el título y el contenido (ya completo); si lleva un campo por llenar,
- * `antesPlantilla` es el texto tal como está en la plantilla, `campos` lo que se reemplaza y `agregar` lo que se
- * escribe al final de esa misma línea. `completa`: la línea ya lleva el contenido. `titulo` sigue el estilo de la
+ * texto fijo que la plantilla trae entre el título y el contenido (ya completo); si se completa en la misma línea,
+ * `antesPlantilla` es el texto tal como está en la plantilla y `agregar` lo que se escribe a continuación. `completa`:
+ * la línea ya lleva el contenido. `titulo` sigue el estilo de la
  * plantilla: negrita subrayada (los títulos de sección) o negrita centrada (Conclusiones).
  * @param {object} c contenido del informe (version_estructura 5)
  */
@@ -72,8 +71,7 @@ export function seccionesFormato(c) {
       tipo: 'parrafo',
       antes: lineaIndicadores(c),
       antesPlantilla: TEXTOS_FORMATO.revisionIndicadores,
-      campos: { [TEXTOS_FORMATO.marcadorArea]: c.indicadores.area },
-      agregar: complementoIndicadores(c),
+      agregar: c.indicadores.revisados.length ? ` ${unirLista(c.indicadores.revisados)}` : '',
       escalaAntes: 1,
       completa: c.indicadores.revisados.length > 0,
       contenido: c.indicadores.revisados.length ? [] : [SIN_INDICADORES],

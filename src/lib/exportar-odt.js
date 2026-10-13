@@ -73,21 +73,6 @@ function reemplazarTexto(p, texto) {
 }
 
 /**
- * Reemplaza un fragmento del texto de un párrafo (un campo de la plantilla, como «(area auditada)») sin tocar el
- * resto ni sus estilos. Devuelve false si el fragmento no está entero en un mismo tramo de texto.
- */
-function reemplazarFragmento(p, buscado, nuevo) {
-  const caminante = p.ownerDocument.createTreeWalker(p, 4 /* NodeFilter.SHOW_TEXT */)
-  for (let n = caminante.nextNode(); n; n = caminante.nextNode()) {
-    if (n.nodeValue.includes(buscado)) {
-      n.nodeValue = n.nodeValue.replace(buscado, nuevo)
-      return true
-    }
-  }
-  return false
-}
-
-/**
  * Inserta líneas después de un ancla: en el primer renglón vacío que la plantilla trae ahí, con su estilo. Si ese
  * renglón usa el estilo genérico (sin el espacio superior de los demás), se usa el estilo de cuerpo de la plantilla.
  * Si es el único renglón antes del siguiente título, se conserva como separación (como en las demás secciones).
@@ -140,12 +125,8 @@ function llenarCuerpo(doc, c) {
   for (const s of seccionesFormato(c)) {
     const ancla = s.antes ? buscar(s.antesPlantilla ?? s.antes) : buscar(s.titulo, { titulo: true })
     // Campos de la plantilla («(area auditada)»): se llenan en su sitio, con el estilo que traen
-    let completa = false
-    for (const [campo, valor] of Object.entries(s.campos ?? {})) {
-      if (!reemplazarFragmento(ancla, campo, valor)) completa = Boolean(reemplazarTexto(ancla, s.antes))
-    }
-    // Lo que se agrega al final de la misma línea de la plantilla («: a, b y c.»)
-    if (s.agregar && !completa) ancla.appendChild(ancla.ownerDocument.createTextNode(s.agregar))
+    // Lo que completa la misma línea de la plantilla (los indicadores, después de «…en el proceso de»)
+    if (s.agregar) ancla.appendChild(ancla.ownerDocument.createTextNode(s.agregar))
     const contenido = Array.isArray(s.contenido) ? s.contenido : parrafos(s.contenido)
     const lineas = s.tipo === 'vinetas' ? conVinetas(contenido) : contenido
     if (lineas.length || !s.completa) rellenar(ancla, lineas.length ? lineas : ['No informado.'], estiloCuerpo, automaticos)

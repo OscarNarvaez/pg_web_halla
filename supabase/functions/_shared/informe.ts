@@ -285,8 +285,6 @@ const enLista = (partes: string[]) => (partes.length > 1 ? `${partes.slice(0, -1
 export const revisados = (a: AuditoriaInforme): string[] =>
   (Array.isArray(a.indicadores_revisados) ? a.indicadores_revisados : []).map((i) => i?.nombre?.trim()).filter((n): n is string => Boolean(n))
 
-/** «(area auditada)» de la plantilla: el área auditada o, si no se informó, el proceso o sistema. */
-export const areaIndicadores = (a: AuditoriaInforme) => a.area_auditada?.trim() || objetoDe(a)
 
 /** Narrativa determinista, usada cuando la IA no está disponible. */
 export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas): Narrativa {
@@ -370,8 +368,8 @@ export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos
 /**
  * Contenido del informe con la estructura del formato oficial (version_estructura 5): portada, Ficha Técnica,
  * listas de hallazgos en el orden del formato y las secciones de Objetivo a Conclusiones. Plantilla del 5/10/2026: sin
- * recomendaciones. La 5 (10/10/2026): «Indicadores» = la línea de la plantilla con el área + los nombres de los
- * indicadores que registró el auditor (la IA ya no redacta una revisión).
+ * recomendaciones. La 5 (10/10/2026): «Indicadores» = la línea de la plantilla con los nombres de los indicadores que
+ * registró el auditor en su campo, después de «…en el proceso de» (la IA no los redacta).
  */
 export function construirContenido(opciones: {
   auditoria: AuditoriaInforme
@@ -427,8 +425,8 @@ export function construirContenido(opciones: {
     priorizacion_procesos: n.priorizacion_procesos,
     metodos: METODOS_AUDITORIA,
     riesgos_oportunidades: n.riesgos_oportunidades,
-    // «Revisión de indicadores priorizados en el proceso de <área>: a, b y c» (la frase la arma formato-informe.js)
-    indicadores: { area: areaIndicadores(a), revisados: revisados(a) },
+    // «Revisión de indicadores priorizados en el proceso de a, b y c» (la frase la arma formato-informe.js)
+    indicadores: { revisados: revisados(a) },
     oportunidades: n.oportunidades,
     observaciones: n.observaciones,
     conclusiones: n.conclusiones,
