@@ -167,12 +167,15 @@ const { rows: [audA] } = await comoUsuario(db, como(A), (tx) => tx.query(
   `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso, creado_en) values ($1,'AI-2026-001','Auditoría de urgencias','PROCESOS','Urgencias','2020-01-01') returning id, creado_en`, [A]))
 ok(Boolean(audA?.id), 'el auditor aprobado crea su auditoría')
 ok(new Date(audA.creado_en).getFullYear() >= 2026, 'la fecha de creación la fija el servidor (no se puede antedatar)')
-const fijarFechasReales = (inicio, fin) => falla(comoUsuario(db, como(A), (tx) => tx.query(
-  `update public.auditorias set fecha_inicio_real = $2, fecha_fin_real = $3 where id = $1`, [audA.id, inicio, fin])))
-const errFechasReales = await fijarFechasReales('2026-10-10', '2026-10-01')
-ok(errFechasReales?.includes('fechas_reales_coherentes'), 'la terminación real no puede ser anterior al inicio real (0010)', errFechasReales)
-const errFechasRealesOk = await fijarFechasReales('2026-10-01', '2026-10-03')
-ok(errFechasRealesOk === null, 'el auditor registra las fechas reales de su auditoría', errFechasRealesOk)
+// 0018: «Fecha Auditoría» y «Fecha Creación del Informe» de la Ficha Técnica
+const fijarFechasInforme = (auditoria, informe) => falla(comoUsuario(db, como(A), (tx) => tx.query(
+  `update public.auditorias set fecha_auditoria = $2, fecha_informe = $3 where id = $1`, [audA.id, auditoria, informe])))
+const errFechasInforme = await fijarFechasInforme('2026-10-10', '2026-10-01')
+ok(errFechasInforme?.includes('fecha_informe_coherente'), 'la fecha de creación del informe no puede ser anterior a la de la auditoría (0018)', errFechasInforme)
+const errFechasInformeOk = await fijarFechasInforme('2026-10-01', '2026-10-03')
+const { rows: columnasFechas } = await db.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'auditorias' and column_name like 'fecha%' order by 1`)
+ok(errFechasInformeOk === null && columnasFechas.map((c) => c.column_name).join() === 'fecha_auditoria,fecha_fin,fecha_informe,fecha_inicio',
+  'el auditor registra la fecha de la auditoría y la de creación del informe (ya no las fechas reales de inicio y terminación)', errFechasInformeOk ?? columnasFechas.map((c) => c.column_name).join())
 // 0016: equipo auditor por auditoría; por defecto, el del perfil
 const personas = (equipo) => JSON.stringify((equipo ?? []).map((m) => [m.nombre, m.cargos, Object.keys(m).sort().join()]))
 const { rows: [equipoAudA] } = await db.query('select equipo_auditor from public.auditorias where id = $1', [audA.id])
@@ -518,6 +521,23 @@ console.log('\n▸ Auditorías existentes al aplicar la 0016 (toman el equipo de
     'las auditorías anteriores a la 0016 conservan el equipo que sus informes mostraban (el del perfil)', JSON.stringify(conEquipo.equipo_auditor))
   const { rows: [sinLider] } = await vieja.query('select lider_auditor from public.auditorias where id = $1', [aud.id])
   ok(sinLider.lider_auditor === null, 'con la 0017 las auditorías existentes quedan sin líder: se registra a mano antes del próximo informe')
+  await vieja.close()
+}
+
+console.log('\n▸ Fechas reales al aplicar la 0018 (el inicio real pasa a ser la fecha de la auditoría)')
+{
+  const vieja = await crearBaseLocal({ hasta: '0018', silencioso: true })
+  const usuario = await registrarUsuario(vieja, 'fe@hila.test', {
+    nombre_completo: 'Fede Fechas', cedula: '1085000018', celular: '3001234567', tipo_evaluador: 'AUDITORES_INTERNOS', cargos: ['Coordinadora'],
+    equipo_auditor: [{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }], alcance: 'PROCESOS', proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
+  })
+  const { rows: [aud] } = await vieja.query(
+    `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso, fecha_inicio_real, fecha_fin_real) values ($1, 'AI-2026-018', 'Anterior a la 0018', 'PROCESOS', 'Urgencias', '2026-09-20', '2026-09-22') returning id`, [usuario])
+  await aplicarMigraciones(vieja, { desde: '0018', silencioso: true })
+  const { rows: [convertida] } = await vieja.query('select * from public.auditorias where id = $1', [aud.id])
+  ok(String(convertida.fecha_auditoria?.toISOString?.() ?? convertida.fecha_auditoria).startsWith('2026-09-20') && convertida.fecha_informe === null
+    && !('fecha_inicio_real' in convertida) && !('fecha_fin_real' in convertida),
+    'la fecha de inicio real registrada pasa a ser la fecha de la auditoría; la de creación del informe queda por registrar', JSON.stringify(convertida))
   await vieja.close()
 }
 
