@@ -34,7 +34,8 @@ aprobación». Avísele al administrador de la plataforma.
 
 Su sesión queda abierta el tiempo que quiera, aunque cierre el navegador, hasta que pulse **Salir**. **En un
 computador compartido, pulse siempre Salir al terminar.** Estos datos aparecen en la Ficha
-Técnica del informe (evaluador, equipo auditor y líder del equipo); puede cambiarlos en **Mi perfil**.
+Técnica del informe (evaluador y líder del equipo); puede cambiarlos en **Mi perfil**. El equipo auditor del perfil es
+su **equipo habitual**: se propone al crear cada auditoría, y en cada una puede cambiarlo (§2 y §8).
 
 **Si su cuenta es anterior al 4 de octubre de 2026**, antes el cargo se escribía a mano. Si lo que escribió
 coincide con un cargo de la lista, se conservó; si no, verá el aviso «Completa tu perfil»: entre a **Mi
@@ -51,6 +52,9 @@ en un informe.
   fechas **reales** son opcionales aquí: puede registrarlas al generar el informe.
 - El botón **Sugerir con IA** propone el objetivo, el área auditada y las normas aplicables. Revise y
   ajuste lo que haga falta antes de guardar.
+- **Equipo auditor:** viene con su equipo habitual (el de **Mi perfil**). Si esta vez lo acompañan otras personas,
+  cámbielas aquí (de 1 a 10, cada una con sus cargos): el informe de esta auditoría nombrará a quienes de verdad
+  participaron. Cambiarlo no modifica su perfil ni otras auditorías.
 
 Al pulsar **Crear auditoría** la plataforma le pregunta cómo quiere empezar:
 
@@ -337,20 +341,23 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
 
 1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
    escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
-2. **Registre los indicadores priorizados del proceso** que revisó, en el recuadro «Indicadores priorizados del
+2. **Revise el equipo auditor** en el recuadro «Equipo auditor de esta auditoría»: es el que aparece en la Ficha
+   Técnica, con sus cargos. Agregue o quite personas si hace falta y pulse **Guardar equipo**. Las auditorías creadas
+   antes del 12 de octubre de 2026 tomaron el equipo que tenía su perfil en ese momento.
+3. **Registre los indicadores priorizados del proceso** que revisó, en el recuadro «Indicadores priorizados del
    proceso»: **solo el nombre corto** de cada uno, uno por campo. Para otro, pulse **Agregar otro indicador** (hasta
    15). No escriba comas: el sistema separa los indicadores con comas y pone «y» antes del último («e» si el último
    empieza por i- o hi-). El recuadro muestra cómo quedará la frase, que se agrega al final de la línea de la
    plantilla: «Revisión de indicadores priorizados en el proceso de Servicio de Urgencias: oportunidad en triage,
    reingresos y satisfacción.» Si no registra ninguno, la sección dice que no se registraron.
-3. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
+4. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
 
 El informe tiene, en este orden:
 
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
 | Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso», su grupo de auditores, el año y «Auditoria interna de SIG» | El sistema |
-| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor, líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
+| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), líder del equipo y archivos adjuntos (los PDF de evidencia) | El sistema |
 | Auditoria interna de SIG | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
 | Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones y Conclusiones | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
@@ -361,7 +368,7 @@ El informe tiene, en este orden:
   estadísticas), se le avisa.
 - El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.
 - A la IA no llegan los nombres del equipo auditor, solo sus cargos.
-- Si cambia los hallazgos, las fechas o los indicadores, genere una **nueva versión**: las anteriores se conservan.
+- Si cambia los hallazgos, las fechas, el equipo o los indicadores, genere una **nueva versión**: las anteriores se conservan.
 - Descárguelo como **Documento (ODT)**, que es la plantilla oficial llena y se abre en LibreOffice y en Word, o en
   **PDF**, que reproduce el mismo formato.
 - Un informe generado con una plantilla anterior (por ejemplo, con RECOMENDACIONES) no se descarga: genere una

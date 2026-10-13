@@ -102,15 +102,19 @@ export function CamposAuditor({ register, errors, control }) {
   )
 }
 
-/** Equipo auditor: una o varias personas (hasta MAX_EQUIPO), cada una con uno o varios cargos. */
-export function CamposEquipo({ register, errors, control }) {
+/**
+ * Equipo auditor: una o varias personas (hasta MAX_EQUIPO), cada una con uno o varios cargos. En el perfil es el equipo
+ * habitual; en una auditoría (0016), el de esa auditoría.
+ * @param {{ descripcion?: string, leyendaOculta?: boolean }} props
+ */
+export function CamposEquipo({ register, errors, control, descripcion, leyendaOculta = false }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'equipo_auditor' })
   const errorLista = errors.equipo_auditor?.message ?? errors.equipo_auditor?.root?.message
   return (
     <fieldset>
-      <legend className="text-sm font-semibold text-tinta-900">Equipo auditor</legend>
+      <legend className={leyendaOculta ? 'sr-only' : 'text-sm font-semibold text-tinta-900'}>Equipo auditor</legend>
       <p className="mt-1 text-xs text-tinta-500">
-        Las personas que te acompañan en la auditoría: al menos una y hasta {MAX_EQUIPO}. Cada una firma el informe.
+        {descripcion ?? `Tu equipo habitual: al menos una persona y hasta ${MAX_EQUIPO}. Se propone al crear cada auditoría, y en cada una puedes cambiarlo.`}
       </p>
       <ol className="mt-3 space-y-3">
         {fields.map((campo, i) => (

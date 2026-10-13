@@ -44,6 +44,13 @@ export interface AuditoriaInforme {
   fecha_fin_real?: string | null
   /** Indicadores priorizados del proceso que registró el auditor: solo su nombre corto (0013, 0015) */
   indicadores_revisados?: IndicadorRevisado[] | null
+  /** Equipo auditor de esta auditoría (0016); vacío → el del perfil */
+  equipo_auditor?: IntegranteEquipo[] | null
+}
+
+export interface IntegranteEquipo {
+  nombre: string
+  cargos: string[]
 }
 
 export interface IndicadorRevisado {
@@ -54,16 +61,27 @@ export interface PerfilInforme {
   nombre_completo: string
   cedula: string
   cargos: string[]
-  equipo_auditor: Array<{ nombre: string; cargos: string[] }>
+  equipo_auditor: IntegranteEquipo[]
   tipo_evaluador: string | null
 }
 
 /** «Coordinadora, Líder equipo»: varios cargos de una persona en una sola línea. */
 export const unirCargos = (cargos?: string[] | null) => (cargos ?? []).join(', ')
 
-/** Sin grupo de evaluador, cargos o equipo auditor completo no se puede llenar la Ficha Técnica. */
-export const perfilIncompletoInforme = (p: PerfilInforme) =>
-  !p.tipo_evaluador || !p.cargos?.length || !p.equipo_auditor?.length || p.equipo_auditor.some((m) => !m.nombre || !m.cargos?.length)
+/**
+ * Equipo auditor del informe: el de la auditoría (0016, decisión del dueño, 12/10/2026) y, si no tiene, el del perfil
+ * (el equipo habitual del auditor).
+ */
+export const equipoDe = (a: AuditoriaInforme, p: PerfilInforme): IntegranteEquipo[] =>
+  (a.equipo_auditor?.length ? a.equipo_auditor : p.equipo_auditor) ?? []
+
+const equipoIncompleto = (equipo: IntegranteEquipo[]) => !equipo.length || equipo.some((m) => !m?.nombre || !m?.cargos?.length)
+
+/** Sin grupo de evaluador ni cargos del líder no se puede llenar la Ficha Técnica (el equipo se revisa aparte). */
+export const perfilIncompletoInforme = (p: PerfilInforme) => !p.tipo_evaluador || !p.cargos?.length
+
+/** El equipo auditor de la Ficha Técnica: al menos una persona, cada una con nombre y cargos. */
+export const equipoIncompletoInforme = (a: AuditoriaInforme, p: PerfilInforme) => equipoIncompleto(equipoDe(a, p))
 
 /** Secciones que redacta la IA (o la plantilla de respaldo si la IA no está disponible). */
 export interface Narrativa {
@@ -394,7 +412,7 @@ export function construirContenido(opciones: {
       fin_real: a.fecha_fin_real ?? '',
       sistema_referencia: a.alcance === 'SISTEMAS' ? `${a.sistema} · ${normasDe(a).join(', ')}` : normasDe(a).join(', '),
       evaluador,
-      equipo: (p.equipo_auditor ?? []).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) })),
+      equipo: equipoDe(a, p).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) })),
       lider: { nombre: p.nombre_completo, cargo: unirCargos(p.cargos) },
       adjuntos,
     },

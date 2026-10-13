@@ -7,7 +7,7 @@ import { anonimizar } from '../_shared/anonimizar.ts'
 import { ErrorGemini, llamarGemini } from '../_shared/gemini.ts'
 import { ESQUEMA_INFORME } from '../_shared/esquema-salida.ts'
 import {
-  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, narrativaRespaldo, perfilIncompletoInforme,
+  calcularEstadisticas, cifrasNoRastreables, construirContenido, construirMensajeInforme, equipoDe, equipoIncompletoInforme, narrativaRespaldo, perfilIncompletoInforme,
   revisados, SISTEMA_INFORME, type HallazgoInforme, type Narrativa, type PerfilInforme,
 } from '../_shared/informe.ts'
 import { limpiarTexto, recortarEnOracion } from '../_shared/validar-salida.ts'
@@ -43,7 +43,11 @@ Deno.serve(async (req) => {
     .maybeSingle()
   if (!perfil) return respuestaError(req, 'Completa tu perfil de auditor antes de generar el informe.', 409, 'sin_perfil')
   if (perfilIncompletoInforme(perfil as PerfilInforme)) {
-    return respuestaError(req, 'Completa en «Mi perfil» tu grupo de auditores, tus cargos y los de tu equipo auditor antes de generar el informe: van en la Ficha Técnica.', 409, 'perfil_incompleto')
+    return respuestaError(req, 'Completa en «Mi perfil» tu grupo de auditores y tus cargos antes de generar el informe: van en la Ficha Técnica.', 409, 'perfil_incompleto')
+  }
+  // El equipo de esta auditoría (0016) o, si no tiene, el del perfil
+  if (equipoIncompletoInforme(auditoria, perfil as PerfilInforme)) {
+    return respuestaError(req, 'Registra el equipo auditor de esta auditoría (en la página del informe) antes de generarlo: va en la Ficha Técnica.', 409, 'equipo_incompleto')
   }
 
   const { data: hallazgos, error } = await admin
@@ -77,7 +81,7 @@ Deno.serve(async (req) => {
   }))
   // Del equipo auditor a la IA solo llegan los cargos, nunca los nombres
   const p = perfil as PerfilInforme
-  const equipoIa = { lider: p.cargos, integrantes: p.equipo_auditor.map((m) => m.cargos), evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '' }
+  const equipoIa = { lider: p.cargos, integrantes: equipoDe(auditoria, p).map((m) => m.cargos), evaluador: TIPOS_EVALUADOR[p.tipo_evaluador as keyof typeof TIPOS_EVALUADOR] ?? '' }
   const auditoriaIa = {
     ...auditoria,
     titulo: anonimizar(auditoria.titulo).texto,

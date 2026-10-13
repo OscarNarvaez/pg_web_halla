@@ -102,6 +102,8 @@ export const esquemaAuditoria = z
     fecha_fin: z.string().optional().default(''),
     fecha_inicio_real: z.string().optional().default(''),
     fecha_fin_real: z.string().optional().default(''),
+    // Equipo auditor de esta auditoría (0016): por defecto, el del perfil
+    equipo_auditor: camposEquipoYAlcance.equipo_auditor,
   })
   .superRefine((d, ctx) => {
     validarAlcance(d, ctx)
@@ -143,6 +145,18 @@ export function perfilIncompleto(p) {
 
 /** Integrante vacío del equipo auditor, para el formulario. */
 export const integranteVacio = () => ({ nombre: '', cargos: [] })
+
+/** Equipo auditor de una auditoría ya creada (0016): solo el equipo, con las reglas del perfil. */
+export const esquemaEquipoAuditoria = z.object({ equipo_auditor: camposEquipoYAlcance.equipo_auditor })
+
+/**
+ * Equipo con el que empieza el formulario: el de la auditoría o, si no tiene, el habitual del perfil (copias, para no
+ * modificar los originales al editar).
+ */
+export function equipoInicial(auditoria, perfil) {
+  const equipo = auditoria?.equipo_auditor?.length ? auditoria.equipo_auditor : perfil?.equipo_auditor
+  return equipo?.length ? equipo.map((m) => ({ nombre: m.nombre ?? '', cargos: [...(m.cargos ?? [])] })) : [integranteVacio()]
+}
 
 /** Convierte los valores del formulario a la fila de profiles/auditorias (proceso XOR sistema). */
 export function aFilaAlcance(d) {

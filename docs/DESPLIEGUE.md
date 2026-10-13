@@ -279,7 +279,7 @@ cambian.
 
 ## 8. Cierre: lo que queda por verificar con el proyecto real
 
-- [ ] `supabase db push` aplicó las quince migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe; la 0014, quitar el PDF analizado; la 0015, indicadores con solo su nombre).
+- [ ] `supabase db push` aplicó las dieciséis migraciones (la 0007 trae riesgo, controles y la matriz; la 0008 fija la escala de niveles; la 0009, los cargos de lista y el equipo de varias personas; la 0010, el evaluador y las fechas reales; la 0011, la lista de verificación; la 0012, los PDF de evidencia agregados al editar; la 0013, los indicadores revisados del informe; la 0014, quitar el PDF analizado; la 0015, indicadores con solo su nombre; la 0016, el equipo auditor de cada auditoría).
 - [ ] `supabase config push` aplicó la configuración de Auth (contraseña de 10, confirmación de correo).
 - [ ] Primer administrador nombrado por SQL y facturación de Gemini activada (`docs/SEGURIDAD.md`).
 - [ ] `pnpm ingest` subió los 246 fragmentos y la consulta de aceptación devolvió 9.3.3.
@@ -351,6 +351,14 @@ Edge Function.
 ```bash
 supabase secrets set PROMPT_VERSION=1.3.0
 supabase functions deploy clasificar-hallazgo      # guía de redacción en el mensaje y V3 con «porque» / «para lo cual»
+git push origin main
+```
+
+**Equipo auditor por auditoría (12/10/2026):**
+
+```bash
+supabase db push                                   # 0016
+supabase functions deploy generar-informe          # la Ficha Técnica nombra al equipo de la auditoría
 git push origin main
 ```
 

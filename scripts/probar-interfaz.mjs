@@ -772,6 +772,16 @@ await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
 await p.getByRole('button', { name: 'Guardar fechas' }).click()
 await p.getByText(/Fechas reales guardadas/).waitFor()
 ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
+// Equipo auditor de esta auditoría (0016): empieza con el del perfil; se agrega a quien también participó
+ok(await p.getByText('Por ahora se usa tu equipo habitual (el de tu perfil).').isVisible() && await p.getByLabel('Nombre de la persona 2').inputValue() === 'Pedro Pérez Ortiz',
+  'el informe propone el equipo del perfil cuando la auditoría aún no tiene uno propio')
+await p.getByRole('button', { name: 'Agregar otra persona al equipo' }).click()
+await p.getByLabel('Nombre de la persona 3').fill('Marta Ruiz Ortega')
+await elegirCargos(p, /^Cargos de la persona 3/, ['Médico especialista pediatra'])
+await p.getByRole('button', { name: 'Guardar equipo' }).click()
+await p.getByText(/Equipo auditor guardado/).waitFor()
+ok(JSON.stringify(db.auditorias[0].equipo_auditor?.map((m) => [m.nombre, m.cargos])) === JSON.stringify([['Laura Gómez Ñáñez', ['Enfermera']], ['Pedro Pérez Ortiz', ['Médico', 'Tesorera']], ['Marta Ruiz Ortega', ['Médico especialista pediatra']]])
+  && perfil.equipo_auditor.length === 2, 'el equipo de la auditoría se guarda en la auditoría, sin tocar el perfil', JSON.stringify(db.auditorias[0].equipo_auditor))
 // Indicadores priorizados del proceso: solo el nombre corto de cada uno, uno por campo con «Agregar otro indicador»
 const LINEA_IND = 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias: oportunidad en triage II, reingresos e infecciones asociadas.'
 const vistaPrevia = p.getByText(/^Revisión de indicadores priorizados en el proceso de Servicio de Urgencias/)
@@ -801,8 +811,8 @@ await hoja.waitFor()
 const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
 const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
   'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
-  'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora',
-  'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor Marta Ruiz Ortega - Médico especialista pediatra',
+  'Líder equipo Ana María Rodríguez Peña - Auditor médico, Coordinadora', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
   LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
@@ -847,7 +857,8 @@ const faltaFijo = enOrden(textoLlenado, fijos)
 ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
 const ORDEN_ODT = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
   'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
-  'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
+  'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor | Marta Ruiz Ortega - Médico especialista pediatra',
+  'Líder equipo | Ana María Rodríguez Peña - Auditor médico, Coordinadora',
   'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
@@ -892,7 +903,8 @@ const textoPdf = execSync(`pdftotext "${rutaPdf}" -`).toString().replace(/\s+/g,
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
 ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño A4, como la plantilla')
 const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de SIG', 'Ficha Técnica',
-  'Evaluador', 'Auditores Internos', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Ana María Rodríguez Peña',
+  'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
   'Riesgos y oportunidades del programa auditoria', 'Indicadores', 'Revisión de indicadores priorizados en el proceso de Servicio de Urgencias',
   'oportunidad en triage II, reingresos e infecciones asociadas.', 'Oportunidades', 'Observaciones', 'Conclusiones'])
@@ -1032,12 +1044,19 @@ await p.getByText('Propuesta de la IA').waitFor()
 ok((await p.getByLabel('Objetivo de la auditoría').inputValue()).includes('Cirugía'), 'la IA rellena el objetivo')
 await p.screenshot({ path: `${CAPTURAS}09-nueva-auditoria.png`, fullPage: true })
 
+// El equipo auditor se propone desde el perfil y se puede cambiar para esta auditoría (0016)
+ok(await p.getByLabel('Nombre de la persona 1').inputValue() === 'Laura Gómez Ñáñez' && await p.getByLabel('Nombre de la persona 2').inputValue() === 'Pedro Pérez Ortiz',
+  'al crear una auditoría, el equipo auditor viene del perfil')
+await p.getByLabel('Nombre de la persona 2').fill('Marta Ruiz Ortega')
 // Al crearla se pregunta si empieza por la lista de verificación o directamente por la auditoría
 await p.getByLabel('Título').fill('Auditoría interna al proceso de Cirugía')
 await p.getByRole('button', { name: 'Crear auditoría' }).click()
 const creada = p.getByRole('dialog', { name: 'Auditoría creada' })
 await creada.waitFor()
 const A2 = db.auditorias.find((a) => a.codigo === 'AI-2026-002')?.id
+const equipoA2 = db.auditorias.find((a) => a.id === A2)?.equipo_auditor
+ok(JSON.stringify(equipoA2?.map((m) => m.nombre)) === JSON.stringify(['Laura Gómez Ñáñez', 'Marta Ruiz Ortega']) && JSON.stringify(perfil.equipo_auditor.map((m) => m.nombre)) === JSON.stringify(['Laura Gómez Ñáñez', 'Pedro Pérez Ortiz']),
+  'la auditoría guarda su propio equipo; el perfil no cambia', JSON.stringify(equipoA2))
 ok(A2 && await creada.getByText('AI-2026-002').isVisible() && (await creada.getByRole('button').count()) === 3,
   'al pulsar «Crear auditoría» aparece la pregunta: lista de verificación o auditoría')
 await p.screenshot({ path: `${CAPTURAS}09b-auditoria-creada.png` })

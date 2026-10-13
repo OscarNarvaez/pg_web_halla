@@ -5,11 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, ClipboardCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { proponerCodigo } from '../hooks/useAuditorias'
-import { aFilaAlcance, esquemaAuditoria } from '../lib/esquemas'
+import { aFilaAlcance, equipoInicial, esquemaAuditoria } from '../lib/esquemas'
 import { DOCUMENTOS, documentosParaAlcance } from '../lib/catalogos'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { Encabezado } from '../components/layout/Encabezado'
-import { CamposAlcance } from '../components/perfil/CamposPerfil'
+import { CamposAlcance, CamposEquipo } from '../components/perfil/CamposPerfil'
 import { ModalEleccion } from '../components/lista/ModalEleccion'
 import { AreaTexto, Boton, Campo, Checkbox, Tarjeta } from '../components/ui'
 
@@ -29,6 +29,7 @@ export default function AuditoriaNueva() {
       codigo: '', titulo: '', alcance: perfil.alcance, proceso: perfil.proceso ?? '', sistema: perfil.sistema ?? '',
       objetivo: '', criterios: documentosParaAlcance(perfil), area_auditada: '', auditado_nombre: '', auditado_cargo: '',
       fecha_inicio: hoy(), fecha_fin: '', fecha_inicio_real: '', fecha_fin_real: '',
+      equipo_auditor: equipoInicial(null, perfil), // el equipo habitual del perfil; se puede cambiar
     },
   })
 
@@ -88,6 +89,7 @@ export default function AuditoriaNueva() {
         fecha_fin: d.fecha_fin || null,
         fecha_inicio_real: d.fecha_inicio_real || null,
         fecha_fin_real: d.fecha_fin_real || null,
+        equipo_auditor: d.equipo_auditor,
       })
       .select('id')
       .single()
@@ -141,6 +143,11 @@ export default function AuditoriaNueva() {
               </div>
             </fieldset>
           </div>
+        </Tarjeta>
+
+        <Tarjeta titulo="Equipo auditor" descripcion="Quienes participan en esta auditoría: aparecen en la Ficha Técnica de su informe. Se propone tu equipo habitual (el de tu perfil); cámbialo si esta vez te acompañan otras personas.">
+          <CamposEquipo register={register} errors={errors} control={control} leyendaOculta
+            descripcion="Al menos una persona y hasta 10, cada una con sus cargos. Cambiarlo aquí no modifica tu perfil." />
         </Tarjeta>
 
         <Tarjeta titulo="Auditado" descripcion="Persona responsable del proceso o sistema auditado (opcional).">

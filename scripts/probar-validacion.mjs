@@ -262,6 +262,17 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
   ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
+  // 0016: el equipo de la auditoría; si no tiene, el del perfil
+  const audEquipo = { ...aud, equipo_auditor: [{ nombre: 'Marta Ruiz', cargos: ['Médico', 'Doctor'] }] }
+  const cEquipo = informe.construirContenido({ auditoria: audEquipo, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-12T10:00:00Z', version: 3, avisos: [] })
+  ok(JSON.stringify(cEquipo.ficha.equipo) === JSON.stringify([{ nombre: 'Marta Ruiz', cargo: 'Médico, Doctor' }]) && c.ficha.equipo[0].nombre === 'Luis Ruiz'
+    && informe.equipoDe(audEquipo, perfilInf)[0].nombre === 'Marta Ruiz' && informe.equipoDe({ ...aud, equipo_auditor: [] }, perfilInf)[0].nombre === 'Luis Ruiz',
+    'la Ficha Técnica nombra al equipo de la auditoría y, si no tiene, al del perfil (0016)')
+  const msgEquipo = informe.construirMensajeInforme(audEquipo, hs, e, { lider: ['Coordinadora'], integrantes: informe.equipoDe(audEquipo, perfilInf).map((m) => m.cargos), evaluador: 'x' })
+  ok(msgEquipo.includes('Integrante 1: Médico, Doctor') && !msgEquipo.includes('Marta'), 'a la IA solo llegan los cargos del equipo de la auditoría, nunca los nombres')
+  ok(informe.equipoIncompletoInforme({ ...aud, equipo_auditor: [] }, { ...perfilInf, equipo_auditor: [] }) && !informe.equipoIncompletoInforme(audEquipo, { ...perfilInf, equipo_auditor: [] })
+    && !informe.perfilIncompletoInforme({ ...perfilInf, equipo_auditor: [] }),
+    'sin equipo en la auditoría ni en el perfil el informe no se genera; con equipo en la auditoría basta')
 }
 
 console.log('\n▸ Resultados de la auditoría (consolidado bajo la matriz)')

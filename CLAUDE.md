@@ -102,6 +102,10 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   del equipo auditor (1 a 10 personas, `profiles.equipo_auditor` jsonb) elige 1 a 5 de `CARGOS_EQUIPO`. Las listas
   están en `catalogos.js`, `_shared/catalogos.ts` y `public.cargos_lider()`/`cargos_equipo()` (0009): cambia las
   tres. Selector accesible en `src/components/ui/SelectorMultiple.jsx`.
+- Equipo auditor POR AUDITORÍA (decisión del dueño, 12/10/2026, 0016): `auditorias.equipo_auditor`, mismas reglas que el
+  del perfil. El del perfil es el equipo habitual: se copia al crear la auditoría (formulario y trigger) y se puede
+  cambiar al crearla o en la página del informe. El informe usa `equipoDe(auditoria, perfil)` (el de la auditoría; si
+  está vacío, el del perfil). A la IA solo le llegan los cargos.
 - Informe final = formato oficial `src/formato_de_informe_final/Auditoria_interna.odt` (decisión del dueño, 4/10/2026):
   «es tal cual ese formato, no debe cambiar». NUNCA edites la plantilla ni su orden; el dueño la reemplaza. El ODT se
   llena SOBRE la plantilla (`src/lib/exportar-odt.js`, anclas por TEXTO, no por estilos); el PDF
