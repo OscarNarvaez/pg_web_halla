@@ -352,6 +352,8 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
    indicadores priorizados en el proceso de oportunidad en triage, reingresos y satisfacción». El recuadro muestra
    cómo quedará. Si no registra ninguno, la sección dice que no se registraron.
 4. Pulse **Generar informe**. Incluye todos los hallazgos no descartados; si alguno está sin validar, se le avisa.
+5. Desde que hay informe, la barra de abajo queda **siempre a la vista** mientras recorre la página, con
+   **Generar nueva versión**, **Documento (editable)** y **PDF**, y la versión que está viendo.
 
 **Interna o externa.** Todo el informe se adapta al grupo de auditores de su perfil (el que eligió al registrarse o
 cambió después en **Mi perfil**): si es auditor externo, la portada, el encabezado de las páginas, «Auditoria externa
@@ -375,10 +377,10 @@ El informe tiene, en este orden:
 - El formato vigente ya no tiene **RECOMENDACIONES**: la oficina de calidad las retiró de la plantilla.
 - A la IA no llegan los nombres del equipo auditor, solo sus cargos.
 - Si cambia los hallazgos, las fechas, el equipo o los indicadores, genere una **nueva versión**: las anteriores se conservan.
-- Descárguelo como **Documento (ODT)**, que es la plantilla oficial llena y se abre en LibreOffice y en Word, o en
-  **PDF**, que reproduce el mismo formato.
-- Un informe generado con una plantilla anterior (por ejemplo, con RECOMENDACIONES) no se descarga: genere una
-  nueva versión.
+- Descárguelo como **Documento (editable)**, que es la plantilla oficial llena en formato ODT y se abre y se edita en
+  LibreOffice y en Word, o en **PDF**, que reproduce el mismo formato.
+- Un informe generado con una plantilla anterior (por ejemplo, con RECOMENDACIONES) no se descarga: la barra muestra
+  **Documento (editable)** y **PDF** desactivados hasta que genere una nueva versión.
 
 ## 9. Consultar las normas
 

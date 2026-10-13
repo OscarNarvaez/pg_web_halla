@@ -15,7 +15,7 @@ import { mensajeError, supabase } from '../lib/supabase'
 import { cx } from '../lib/cx'
 import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
-import { Boton, BotonEnlace, EstadoError, EstadoVacio, claseControl } from '../components/ui'
+import { BarraFija, Boton, BotonEnlace, EstadoError, EstadoVacio, claseControl } from '../components/ui'
 
 const ESPERA_GUARDADO = 1500 // guardado automático tras la última tecla
 const BARRA = 'bg-[#c0c0c0] px-3 py-1.5 text-center text-sm font-bold uppercase text-black'
@@ -335,7 +335,7 @@ function Editor({ auditoria, inicial, existe, guardadaEn }) {
       </div>
 
       {/* Barra de guardado: siempre a la vista mientras se recorre la lista */}
-      <div className="sticky bottom-3 z-20 mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-tinta-100 bg-white p-3 shadow-lg">
+      <BarraFija>
         {soloLectura
           ? <p className="text-sm text-tinta-500">Solo lectura: la auditoría está cerrada.</p>
           : <EstadoGuardado estado={estado} guardadoEn={guardadoEn} />}
@@ -345,7 +345,7 @@ function Editor({ auditoria, inicial, existe, guardadaEn }) {
             <Boton icono={Save} onClick={guardarAhora} cargando={estado === 'guardando'} aria-keyshortcuts="Control+S">Guardar cambios</Boton>
           )}
         </div>
-      </div>
+      </BarraFija>
     </>
   )
 }

@@ -27,7 +27,9 @@ export function ToastProvider({ children }) {
       {children}
       <div
         aria-live="polite"
-        className="no-imprimir pointer-events-none fixed inset-x-4 bottom-4 z-50 flex flex-col items-end gap-2 sm:left-auto sm:w-96"
+        className="no-imprimir pointer-events-none fixed inset-x-4 z-50 flex flex-col items-end gap-2 sm:left-auto sm:w-96"
+        // Encima de la barra de acciones fija de la página (BarraFija), si la hay
+        style={{ bottom: 'calc(var(--alto-barra-fija, 0px) + 1rem)' }}
       >
         {toasts.map((t) => (
           <Toast key={t.id} tipo={t.tipo} mensaje={t.mensaje} alCerrar={() => cerrar(t.id)} />

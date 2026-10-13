@@ -15,7 +15,7 @@ import { Encabezado } from '../components/layout/Encabezado'
 import { PantallaCarga } from '../components/layout/PantallaCarga'
 import { VistaInforme } from '../components/informe/VistaInforme'
 import { CamposEquipo } from '../components/perfil/CamposPerfil'
-import { Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
+import { BarraFija, Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
 
 /** Fechas reales de la auditoría: la Ficha Técnica del formato las pide junto a las planeadas. */
 function FechasReales({ auditoria, alGuardar }) {
@@ -197,22 +197,9 @@ export default function Informe() {
           titulo="Informe de auditoría"
           descripcion="Informe final con el formato oficial del hospital. Los hallazgos, la Ficha Técnica y los indicadores que registres los llena el sistema; la IA redacta las secciones narrativas."
           volver={{ a: `/app/auditorias/${id}`, etiqueta: a.titulo }}
-          acciones={
-            <>
-              <Boton icono={lista.length ? RefreshCw : FileText} onClick={generar} cargando={generando} disabled={!puedeGenerar}>
-                {lista.length ? 'Generar nueva versión' : 'Generar informe'}
-              </Boton>
-              {oficial && (
-                <>
-                  <Boton variante="secundario" icono={FileDown} onClick={() => exportar('odt')} cargando={exportando === 'odt'} disabled={Boolean(exportando)}
-                    title="Documento con la plantilla oficial; se abre en LibreOffice y en Word">
-                    Documento (ODT)
-                  </Boton>
-                  <Boton variante="secundario" icono={FileDown} onClick={() => exportar('pdf')} cargando={exportando === 'pdf'} disabled={Boolean(exportando)}>PDF</Boton>
-                </>
-              )}
-            </>
-          }
+          acciones={!lista.length && (
+            <Boton icono={FileText} onClick={generar} cargando={generando} disabled={!puedeGenerar}>Generar informe</Boton>
+          )}
         />
         {!puedeGenerar && (
           <p className="mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
@@ -251,10 +238,23 @@ export default function Informe() {
         />
       )}
       {oficial && <VistaInforme informe={informe} />}
+
+      {/* Con el informe generado, sus acciones quedan siempre a la vista mientras se recorre la página */}
       {informe && (
-        <p className="no-imprimir mt-3 text-center text-xs text-tinta-500">
-          Versión {informe.version} · generada {fechaHora(informe.generado_en)}{informe.modelo_ia ? ` · narrativa: ${informe.modelo_ia}` : ' · narrativa: plantilla'}
-        </p>
+        <BarraFija como="section" aria-label="Acciones del informe">
+          <p className="text-xs text-tinta-500">
+            Versión {informe.version} · generada {fechaHora(informe.generado_en)}{informe.modelo_ia ? ` · narrativa: ${informe.modelo_ia}` : ' · narrativa: plantilla'}
+            {!oficial && ' · formato anterior: genera una nueva versión para descargarlo'}
+          </p>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Boton icono={RefreshCw} onClick={generar} cargando={generando} disabled={!puedeGenerar}>Generar nueva versión</Boton>
+            <Boton variante="secundario" icono={FileDown} onClick={() => exportar('odt')} cargando={exportando === 'odt'} disabled={!oficial || generando || Boolean(exportando)}
+              title="Documento ODT con la plantilla oficial: se abre y se edita en LibreOffice y en Word">
+              Documento (editable)
+            </Boton>
+            <Boton variante="secundario" icono={FileDown} onClick={() => exportar('pdf')} cargando={exportando === 'pdf'} disabled={!oficial || generando || Boolean(exportando)}>PDF</Boton>
+          </div>
+        </BarraFija>
       )}
     </>
   )

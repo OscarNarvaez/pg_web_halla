@@ -832,8 +832,31 @@ ok(textoHoja.indexOf(extintor.slice(0, 60)) > textoHoja.indexOf('NO CONFORMIDADE
   'cada hallazgo va en su lista, con la redacción validada')
 await p.screenshot({ path: `${CAPTURAS}07-informe.png`, fullPage: true })
 
+// Con el informe generado, «Generar nueva versión», «Documento (editable)» y «PDF» quedan siempre a la vista
+{
+  const barra = p.getByRole('region', { name: 'Acciones del informe' })
+  const BOTONES_INFORME = ['Generar nueva versión', 'Documento (editable)', 'PDF']
+  const aLaVista = async () => {
+    for (const nombre of BOTONES_INFORME) {
+      const visible = await barra.getByRole('button', { name: nombre, exact: true })
+        .evaluate((b) => { const r = b.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.width > 0 })
+      if (!visible) return nombre
+    }
+    return ''
+  }
+  const fueraArriba = (await p.evaluate(() => scrollTo(0, 0)), await aLaVista())
+  const fueraMedio = (await hoja.getByText('Criterios de auditoría', { exact: true }).first().scrollIntoViewIfNeeded(), await aLaVista())
+  const fueraFinal = (await p.evaluate(() => scrollTo(0, document.body.scrollHeight)), await aLaVista())
+  ok(!fueraArriba && !fueraMedio && !fueraFinal, 'los botones del informe siguen a la vista arriba, en medio y al final de la página',
+    [fueraArriba, fueraMedio, fueraFinal].join(' / '))
+  ok((await p.getByRole('button', { name: 'Generar nueva versión' }).count()) === 1 && (await p.getByRole('button', { name: 'Generar informe' }).count()) === 0,
+    'cada acción aparece una sola vez: el encabezado deja de mostrarlas cuando ya hay informe')
+  await p.evaluate(() => scrollTo(0, document.body.scrollHeight / 2))
+  await p.screenshot({ path: `${CAPTURAS}07c-informe-acciones.png` })
+}
+
 // ODT: la plantilla oficial llena
-const [descargaOdt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (ODT)' }).click()])
+const [descargaOdt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
 const rutaOdt = `${CAPTURAS}${descargaOdt.suggestedFilename()}`
 await descargaOdt.saveAs(rutaOdt)
 ok(/^Informe_AI-2026-001_\d{8}\.odt$/.test(descargaOdt.suggestedFilename()), `nombre del documento: ${descargaOdt.suggestedFilename()}`)
@@ -922,8 +945,12 @@ execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
   await p.reload()
   await p.getByRole('button', { name: 'Generar nueva versión' }).click()
   await p.getByText(/Informe versión \d+ generado/).waitFor()
+  const cajaAviso = await p.getByRole('status').filter({ hasText: /Informe versión \d+ generado/ }).boundingBox()
+  const cajaBarra = await p.getByRole('region', { name: 'Acciones del informe' }).boundingBox()
+  ok(cajaAviso.y + cajaAviso.height <= cajaBarra.y, 'el aviso de «informe generado» sale encima de la barra y no tapa sus botones',
+    `aviso ${Math.round(cajaAviso.y + cajaAviso.height)} · barra ${Math.round(cajaBarra.y)}`)
   const hojaExt = (await p.getByRole('article', { name: 'Informe final de auditoría' }).innerText()).replace(/\s+/g, ' ')
-  const [odtExt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (ODT)' }).click()])
+  const [odtExt] = await Promise.all([p.waitForEvent('download', { timeout: 30000 }), p.getByRole('button', { name: 'Documento (editable)' }).click()])
   const rutaExt = `${CAPTURAS}externa-${odtExt.suggestedFilename()}`
   await odtExt.saveAs(rutaExt)
   const textoExt = ['content.xml', 'styles.xml', 'meta.xml'].map((x) => textoOdf(execSync(`unzip -p "${rutaExt}" ${x}`).toString())).join('\n')
@@ -942,7 +969,11 @@ execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
   db.informes.push(viejo)
   await p.goto(`${BASE}/app/auditorias/${A1}/informe`)
   await p.getByRole('heading', { name: 'Esta versión tiene el formato anterior' }).waitFor()
-  ok((await p.getByRole('button', { name: 'Documento (ODT)' }).count()) === 0, 'un informe con el formato anterior pide generar una nueva versión y no se descarga')
+  const barraVieja = p.getByRole('region', { name: 'Acciones del informe' })
+  ok(await barraVieja.getByRole('button', { name: 'Generar nueva versión' }).isEnabled()
+    && await barraVieja.getByRole('button', { name: 'Documento (editable)' }).isDisabled() && await barraVieja.getByRole('button', { name: 'PDF' }).isDisabled()
+    && /formato anterior: genera una nueva versión/.test(await barraVieja.innerText()),
+  'un informe con el formato anterior pide generar una nueva versión y no se descarga (los botones siguen a la vista, desactivados)')
   db.informes.pop()
 }
 perfil.cargos = []
@@ -1216,6 +1247,9 @@ console.log('\n▸ Móvil (360 px)')
     await m.waitForTimeout(400)
     await sinDesborde(m, nombre)
   }
+  await m.goto(`${BASE}/app/auditorias/${A1}/informe`)
+  await m.getByRole('article', { name: 'Informe final de auditoría' }).getByText('Indicadores', { exact: true }).first().scrollIntoViewIfNeeded()
+  await m.screenshot({ path: `${CAPTURAS}10c-movil-informe-acciones.png` })
   await m.goto(`${BASE}/app/auditorias/${A1}/matriz`)
   await m.getByRole('region', { name: 'Resultados de la auditoría' }).screenshot({ path: `${CAPTURAS}10b-movil-resultados.png` })
   // Entrar a la auditoría con lista: primero la pregunta, después el detalle
