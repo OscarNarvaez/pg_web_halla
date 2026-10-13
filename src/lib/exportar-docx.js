@@ -34,6 +34,9 @@ export class ErrorPlantilla extends Error {
 }
 
 const normal = (t) => t.replace(/\s+/g, ' ').trim()
+/** Para comparar textos de la plantilla sin importar tildes ni mayúsculas («Auditoria» o «Auditoría»). */
+const comparable = (t) => normal(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const TITULO_AUDITORIA = /^Auditor[ií]a (Interna|Externa) - /
 const es = (n, nombre, ns = NS.w) => n?.nodeType === 1 && n.namespaceURI === ns && n.localName === nombre
 const hijos = (n, nombre) => (n ? [...n.children].filter((h) => es(h, nombre)) : [])
 const hijo = (n, nombre) => hijos(n, nombre)[0]
@@ -62,12 +65,26 @@ function nuevoTexto(doc, texto) {
   return t
 }
 
-/** Tramo nuevo con el formato del primer tramo del párrafo (o, si no tiene, el de su marca de párrafo). */
+/**
+ * Formato de un renglón vacío: el de su marca de párrafo. Google Docs y Word guardan ahí la fuente y el tamaño de un
+ * renglón sin texto (su tramo vacío puede no traer ninguno y el texto saldría con la fuente por defecto, Calibri 11).
+ */
+function formatoDeMarca(p) {
+  const marca = hijo(hijo(p, 'pPr'), 'rPr')
+  if (!marca?.children.length) return null
+  const formato = marca.cloneNode(true)
+  // Las marcas de cambios de la marca de párrafo no valen para un tramo
+  for (const n of [...formato.children]) if (['ins', 'del', 'moveFrom', 'moveTo'].includes(n.localName)) formato.removeChild(n)
+  return formato
+}
+
+/** Tramo nuevo con el formato del primer tramo con texto del párrafo o, si no tiene texto, el de su marca de párrafo. */
 function nuevoTramo(p) {
   const doc = p.ownerDocument
   const r = doc.createElementNS(NS.w, 'w:r')
-  const formato = hijo(hijos(p, 'r')[0], 'rPr') ?? hijo(hijo(p, 'pPr'), 'rPr')
-  if (formato) r.appendChild(formato.cloneNode(true))
+  const conTexto = hijos(p, 'r').find((x) => hijo(x, 't'))
+  const formato = conTexto ? hijo(conTexto, 'rPr')?.cloneNode(true) : formatoDeMarca(p) ?? hijo(hijos(p, 'r')[0], 'rPr')?.cloneNode(true)
+  if (formato) r.appendChild(formato)
   return r
 }
 
@@ -90,6 +107,15 @@ function reemplazarTexto(p, texto) {
   const tramos = hijos(p, 'r')
   let tramo = tramos.find((r) => hijo(r, 't')) ?? tramos.find((r) => !hijo(r, 'br') && !hijo(r, 'drawing'))
   if (!tramo) tramo = p.insertBefore(nuevoTramo(p), tramos[0] ?? null)
+  else if (!hijo(tramo, 't')) {
+    // Un tramo vacío toma el formato del renglón (su marca de párrafo), como lo vería quien escribe en él
+    const formato = formatoDeMarca(p)
+    if (formato) {
+      const anterior = hijo(tramo, 'rPr')
+      if (anterior) tramo.replaceChild(formato, anterior)
+      else tramo.insertBefore(formato, tramo.firstChild)
+    }
+  }
   for (const r of tramos) for (const t of hijos(r, 't')) r.removeChild(t)
   tramo.appendChild(nuevoTexto(p.ownerDocument, texto))
   return tramo
@@ -129,16 +155,21 @@ function llenarCuerpo(doc, c) {
     return n
   }
 
-  // Portada: «Auditoria Interna - <año> - <proceso> <evaluador>» (o «Externa») y el año
-  const titulo = parrafosCuerpo().find((x) => /^Auditoria (Interna|Externa) - /.test(normal(textoDe(x))))
-  if (!titulo) throw new ErrorPlantilla('La plantilla del informe no tiene el título de la portada («Auditoria Interna - …»).')
+  // Portada: «Auditoría Interna - <año> - <proceso> <evaluador>» (o «Externa») y el año
+  const titulo = parrafosCuerpo().find((x) => TITULO_AUDITORIA.test(normal(textoDe(x))))
+  if (!titulo) throw new ErrorPlantilla('La plantilla del informe no tiene el título de la portada («Auditoría Interna - …»).')
   reemplazarTexto(titulo, `${tituloAuditoria(c)} ${c.encabezado.evaluador}`.trim())
   const anio = parrafosCuerpo().find((x) => /^\d{4}$/.test(normal(textoDe(x))))
   if (anio) reemplazarTexto(anio, c.encabezado.anio)
-  // «Auditoria interna de» (portada y título de las listas): «interna» o «externa» y, después de «de», lo auditado
-  const programas = parrafosCuerpo().filter((x) => normal(textoDe(x)) === TEXTOS_FORMATO.programa)
+  // «Auditoría interna de» (portada) y «Auditoría interna de:» (título de las listas): «interna» o «externa» y, después
+  // de «de», lo auditado, aunque la plantilla traiga ahí «SIG» (decisión del dueño, 12/10/2026)
+  const programa = comparable(TEXTOS_FORMATO.programa)
+  const programas = parrafosCuerpo().filter((x) => comparable(textoDe(x)).startsWith(programa))
   if (!programas.length) throw new ErrorPlantilla(`La plantilla del informe no tiene «${TEXTOS_FORMATO.programa}».`)
-  for (const x of programas) reemplazarTexto(x, programaDe(c))
+  for (const x of programas) {
+    const conDosPuntos = comparable(textoDe(x)).startsWith(`${programa}:`)
+    reemplazarTexto(x, programaDe(c, conDosPuntos ? TEXTOS_FORMATO.programaListas : TEXTOS_FORMATO.programa))
+  }
 
   // Formato de los párrafos de texto que se agregan donde la plantilla no trae renglón vacío
   const alcance = buscar('Alcance', { titulo: true })
@@ -176,8 +207,7 @@ function llenarFicha(cuerpo, c) {
   for (const fila of filas()) {
     const [, valor, , valor2] = celdas(fila)
     switch (etiqueta(fila)) {
-      case TEXTOS_FORMATO.fechaInicioPlaneada: escribir(valor, f.inicio_planeada); escribir(valor2, f.fin_planeada); break
-      case TEXTOS_FORMATO.fechaInicioReal: escribir(valor, f.inicio_real); escribir(valor2, f.fin_real); break
+      case TEXTOS_FORMATO.fechaAuditoria: escribir(valor, f.fecha_auditoria); escribir(valor2, f.fecha_informe); break
       case TEXTOS_FORMATO.sistemaReferencia: escribir(valor, f.sistema_referencia); break
       case TEXTOS_FORMATO.evaluador: escribir(valor, f.evaluador); break
       case TEXTOS_FORMATO.liderEquipo: escribir(valor, personaFicha(f.lider)); break
@@ -217,7 +247,7 @@ function llenarFicha(cuerpo, c) {
 
 /** Qué cuadro del encabezado o del pie es, por su texto. */
 const tipoCuadro = (texto) => (/^HOSPITAL /.test(texto) ? 'institucion'
-  : /^Auditoria (Interna|Externa) - /.test(texto) ? 'titulo'
+  : TITULO_AUDITORIA.test(texto) ? 'titulo'
     : /^Generado por /.test(texto) ? 'generado'
       : /^Página/.test(texto) ? 'pagina' : null)
 
@@ -325,6 +355,36 @@ function alinearSecciones(documento, relaciones, partes) {
   }
 }
 
+// Propiedades del documento (título y autor). Si la plantilla no las trae (Google Docs no las guarda), se agregan.
+const CORE = 'docProps/core.xml'
+const CORE_VACIO = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
+  + ' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+  + '<dc:title></dc:title><dc:creator></dc:creator><cp:lastModifiedBy></cp:lastModifiedBy>'
+  + '<dcterms:created xsi:type="dcterms:W3CDTF"></dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF"></dcterms:modified></cp:coreProperties>'
+
+/** Registra docProps/core.xml en [Content_Types].xml y en _rels/.rels, para una plantilla que no lo traía. */
+function registrarPropiedades(tipos, relaciones) {
+  const CT = 'http://schemas.openxmlformats.org/package/2006/content-types'
+  const raizTipos = tipos.documentElement
+  if (![...raizTipos.getElementsByTagNameNS(CT, 'Override')].some((o) => o.getAttribute('PartName') === `/${CORE}`)) {
+    const o = tipos.createElementNS(CT, 'Override')
+    o.setAttribute('PartName', `/${CORE}`)
+    o.setAttribute('ContentType', 'application/vnd.openxmlformats-package.core-properties+xml')
+    raizTipos.appendChild(o)
+  }
+  const raiz = relaciones.documentElement
+  const existentes = [...raiz.getElementsByTagNameNS(NS.rels, 'Relationship')]
+  if (!existentes.some((r) => r.getAttribute('Target').replace(/^\//, '') === CORE)) {
+    const r = relaciones.createElementNS(NS.rels, 'Relationship')
+    let n = existentes.length + 1
+    while (existentes.some((x) => x.getAttribute('Id') === `rId${n}`)) n++
+    r.setAttribute('Id', `rId${n}`)
+    r.setAttribute('Type', 'http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties')
+    r.setAttribute('Target', CORE)
+    raiz.appendChild(r)
+  }
+}
+
 function llenarMetadatos(doc, c) {
   const poner = (ns, nombre, valor) => {
     const n = doc.getElementsByTagNameNS(ns, nombre.split(':')[1])[0]
@@ -363,15 +423,27 @@ export async function construirDocx(informe) {
   for (const parte of Object.values(partes)) llenarEncabezadoYPie(parte, c)
   if (archivos['word/_rels/document.xml.rels']) alinearSecciones(documento, leerXml(archivos['word/_rels/document.xml.rels']), partes)
 
+  // Una plantilla sin propiedades (Google Docs no las guarda) recibe docProps/core.xml con el título y el autor
+  const sinPropiedades = !archivos[CORE] && archivos['[Content_Types].xml'] && archivos['_rels/.rels']
+  const tipos = sinPropiedades && leerXml(archivos['[Content_Types].xml'])
+  const relaciones = sinPropiedades && leerXml(archivos['_rels/.rels'])
+  if (sinPropiedades) registrarPropiedades(tipos, relaciones)
   const salida = {}
   for (const [ruta, datos] of Object.entries(archivos)) {
     if (ruta === DOCUMENTO) salida[ruta] = escribirXml(documento)
     else if (partes[ruta]) salida[ruta] = escribirXml(partes[ruta])
-    else if (ruta === 'docProps/core.xml') {
+    else if (ruta === CORE) {
       const core = leerXml(datos)
       llenarMetadatos(core, c)
       salida[ruta] = escribirXml(core)
-    } else salida[ruta] = datos
+    } else if (sinPropiedades && ruta === '[Content_Types].xml') salida[ruta] = escribirXml(tipos)
+    else if (sinPropiedades && ruta === '_rels/.rels') salida[ruta] = escribirXml(relaciones)
+    else salida[ruta] = datos
+  }
+  if (sinPropiedades) {
+    const core = leerXml(strToU8(CORE_VACIO))
+    llenarMetadatos(core, c)
+    salida[CORE] = escribirXml(core)
   }
   return zipSync(salida, { level: 6 })
 }

@@ -42,7 +42,7 @@ export function mensajeError(error) {
     [/Ley 1581/i, 'Debes autorizar el tratamiento de tus datos personales.'],
     // Cargos y equipo auditor (migración 0009)
     [/Auditores Internos o a los Auditores Externos/i, 'Elige si perteneces a los Auditores Internos o a los Auditores Externos.'],
-    [/fechas_reales_coherentes/i, 'La terminación real no puede ser anterior al inicio real.'],
+    [/fecha_informe_coherente/i, 'La fecha de creación del informe no puede ser anterior a la fecha de la auditoría.'],
     [/Cargo no permitido/i, 'Uno de los cargos elegidos no está en la lista institucional. Elígelos de nuevo.'],
     // Líder del equipo auditor de la auditoría (0017)
     [/líder del equipo auditor/i, 'Revisa el líder del equipo auditor: su nombre (de 3 a 120 caracteres) y de 1 a 5 cargos de la lista.'],

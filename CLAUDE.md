@@ -121,8 +121,13 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   horizontal) los cuadros del encabezado y el pie toman la posición de los de la portada y el margen superior es el de la
   portada (el texto se montaba sobre el encabezado); los cuadros del encabezado y el pie crecen con su texto y los de
   «HOSPITAL INFANTIL LOS ANGELES» y «Generado por…» se ensanchan (no cabían en una línea). Las filas «Ficha Técnica» y
-  «Equipo auditor» traen interlineado 0,69 y se ven recortadas arriba: es de la plantilla, no se toca. Contenido
-  `version_estructura: 5`; las versiones anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
+  «Equipo auditor» traen interlineado 0,69 y se ven recortadas arriba: es de la plantilla, no se toca. Un renglón vacío
+  toma el formato de su marca de párrafo (`formatoDeMarca`: Google Docs no lo guarda en el tramo vacío y el texto saldría
+  en Calibri 11). Si la plantilla no trae `docProps/core.xml` (Google Docs), se agrega con el título y el autor.
+  Plantilla del 12/10/2026, 21:43 (Google Docs, decisión del dueño): «Auditoría» con tilde (portada, títulos) y la Ficha
+  Técnica trae «Fecha Auditoría» y «Fecha Creación del Informe» (`auditorias.fecha_auditoria` y `fecha_informe`, 0018; se
+  registran en «Fechas del informe»; sin fecha de creación, la del día en que se genera, hora de Colombia) en lugar de las
+  fechas planeadas y reales. Contenido `version_estructura: 6`; las versiones anteriores se regeneran. Sin firmas: la plantilla no las tiene. «Evaluador» = `profiles.tipo_evaluador` (0010).
   Plantilla del 5/10/2026 (decisión del dueño): SIN «RECOMENDACIONES». Plantilla del 13/10/2026: bajo «Indicadores» la
   línea es «Revisión de indicadores priorizados en el proceso de» y, justo después de «de», en ESA MISMA línea, van SOLO
   los nombres cortos que registra el auditor: «…en el proceso de a, b y c» (sin el área, sin «:» ni punto). Uno por campo
@@ -131,11 +136,13 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   nombres (anonimizados) para nombrarlos bien si los menciona, sin metas ni resultados.
 - Interna o externa (decisión del dueño, 13/10/2026): TODO texto que diga «interna/interno» se adapta a
   `profiles.tipo_evaluador` con `textosAuditoria()` (`TEXTOS_TIPO_AUDITORIA` en catalogos.js = _shared/catalogos.ts):
-  portada, encabezado, «Auditoria interna de <lo auditado>» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
+  portada, encabezado, «Auditoría interna de <lo auditado>» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
   (`sistemaInforme`), «Sugerir con IA», código AI-/AE-, ejemplo del título y autorización de datos. El informe guarda el
   grupo en `encabezado.tipo_evaluador` (sin grupo → interna). La plantilla sigue diciendo «interna»: se reemplaza al llenar.
-  Plantilla del 12/10/2026 (decisión del dueño): en la portada y en el título de las listas dice solo «Auditoria interna
-  de» (sin «SIG»); justo después de «de» va lo auditado, el proceso o el sistema: «Auditoria interna de Urgencias».
+  Decisión del dueño (12/10/2026): en la portada y en el título de las listas, justo después de «de» va lo auditado, el
+  proceso o el sistema, aunque la plantilla traiga ahí «SIG»: «Auditoría interna de Urgencias» en la portada y
+  «Auditoría interna de: Urgencias» antes de las listas (con los dos puntos de la plantilla, `programaListas`). Todo el
+  informe escribe «Auditoría» con tilde, como el cuerpo de la plantilla (los cuadros del encabezado la traen sin tilde).
   Excepción: el prompt del sistema de clasificación (ANEXO A literal, «auditor interno») no se toca.
   Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.
 - Conclusiones (decisión del dueño, 12/10/2026): UN SOLO párrafo que valora la adecuación, la conveniencia y la eficacia

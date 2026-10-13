@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     }
   }
   if (estadisticas.sin_confirmar) avisos.push(`El informe incluye ${estadisticas.sin_confirmar} hallazgo(s) sin validar.`)
-  if (!auditoria.fecha_inicio_real || !auditoria.fecha_fin_real) avisos.push('Faltan las fechas reales de la auditoría: la Ficha Técnica las deja en blanco.')
+  if (!auditoria.fecha_auditoria) avisos.push('Falta la fecha de la auditoría: la Ficha Técnica la deja en blanco.')
   if (!revisados(auditoria).length) avisos.push('No registraste indicadores priorizados del proceso: la sección «Indicadores» dirá que no se registraron.')
 
   // 5. Contenido con la estructura del formato oficial y nueva versión

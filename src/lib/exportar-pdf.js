@@ -154,8 +154,7 @@ export async function exportarPdf(informe) {
   }
   const f = c.ficha
   cabecera(TEXTOS_FORMATO.fichaTecnica)
-  filaDoble(TEXTOS_FORMATO.fechaInicioPlaneada, f.inicio_planeada, TEXTOS_FORMATO.fechaFinPlaneada, f.fin_planeada)
-  filaDoble(TEXTOS_FORMATO.fechaInicioReal, f.inicio_real, TEXTOS_FORMATO.fechaFinReal, f.fin_real)
+  filaDoble(TEXTOS_FORMATO.fechaAuditoria, f.fecha_auditoria, TEXTOS_FORMATO.fechaInforme, f.fecha_informe)
   filaSimple(TEXTOS_FORMATO.sistemaReferencia, f.sistema_referencia)
   filaSimple(TEXTOS_FORMATO.evaluador, f.evaluador)
   cabecera(TEXTOS_FORMATO.equipoAuditor)
@@ -168,7 +167,7 @@ export async function exportarPdf(informe) {
 
   // ─── Hallazgos ─────────────────────────────────────────────────────────────
   y += 2
-  parrafo(programaDe(c), { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
+  parrafo(programaDe(c, TEXTOS_FORMATO.programaListas), { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
   for (const lista of LISTAS_HALLAZGOS) {
     parrafo(lista.titulo, { escala: ESCALA_ROTULO })
     const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []

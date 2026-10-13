@@ -40,8 +40,9 @@ export interface AuditoriaInforme {
   auditado_cargo: string | null
   fecha_inicio: string | null
   fecha_fin: string | null
-  fecha_inicio_real?: string | null
-  fecha_fin_real?: string | null
+  /** «Fecha Auditoría» y «Fecha Creación del Informe» de la Ficha Técnica (0018) */
+  fecha_auditoria?: string | null
+  fecha_informe?: string | null
   /** Indicadores priorizados del proceso que registró el auditor: solo su nombre corto (0013, 0015) */
   indicadores_revisados?: IndicadorRevisado[] | null
   /** Equipo auditor de esta auditoría (0016); vacío → el del perfil */
@@ -285,7 +286,7 @@ export function construirMensajeInforme(
     `Alcance: ${a.alcance} · ${objeto}${a.area_auditada ? ` · Área: ${a.area_auditada}` : ''}`,
     `Objetivo: ${a.objetivo?.trim() || 'NO INFORMADO (redáctalo)'}`,
     `Periodo planeado: ${a.fecha_inicio ?? 'no informado'} a ${a.fecha_fin ?? 'no informado'}`,
-    `Periodo real: ${a.fecha_inicio_real ?? 'no informado'} a ${a.fecha_fin_real ?? 'no informado'}`,
+    `Fecha de la auditoría: ${a.fecha_auditoria ?? 'no informada'}`,
     `Normas aplicables: ${normasDe(a).join(', ')}`,
     '',
     '## EQUIPO AUDITOR (solo cargos)',
@@ -338,10 +339,10 @@ export function narrativaRespaldo(a: AuditoriaInforme, e: Estadisticas, tipoEval
   // «de el proceso» → «del proceso»
   const deObjeto = objeto.startsWith('el ') ? `del ${objeto.slice(3)}` : `de ${objeto}`
   const objetivo = `Evaluar la conformidad ${deObjeto} del ${INSTITUCION.nombre} frente a los requisitos aplicables.`
-  const periodo = a.fecha_inicio_real || a.fecha_inicio
-  const periodoFin = a.fecha_fin_real || a.fecha_fin
-  const alcance = `La auditoría comprende ${objeto}${a.area_auditada ? `, en el área ${a.area_auditada}` : ''}` +
-    `${periodo ? `, en el periodo del ${periodo}${periodoFin ? ` al ${periodoFin}` : ''}` : ''}, frente a ${enLista(normasDe(a))}.`
+  // La fecha de la auditoría (0018) o, si no se registró, el periodo planeado
+  const cuando = a.fecha_auditoria ? `, realizada el ${a.fecha_auditoria}`
+    : a.fecha_inicio ? `, en el periodo del ${a.fecha_inicio}${a.fecha_fin ? ` al ${a.fecha_fin}` : ''}` : ''
+  const alcance = `La auditoría comprende ${objeto}${a.area_auditada ? `, en el área ${a.area_auditada}` : ''}${cuando}, frente a ${enLista(normasDe(a))}.`
   const altos = r.ALTA + r.EXTREMA
   const priorizacion = altos
     ? `Se priorizó ${objeto} por la presencia de riesgos de nivel alto o extremo según la escala del PR13_GQ, que requieren tratamiento.`
@@ -394,7 +395,7 @@ export const textosNarrativa = (n: Narrativa) => [
 export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos: HallazgoInforme[], e: Estadisticas): string[] {
   const permitidas = new Set<string>(['9001', '14001', '45001', '19011', '31000', '2015', '2018', '13'])
   const agregar = (x: unknown) => String(x ?? '').match(/\d+(?:[.,]\d+)*/g)?.forEach((m) => permitidas.add(m))
-  ;[...cifrasAuditoria(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_inicio_real, a.fecha_fin_real,
+  ;[...cifrasAuditoria(e), e.total, e.confirmados, a.codigo, a.titulo, a.fecha_inicio, a.fecha_fin, a.fecha_auditoria, a.fecha_informe,
     a.objetivo, a.area_auditada, ...(a.criterios ?? []), ...revisados(a)].forEach(agregar)
   hallazgos.forEach((h) => [h.consecutivo, h.hallazgo_corregido, h.criterio_requisito, h.evidencia, h.riesgo_descripcion,
     h.riesgo_probabilidad, h.riesgo_impacto, (h.riesgo_probabilidad ?? 0) * (h.riesgo_impacto ?? 0)].forEach(agregar))
@@ -402,11 +403,16 @@ export function cifrasNoRastreables(n: Narrativa, a: AuditoriaInforme, hallazgos
   return [...new Set((texto.match(/\d+(?:[.,]\d+)*/g) ?? []).filter((m) => !permitidas.has(m)))]
 }
 
+/** «2026-10-12»: la fecha de un instante en la hora de Colombia. */
+export const fechaColombia = (iso: string) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
+
 /**
- * Contenido del informe con la estructura del formato oficial (version_estructura 5): portada, Ficha Técnica,
+ * Contenido del informe con la estructura del formato oficial (version_estructura 6): portada, Ficha Técnica,
  * listas de hallazgos en el orden del formato y las secciones de Objetivo a Conclusiones. Plantilla del 5/10/2026: sin
  * recomendaciones. La 5 (10/10/2026): «Indicadores» = la línea de la plantilla con los nombres de los indicadores que
- * registró el auditor en su campo, después de «…en el proceso de» (la IA no los redacta).
+ * registró el auditor en su campo, después de «…en el proceso de» (la IA no los redacta). La 6 (12/10/2026): la Ficha
+ * Técnica trae «Fecha Auditoría» y «Fecha Creación del Informe» en lugar de las fechas planeadas y reales.
  */
 export function construirContenido(opciones: {
   auditoria: AuditoriaInforme
@@ -427,7 +433,7 @@ export function construirContenido(opciones: {
     .filter((pdf): pdf is { nombre: string; paginas: number; sha256: string } => Boolean(pdf?.nombre))
     .map((pdf) => [pdf.sha256, `${pdf.nombre} (${pdf.paginas} ${pdf.paginas === 1 ? 'página' : 'páginas'})`])).values()]
   return {
-    version_estructura: 5,
+    version_estructura: 6,
     formato: 'Auditoria_interna.docx',
     identificacion: {
       codigo: a.codigo,
@@ -437,15 +443,14 @@ export function construirContenido(opciones: {
       fecha_emision: opciones.generadoEn.slice(0, 10),
       version: opciones.version,
     },
-    // «Auditoria Interna - <año> - <proceso o sistema>», como en el encabezado y la portada del formato
-    // tipo_evaluador decide «Auditoria Interna» o «Auditoria Externa» en todo el documento (formato-informe.js)
-    encabezado: { anio: (a.fecha_inicio ?? opciones.generadoEn).slice(0, 4), objeto, evaluador, tipo_evaluador: p.tipo_evaluador ?? null },
+    // «Auditoría Interna - <año> - <proceso o sistema>», como en el encabezado y la portada del formato
+    // tipo_evaluador decide «Auditoría Interna» o «Auditoría Externa» en todo el documento (formato-informe.js)
+    encabezado: { anio: (a.fecha_auditoria ?? a.fecha_inicio ?? opciones.generadoEn).slice(0, 4), objeto, evaluador, tipo_evaluador: p.tipo_evaluador ?? null },
     generado: { por: p.nombre_completo, en: opciones.generadoEn },
     ficha: {
-      inicio_planeada: a.fecha_inicio ?? '',
-      fin_planeada: a.fecha_fin ?? '',
-      inicio_real: a.fecha_inicio_real ?? '',
-      fin_real: a.fecha_fin_real ?? '',
+      // Las registra el auditor antes de generar el informe (0018); sin fecha de creación, la del día en que se genera
+      fecha_auditoria: a.fecha_auditoria ?? '',
+      fecha_informe: a.fecha_informe ?? fechaColombia(opciones.generadoEn),
       sistema_referencia: a.alcance === 'SISTEMAS' ? `${a.sistema} · ${normasDe(a).join(', ')}` : normasDe(a).join(', '),
       evaluador,
       equipo: equipoDe(a, p).map((m) => ({ nombre: m.nombre, cargo: unirCargos(m.cargos) })),

@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { invocarFuncion, mensajeError, supabase } from '../lib/supabase'
 import { fechaHora } from '../lib/formato'
 import {
-  MAX_INDICADORES, MAX_NOMBRE_INDICADOR, equipoInicial, esquemaEquipoAuditoria, esquemaFechasReales, esquemaIndicadores, esquemaLiderAuditoria, indicadorVacio,
+  MAX_INDICADORES, MAX_NOMBRE_INDICADOR, equipoInicial, esquemaEquipoAuditoria, esquemaFechasInforme, esquemaIndicadores, esquemaLiderAuditoria, indicadorVacio,
   liderInicial,
 } from '../lib/esquemas'
 import { esFormatoOficial, lineaIndicadores } from '../lib/formato-informe'
@@ -20,25 +20,27 @@ import { VistaInforme } from '../components/informe/VistaInforme'
 import { CamposEquipo, CamposLider } from '../components/perfil/CamposPerfil'
 import { BarraFija, Boton, Campo, EstadoError, EstadoVacio, Tarjeta, claseControl } from '../components/ui'
 
-/** Fechas reales de la auditoría: la Ficha Técnica del formato las pide junto a las planeadas. */
-function FechasReales({ auditoria, alGuardar }) {
+/**
+ * «Fecha Auditoría» y «Fecha Creación del Informe» (plantilla del 12/10/2026, 0018): van en la Ficha Técnica. Sin fecha
+ * de creación, el informe toma la del día en que se genera.
+ */
+function FechasInforme({ auditoria, alGuardar }) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm({
-    resolver: zodResolver(esquemaFechasReales),
-    defaultValues: { fecha_inicio_real: auditoria.fecha_inicio_real ?? '', fecha_fin_real: auditoria.fecha_fin_real ?? '' },
+    resolver: zodResolver(esquemaFechasInforme),
+    defaultValues: { fecha_auditoria: auditoria.fecha_auditoria ?? '', fecha_informe: auditoria.fecha_informe ?? '' },
   })
   const enviar = async (d) => {
-    const ok = await alGuardar({ fecha_inicio_real: d.fecha_inicio_real || null, fecha_fin_real: d.fecha_fin_real || null })
+    const ok = await alGuardar({ fecha_auditoria: d.fecha_auditoria || null, fecha_informe: d.fecha_informe || null })
     if (ok) reset(d)
   }
   return (
-    <Tarjeta titulo="Fechas reales de la auditoría" className="mb-6">
+    <Tarjeta titulo="Fechas del informe" className="mb-6">
       <form onSubmit={handleSubmit(enviar)} noValidate className="flex flex-wrap items-end gap-4">
         <p className="w-full text-sm text-tinta-500">
-          Van en la Ficha Técnica junto a las planeadas ({auditoria.fecha_inicio ?? 'sin fecha'} a {auditoria.fecha_fin ?? 'sin fecha'}).
-          Regístralas antes de generar el informe.
+          Van en la Ficha Técnica del informe. Si dejas vacía la fecha de creación, se usa la del día en que generes el informe.
         </p>
-        <Campo etiqueta="Fecha inicio (real)" type="date" className="w-full sm:w-52" error={errors.fecha_inicio_real?.message} {...register('fecha_inicio_real')} />
-        <Campo etiqueta="Fecha terminación (real)" type="date" className="w-full sm:w-52" error={errors.fecha_fin_real?.message} {...register('fecha_fin_real')} />
+        <Campo etiqueta="Fecha Auditoría" type="date" className="w-full sm:w-52" error={errors.fecha_auditoria?.message} {...register('fecha_auditoria')} />
+        <Campo etiqueta="Fecha Creación del Informe" type="date" className="w-full sm:w-60" error={errors.fecha_informe?.message} {...register('fecha_informe')} />
         <Boton type="submit" variante="secundario" icono={CalendarCheck} cargando={isSubmitting} disabled={!isDirty}>Guardar fechas</Boton>
       </form>
     </Tarjeta>
@@ -208,7 +210,7 @@ export default function Informe() {
     }
   }
 
-  // Fechas reales e indicadores se guardan en la auditoría; el informe los toma al generar una nueva versión
+  // Fechas, líder, equipo e indicadores se guardan en la auditoría; el informe los toma al generar una nueva versión
   const guardarAuditoria = (mensaje) => async (cambios) => {
     const { data, error } = await supabase.from('auditorias').update(cambios).eq('id', id).select().single()
     if (error) {
@@ -248,7 +250,7 @@ export default function Informe() {
           </div>
         )}
         {informes.error && <EstadoError mensaje={informes.error} alReintentar={informes.recargar} className="mb-4" />}
-        <FechasReales key={a.id} auditoria={a} alGuardar={guardarAuditoria('Fechas reales guardadas. Genera una nueva versión para incluirlas en el informe.')} />
+        <FechasInforme key={a.id} auditoria={a} alGuardar={guardarAuditoria('Fechas del informe guardadas. Genera una nueva versión para incluirlas en el informe.')} />
         <LiderAuditoria key={`lider-${a.id}`} auditoria={a}
           alGuardar={guardarAuditoria('Líder del equipo guardado. Genera una nueva versión para incluirlo en el informe.')} />
         <EquipoAuditoria key={`equipo-${a.id}`} auditoria={a} perfil={perfil}

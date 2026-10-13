@@ -769,11 +769,11 @@ await p.getByRole('button', { name: /^1\s*No conformidad/ }).click()
 
 // Informe final con el formato oficial (src/formato_de_informe_final/Auditoria_interna.docx)
 await p.getByRole('link', { name: 'Generar informe' }).click()
-await p.getByLabel('Fecha inicio (real)').fill('2026-10-01')
-await p.getByLabel('Fecha terminación (real)').fill('2026-10-02')
+await p.getByLabel('Fecha Auditoría').fill('2026-10-01')
+await p.getByLabel('Fecha Creación del Informe').fill('2026-10-02')
 await p.getByRole('button', { name: 'Guardar fechas' }).click()
-await p.getByText(/Fechas reales guardadas/).waitFor()
-ok(db.auditorias[0].fecha_inicio_real === '2026-10-01' && db.auditorias[0].fecha_fin_real === '2026-10-02', 'el auditor registra las fechas reales que pide la Ficha Técnica')
+await p.getByText(/Fechas del informe guardadas/).waitFor()
+ok(db.auditorias[0].fecha_auditoria === '2026-10-01' && db.auditorias[0].fecha_informe === '2026-10-02', 'el auditor registra la «Fecha Auditoría» y la «Fecha Creación del Informe» que pide la Ficha Técnica')
 // Líder del equipo auditor (0017): se escribe a mano y empieza vacío, aunque el dueño de la cuenta tenga cargos de líder
 const botonGenerar = p.getByRole('button', { name: 'Generar informe' })
 ok(await p.getByLabel('Nombre del líder').inputValue() === '' && (await p.getByRole('button', { name: /^Cargos del líder/ }).innerText()).includes('Elige uno o varios cargos')
@@ -824,10 +824,10 @@ await p.getByRole('button', { name: 'Generar informe' }).click()
 const hoja = p.getByRole('article', { name: 'Informe final de auditoría' })
 await hoja.waitFor()
 const textoHoja = (await hoja.innerText()).replace(/\s+/g, ' ')
-const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
-  'Fecha inicio (planeada) 2026-10-01', 'Fecha inicio (real) 2026-10-01', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
+const ORDEN_VISTA = ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoría Interna - 2026 - Urgencias', 'Auditores Internos', 'Auditoría interna de Urgencias', 'Ficha Técnica',
+  'Fecha Auditoría 2026-10-01 Fecha Creación del Informe 2026-10-02', 'Sistema de referencia NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador Auditores Internos',
   'Equipo auditor Laura Gómez Ñáñez - Enfermera', 'Equipo auditor Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor Marta Ruiz Ortega - Médico especialista pediatra',
-  'Líder equipo Carlos Mora Díaz - Subgerente de cirugía, Líder equipo', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Líder equipo Carlos Mora Díaz - Subgerente de cirugía, Líder equipo', 'Archivos adjuntos evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoría interna de: Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor Principales aspectos que se tienen en cuenta:', 'Criterios de auditoría', 'Priorización de procesos',
   'Métodos a emplear para el desarrollo de la auditoría', 'Riesgos y oportunidades del programa auditoria', 'Indicadores',
   LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones', 'Generado por Ana María Rodríguez Peña - ']
@@ -888,34 +888,33 @@ const original = lineasWord(parteDocx(PLANTILLA, 'word/document.xml'))
 const llenado = lineasWord(parteDocx(rutaDocx, 'word/document.xml'))
 const textoLlenado = llenado.join('\n')
 // Todos los textos de la plantilla siguen ahí, en el mismo orden (menos el título y el año de la portada, que se llenan)
-const fijos = original.filter((l) => !/^Auditoria Interna - /.test(l) && !/^\d{4}$/.test(l)).map((l) => l.split(' | ')[0])
+const fijos = original.filter((l) => !/^Auditor[ií]a (Interna - |interna de)/.test(l) && !/^\d{4}$/.test(l)).map((l) => l.split(' | ')[0])
 const faltaFijo = enOrden(textoLlenado, fijos)
 ok(!faltaFijo, `el documento conserva todos los textos de la plantilla en su orden (${fijos.length})`, faltaFijo)
-const ORDEN_DOCX = ['Auditoria Interna - 2026 - Urgencias Auditores Internos', '2026', 'Auditoria interna de Urgencias',
-  'Fecha inicio (planeada) | 2026-10-01 | Fecha terminación (planeada) | 2026-10-03',
-  'Fecha inicio (real) | 2026-10-01 | Fecha terminación (real) | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
+const ORDEN_DOCX = ['Auditoría Interna - 2026 - Urgencias Auditores Internos', '2026', 'Auditoría interna de Urgencias',
+  'Fecha Auditoría | 2026-10-01 | Fecha Creación del Informe | 2026-10-02', 'Sistema de referencia | NTC-ISO 9001:2015, PR13-GQ, ISO 19011', 'Evaluador | Auditores Internos',
   'Equipo auditor | Laura Gómez Ñáñez - Enfermera', 'Equipo auditor | Pedro Pérez Ortiz - Médico, Tesorera', 'Equipo auditor | Marta Ruiz Ortega - Médico especialista pediatra',
   'Líder equipo | Carlos Mora Díaz - Subgerente de cirugía, Líder equipo',
-  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoria interna de Urgencias',
+  'Archivos adjuntos', 'evidencia.pdf (1 página)', 'escaneado.pdf (1 página)', 'Auditoría interna de: Urgencias',
   'FORTALEZAS IDENTIFICADAS', '• ', 'OPORTUNIDADES DE MEJORA', '• ', 'OBSERVACIONES', '• ', 'NO CONFORMIDADES', `• ${extintor.slice(0, 50)}`,
   'Objetivo', 'Evaluar el cumplimiento', 'Alcance', 'La auditoría comprende', 'Principales aspectos que se tienen en cuenta:', '• Competencia', 'Criterios de auditoría', '• NTC-ISO 9001:2015',
   'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría', '• Revisión documental', 'Riesgos y oportunidades del programa auditoria',
   'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones',
   'La auditoría interna AI-2026-001', 'Conclusiones', 'Con base en la evidencia']
-const faltaDocx = enOrden(textoLlenado, ORDEN_DOCX) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)|Auditoria interna de SIG/.test(textoLlenado) ? 'RECOMENDACIONES, SIG, cifras o campo sin llenar' : '')
-ok(!faltaDocx && llenado.filter((l) => l === 'Auditoria interna de Urgencias').length === 2,
-  'el Word llena la portada, la Ficha Técnica, las cuatro listas y cada sección en su lugar; después de «Auditoria interna de» va lo auditado', faltaDocx)
+const faltaDocx = enOrden(textoLlenado, ORDEN_DOCX) || (/RECOMENDACIONES|Hallazgos registrados:|\(area auditada\)|SIG|Fecha inicio|Auditoria /.test(textoLlenado) ? 'RECOMENDACIONES, SIG, fechas anteriores, «Auditoria» sin tilde o campo sin llenar' : '')
+ok(!faltaDocx && llenado.includes('Auditoría interna de Urgencias') && llenado.includes('Auditoría interna de: Urgencias'),
+  'el Word llena la portada, la Ficha Técnica (con la fecha de la auditoría y la de creación del informe), las cuatro listas y cada sección; después de «Auditoría interna de» va lo auditado', faltaDocx)
 const partesDocx = execSync(`unzip -Z1 "${rutaDocx}"`).toString().split('\n').filter((r) => /^word\/(header|footer)\d*\.xml$/.test(r))
 const encabezadosPies = partesDocx.map((r) => parteDocx(rutaDocx, r))
 const textoEncabezadoPie = encabezadosPies.flatMap(lineasWord).join('\n')
-ok(/Auditoria Interna - 2026 - Urgencias/.test(textoEncabezadoPie) && !/Hospitalización|Roberto Carlos/.test(textoEncabezadoPie)
+ok(/Auditoría Interna - 2026 - Urgencias/.test(textoEncabezadoPie) && !/Hospitalización|Roberto Carlos/.test(textoEncabezadoPie)
   && /Generado por Ana María Rodríguez Peña - 20\d\d-\d\d-\d\d \d{1,2}:\d\d [AP]M/.test(textoEncabezadoPie)
   && encabezadosPies.some((x) => /w:instr=" PAGE "/.test(x) && /w:instr=" NUMPAGES "/.test(x)), 'encabezado y pie de la plantilla con la auditoría, quien lo generó y el número de página')
 // Desde la página 2 la plantilla traía coordenadas de hoja horizontal: el pie a mitad de página y el texto sobre el encabezado
 const cuadro = (xml, texto) => [...xml.matchAll(/<wp:anchor[\s\S]*?<\/wp:anchor>/g)].map((m) => m[0]).find((a) => a.includes(texto))
 const posicion = (a, eje) => a?.match(new RegExp(`<wp:position${eje} relativeFrom="(\\w+)"><wp:posOffset>(-?\\d+)<`))?.slice(1).join(':')
 const pies = encabezadosPies.map((x) => cuadro(x, '>Generado por ')).filter(Boolean)
-const titulos = encabezadosPies.map((x) => cuadro(x, '>Auditoria Interna - ')).filter(Boolean)
+const titulos = encabezadosPies.map((x) => cuadro(x, '>Auditoría Interna - ')).filter(Boolean)
 const margenesArriba = [...parteDocx(rutaDocx, 'word/document.xml').matchAll(/<w:pgMar [^>]*w:top="(\d+)"/g)].map((m) => m[1])
 ok(pies.length >= 2 && new Set(pies.map((a) => posicion(a, 'V'))).size === 1 && new Set(titulos.map((a) => posicion(a, 'H'))).size === 1 && new Set(margenesArriba).size === 1,
   'el encabezado y el pie quedan en el mismo lugar en todas las páginas, y el texto no se monta sobre el encabezado',
@@ -923,7 +922,7 @@ ok(pies.length >= 2 && new Set(pies.map((a) => posicion(a, 'V'))).size === 1 && 
 ok(pies.every((a) => /<a:spAutoFit\/>/.test(a) && Number(a.match(/<wp:extent cx="(\d+)"/)[1]) >= 6 * 914400),
   'el cuadro de «Generado por…» es lo bastante ancho para un nombre largo y crece en lugar de esconder el texto')
 const core = parteDocx(rutaDocx, 'docProps/core.xml')
-ok(/<dc:title>Auditoria Interna - 2026 - Urgencias<\/dc:title>/.test(core) && /<dc:creator>Ana María Rodríguez Peña<\/dc:creator>/.test(core),
+ok(/<dc:title>Auditoría Interna - 2026 - Urgencias<\/dc:title>/.test(core) && /<dc:creator>Ana María Rodríguez Peña<\/dc:creator>/.test(core),
   'los metadatos del documento llevan la auditoría y a quien lo generó')
 ok(/word\/media\/[^\s]+\.(png|jpe?g)/.test(execSync(`unzip -l "${rutaDocx}"`).toString()), 'el logo de la plantilla se conserva')
 const xmlInvalido = ['word/document.xml', 'docProps/core.xml', ...partesDocx].filter((x) => {
@@ -955,13 +954,15 @@ ok(/^Informe_AI-2026-001_\d{8}\.pdf$/.test(descargaPdf.suggestedFilename()), `no
 const textoPdf = execSync(`pdftotext "${rutaPdf}" -`).toString().replace(/\s+/g, ' ')
 const paginasPdf = Number(execSync(`pdfinfo "${rutaPdf}"`).toString().match(/Pages:\s+(\d+)/)[1])
 ok(/A4|595\.\d* x 841\.\d*/.test(execSync(`pdfinfo "${rutaPdf}"`).toString()), 'tamaño A4, como la plantilla')
-const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - 2026 - Urgencias Auditores Internos', 'Auditoria interna de Urgencias', 'Ficha Técnica',
+const faltaPdf = enOrden(textoPdf, ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoría Interna - 2026 - Urgencias Auditores Internos', 'Auditoría interna de Urgencias', 'Ficha Técnica',
   'Evaluador', 'Auditores Internos', 'Laura Gómez Ñáñez - Enfermera', 'Marta Ruiz Ortega - Médico especialista pediatra', 'Carlos Mora Díaz - Subgerente de cirugía, Líder equipo',
-  'Auditoria interna de Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
+  'Auditoría interna de: Urgencias', 'FORTALEZAS IDENTIFICADAS', 'OPORTUNIDADES DE MEJORA', 'OBSERVACIONES', 'NO CONFORMIDADES', 'Objetivo', 'Alcance',
   'Criterios de selección equipo auditor', 'Criterios de auditoría', 'Priorización de procesos', 'Métodos a emplear para el desarrollo de la auditoría',
   'Riesgos y oportunidades del programa auditoria', 'Indicadores', LINEA_IND, 'Oportunidades', 'Observaciones', 'Conclusiones'])
-  || (/RECOMENDACIONES|Hallazgos registrados:|Auditoria interna de SIG/.test(textoPdf) ? 'RECOMENDACIONES, SIG o cifras de la auditoría' : '')
+  || (/RECOMENDACIONES|Hallazgos registrados:|SIG|Fecha inicio/.test(textoPdf) ? 'RECOMENDACIONES, SIG, fechas anteriores o cifras de la auditoría' : '')
 ok(!faltaPdf, 'el PDF sigue el mismo orden del formato oficial', faltaPdf)
+ok(/Fecha Auditoría\s+2026-10-01\s+Fecha Creación del Informe\s+2026-10-02/.test(execSync(`pdftotext -layout "${rutaPdf}" -`).toString()),
+  'el PDF lleva en la Ficha Técnica la fecha de la auditoría y la de creación del informe')
 ok(new RegExp(`Página 1/${paginasPdf}`).test(textoPdf) && /Generado por Ana María Rodríguez Peña/.test(textoPdf) && /Ñáñez/.test(textoPdf),
   `encabezado y pie de la plantilla en cada página (${paginasPdf} páginas), con tildes y «ñ»`)
 const fuentesPdf = execSync(`pdffonts "${rutaPdf}"`).toString()
@@ -970,7 +971,7 @@ const imagenesPdf = execSync(`pdfimages -list "${rutaPdf}"`).toString().split('\
 ok(imagenesPdf.length === 1 && /^\s*1\s/.test(imagenesPdf[0]), 'el logo de la plantilla va solo en la portada', imagenesPdf.join(' / '))
 execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
 
-// Auditor externo: el informe dice «Auditoria Externa» en la portada y el encabezado, y «Auditoria externa de Urgencias»
+// Auditor externo: el informe dice «Auditoría Externa» en la portada y el encabezado, y «Auditoría externa de Urgencias»
 {
   perfil.tipo_evaluador = 'AUDITORES_EXTERNOS'
   await p.reload()
@@ -986,10 +987,10 @@ execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
   await docxExt.saveAs(rutaExt)
   const rutasExt = ['word/document.xml', 'docProps/core.xml', ...execSync(`unzip -Z1 "${rutaExt}"`).toString().split('\n').filter((r) => /^word\/(header|footer)\d*\.xml$/.test(r))]
   const textoExt = rutasExt.map((x) => parteDocx(rutaExt, x)).flatMap((x) => [...lineasWord(x), ...(x.match(/<dc:title>[^<]*/g) ?? [])]).join('\n')
-  ok(hojaExt.includes('Auditoria Externa - 2026 - Urgencias Auditores Externos') && (hojaExt.match(/Auditoria externa de Urgencias/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(hojaExt)
-    && /Auditoria Externa - 2026 - Urgencias/.test(textoExt) && (textoExt.match(/Auditoria externa de Urgencias/g) ?? []).length === 2 && !/Auditoria [Ii]nterna/.test(textoExt)
-    && /<dc:title>Auditoria Externa - 2026 - Urgencias/.test(textoExt) && /La auditoría externa AI-2026-001/.test(hojaExt),
-    'con un auditor externo, la vista y el Word dicen «Auditoria Externa» en todas partes (portada, encabezado, «…externa de Urgencias», metadatos y narrativa)')
+  ok(hojaExt.includes('Auditoría Externa - 2026 - Urgencias Auditores Externos') && (hojaExt.match(/Auditoría externa de:? Urgencias/g) ?? []).length === 2 && !/Auditor[ií]a [Ii]nterna/.test(hojaExt)
+    && /Auditoría Externa - 2026 - Urgencias/.test(textoExt) && (textoExt.match(/Auditoría externa de:? Urgencias/g) ?? []).length === 2 && !/Auditor[ií]a [Ii]nterna/.test(textoExt)
+    && /<dc:title>Auditoría Externa - 2026 - Urgencias/.test(textoExt) && /La auditoría externa AI-2026-001/.test(hojaExt),
+    'con un auditor externo, la vista y el Word dicen «Auditoría Externa» en todas partes (portada, encabezado, «…externa de Urgencias», metadatos y narrativa)')
   perfil.tipo_evaluador = 'AUDITORES_INTERNOS'
 }
 

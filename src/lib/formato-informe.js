@@ -1,17 +1,17 @@
 // Formato oficial del informe final (src/formato_de_informe_final/Auditoria_interna.docx, entregado por el dueño).
-// Los textos fijos se copian TAL CUAL de la plantilla (incluida la ortografía de la plantilla: «Auditoria», «ANGELES»).
+// Los textos fijos se copian TAL CUAL de la plantilla (incluida su ortografía: «ANGELES», «programa auditoria»).
 // El Word se llena sobre la plantilla misma (exportar-docx.js); la vista en pantalla y el PDF reproducen este orden.
 import { textosAuditoria } from './catalogos.js'
 
 export const TEXTOS_FORMATO = {
   institucion: 'HOSPITAL INFANTIL LOS ANGELES',
-  // Portada y título de las listas (plantilla del 12/10/2026): después de «de» va lo auditado, con programaDe(c)
-  programa: 'Auditoria interna de',
+  // Portada y título de las listas (plantilla del 12/10/2026): después de «de» (o «de:») va lo auditado, con programaDe(c)
+  programa: 'Auditoría interna de',
+  programaListas: 'Auditoría interna de:',
   fichaTecnica: 'Ficha Técnica',
-  fechaInicioPlaneada: 'Fecha inicio (planeada)',
-  fechaFinPlaneada: 'Fecha terminación (planeada)',
-  fechaInicioReal: 'Fecha inicio (real)',
-  fechaFinReal: 'Fecha terminación (real)',
+  // Fechas de la Ficha Técnica (plantilla del 12/10/2026): las registra el auditor antes de generar el informe (0018)
+  fechaAuditoria: 'Fecha Auditoría',
+  fechaInforme: 'Fecha Creación del Informe',
   sistemaReferencia: 'Sistema de referencia',
   evaluador: 'Evaluador',
   equipoAuditor: 'Equipo auditor',
@@ -87,14 +87,15 @@ export function seccionesFormato(c) {
 /** Textos «interna» o «externa» según el grupo del auditor que generó el informe (decisión del dueño, 13/10/2026). */
 const tipoDe = (c) => textosAuditoria(c.encabezado?.tipo_evaluador)
 
-/** «Auditoria Interna - 2026 - Hospitalización» (o «Auditoria Externa…»), como en el encabezado de la plantilla. */
-export const tituloAuditoria = (c) => `Auditoria ${tipoDe(c).Tipo} - ${c.encabezado.anio} - ${c.encabezado.objeto}`
+/** «Auditoría Interna - 2026 - Hospitalización» (o «Auditoría Externa…»), como en la portada y el encabezado. */
+export const tituloAuditoria = (c) => `Auditoría ${tipoDe(c).Tipo} - ${c.encabezado.anio} - ${c.encabezado.objeto}`
 
 /**
- * «Auditoria interna de Urgencias» (o «Auditoria externa de…»): justo después de «de» va lo auditado, el proceso o el
- * sistema (decisión del dueño, 12/10/2026). Va en la portada y como título de las listas de hallazgos.
+ * «Auditoría interna de Urgencias» (o «Auditoría externa de…»): justo después de «de» va lo auditado, el proceso o el
+ * sistema (decisión del dueño, 12/10/2026), aunque la plantilla traiga ahí «SIG». En la portada es `programa`; como
+ * título de las listas, `programaListas` («Auditoría interna de: Urgencias», con los dos puntos de la plantilla).
  */
-export const programaDe = (c) => `${TEXTOS_FORMATO.programa.replace('interna', tipoDe(c).tipo)} ${c.encabezado.objeto ?? ''}`.trimEnd()
+export const programaDe = (c, base = TEXTOS_FORMATO.programa) => `${base.replace('interna', tipoDe(c).tipo)} ${c.encabezado.objeto ?? ''}`.trimEnd()
 
 /** «2026-10-04 12:14 PM» en la hora de Colombia, como el pie de la plantilla. */
 export function fechaHoraFormato(iso) {
@@ -119,6 +120,6 @@ export const parrafos = (texto) => String(texto ?? '').split(/\n\s*\n/).map((t) 
 
 /**
  * ¿El informe tiene la estructura de la plantilla oficial vigente? Las versiones anteriores (la 3 traía recomendaciones;
- * la 4, meta y resultado de cada indicador) se deben regenerar.
+ * la 4, meta y resultado de cada indicador; la 5, fechas planeadas y reales) se deben regenerar.
  */
-export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 5
+export const esFormatoOficial = (c) => (c?.version_estructura ?? 0) >= 6

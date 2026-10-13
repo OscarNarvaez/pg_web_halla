@@ -179,7 +179,9 @@ Funciones del prototipo que el dueño dejó fuera de V1, descritas para poder re
 > Ficha Técnica, listas de hallazgos (fortalezas → oportunidades de mejora → observaciones → no conformidades) y las
 > secciones Objetivo… RECOMENDACIONES. Se descarga como ODT (la plantilla llena) y PDF; el Word (.docx) se retiró.
 > **12/10/2026:** el dueño reemplazó la plantilla por un Word (`Auditoria_interna.docx`): el informe se descarga como Word
-> lleno sobre ella y PDF. En la portada y antes de las listas dice «Auditoria interna de <lo auditado>» (ya no «de SIG»).
+> lleno sobre ella y PDF. En la portada y antes de las listas dice «Auditoría interna de <lo auditado>» (no «de SIG»).
+> La plantilla del 12/10/2026 (21:43) cambia las fechas de la Ficha Técnica por «Fecha Auditoría» y «Fecha Creación del
+> Informe» (0018, contenido versión 6).
 
 - **Riesgo por hallazgo (etapa 5):** probabilidad e impacto de 1 a 5 según el PR13-GQ, riesgo
   inherente = P × I, niveles Bajo/Moderado/Alto/Extremo (en el prototipo los umbrales eran editables; implementado con la escala fija 4/9/16),

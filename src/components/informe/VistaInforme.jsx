@@ -72,12 +72,8 @@ export function VistaInforme({ informe }) {
           <tbody>
             <tr><Celda etiqueta ancho={4}>{TEXTOS_FORMATO.fichaTecnica}</Celda></tr>
             <tr>
-              <Celda etiqueta>{TEXTOS_FORMATO.fechaInicioPlaneada}</Celda><Celda className="text-center">{f.inicio_planeada}</Celda>
-              <Celda etiqueta>{TEXTOS_FORMATO.fechaFinPlaneada}</Celda><Celda className="text-center">{f.fin_planeada}</Celda>
-            </tr>
-            <tr>
-              <Celda etiqueta>{TEXTOS_FORMATO.fechaInicioReal}</Celda><Celda className="text-center">{f.inicio_real}</Celda>
-              <Celda etiqueta>{TEXTOS_FORMATO.fechaFinReal}</Celda><Celda className="text-center">{f.fin_real}</Celda>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaAuditoria}</Celda><Celda className="text-center">{f.fecha_auditoria}</Celda>
+              <Celda etiqueta>{TEXTOS_FORMATO.fechaInforme}</Celda><Celda className="text-center">{f.fecha_informe}</Celda>
             </tr>
             <tr><Celda etiqueta>{TEXTOS_FORMATO.sistemaReferencia}</Celda><Celda ancho={3}>{f.sistema_referencia}</Celda></tr>
             <tr><Celda etiqueta>{TEXTOS_FORMATO.evaluador}</Celda><Celda ancho={3}>{f.evaluador}</Celda></tr>
@@ -94,7 +90,7 @@ export function VistaInforme({ informe }) {
         </table>
 
         {/* Hallazgos */}
-        <Titulo>{programaDe(c)}</Titulo>
+        <Titulo>{programaDe(c, TEXTOS_FORMATO.programaListas)}</Titulo>
         {LISTAS_HALLAZGOS.map((lista) => {
           const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []
           return (

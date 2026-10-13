@@ -29,7 +29,7 @@ export default function AuditoriaNueva() {
     defaultValues: {
       codigo: '', titulo: '', alcance: perfil.alcance, proceso: perfil.proceso ?? '', sistema: perfil.sistema ?? '',
       objetivo: '', criterios: documentosParaAlcance(perfil), area_auditada: '', auditado_nombre: '', auditado_cargo: '',
-      fecha_inicio: hoy(), fecha_fin: '', fecha_inicio_real: '', fecha_fin_real: '',
+      fecha_inicio: hoy(), fecha_fin: '', fecha_auditoria: '',
       equipo_auditor: equipoInicial(null, perfil), // el equipo habitual del perfil; se puede cambiar
     },
   })
@@ -88,8 +88,7 @@ export default function AuditoriaNueva() {
         auditado_cargo: d.auditado_cargo || null,
         fecha_inicio: d.fecha_inicio || null,
         fecha_fin: d.fecha_fin || null,
-        fecha_inicio_real: d.fecha_inicio_real || null,
-        fecha_fin_real: d.fecha_fin_real || null,
+        fecha_auditoria: d.fecha_auditoria || null,
         equipo_auditor: d.equipo_auditor,
       })
       .select('id')
@@ -112,12 +111,11 @@ export default function AuditoriaNueva() {
             <Campo etiqueta="Código" required error={errors.codigo?.message} ayuda={`Formato ${t.sigla}-año-consecutivo.`} {...register('codigo')} />
             <Campo etiqueta="Título" required error={errors.titulo?.message} className="sm:col-span-2" placeholder={`Auditoría ${t.tipo} al proceso de Urgencias`} {...register('titulo')} />
           </div>
-          {/* La Ficha Técnica del informe pide fechas planeadas y reales; las reales se pueden completar después */}
+          {/* La Ficha Técnica del informe pide la fecha de la auditoría (0018); se puede completar después */}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Campo etiqueta="Fecha inicio (planeada)" type="date" error={errors.fecha_inicio?.message} {...register('fecha_inicio')} />
             <Campo etiqueta="Fecha terminación (planeada)" type="date" error={errors.fecha_fin?.message} {...register('fecha_fin')} />
-            <Campo etiqueta="Fecha inicio (real)" type="date" ayuda="Opcional: puedes registrarla al generar el informe." error={errors.fecha_inicio_real?.message} {...register('fecha_inicio_real')} />
-            <Campo etiqueta="Fecha terminación (real)" type="date" ayuda="Opcional: puedes registrarla al generar el informe." error={errors.fecha_fin_real?.message} {...register('fecha_fin_real')} />
+            <Campo etiqueta="Fecha Auditoría" type="date" ayuda="Opcional: puedes registrarla al generar el informe. Va en la Ficha Técnica." error={errors.fecha_auditoria?.message} {...register('fecha_auditoria')} />
           </div>
         </Tarjeta>
 

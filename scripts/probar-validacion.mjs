@@ -194,7 +194,7 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const informe = await import('../supabase/functions/_shared/informe.ts')
   const aud = { id: 'a1', codigo: 'AI-2026-001', titulo: 'Auditoría a Urgencias', alcance: 'PROCESOS', proceso: 'Urgencias', sistema: null, objetivo: '',
     criterios: ['NTC-ISO 9001:2015', 'PR13-GQ'], area_auditada: 'Urgencias', auditado_nombre: null, auditado_cargo: null,
-    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', fecha_inicio_real: '2026-10-02', fecha_fin_real: null,
+    fecha_inicio: '2026-10-01', fecha_fin: '2026-10-03', fecha_auditoria: '2026-10-02', fecha_informe: null,
     lider_auditor: { nombre: 'Carlos Mora Díaz', cargos: ['Subgerente de cirugía', 'Líder equipo'] } }
   const perfilInf = { nombre_completo: 'Ana Pérez', cedula: '1085123456', cargos: ['Auditor médico', 'Coordinadora'], equipo_auditor: [{ nombre: 'Luis Ruiz', cargos: ['Médico'] }], tipo_evaluador: 'AUDITORES_EXTERNOS' }
   const pdf = { nombre: 'acta.pdf', paginas: 2, sha256: 'a'.repeat(64) }
@@ -213,17 +213,22 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   ok(JSON.stringify(c.hallazgos.map((g) => g.clasificacion)) === '["FORTALEZA","OPORTUNIDAD_DE_MEJORA","OBSERVACION","NO_CONFORMIDAD"]', 'las listas siguen el orden del formato: fortalezas, oportunidades, observaciones, no conformidades')
   ok(c.ficha.evaluador === 'Auditores Externos' && c.encabezado.evaluador === 'Auditores Externos' && c.encabezado.anio === '2026' && c.encabezado.objeto === 'Urgencias',
     'el evaluador y el título de la portada salen del perfil y de la auditoría')
-  ok(c.ficha.inicio_planeada === '2026-10-01' && c.ficha.inicio_real === '2026-10-02' && c.ficha.fin_real === ''
+  ok(c.ficha.fecha_auditoria === '2026-10-02' && c.ficha.fecha_informe === '2026-10-04' && !('inicio_planeada' in c.ficha) && !('inicio_real' in c.ficha)
     && JSON.stringify(c.ficha.lider) === JSON.stringify({ nombre: 'Carlos Mora Díaz', cargo: 'Subgerente de cirugía, Líder equipo' })
     && c.ficha.equipo[0].nombre === 'Luis Ruiz' && c.generado.por === 'Ana Pérez',
-    'la Ficha Técnica lleva fechas planeadas y reales, el líder registrado en la auditoría (no el dueño de la cuenta) y el equipo')
+    'la Ficha Técnica lleva la fecha de la auditoría, la de creación del informe, el líder registrado en la auditoría (no el dueño de la cuenta) y el equipo')
+  // Sin fecha de creación registrada, la del día en que se genera, en la hora de Colombia (las 22:00 del 4 son el 5 en UTC)
+  const cTarde = informe.construirContenido({ auditoria: aud, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-05T03:00:00Z', version: 2, avisos: [] })
+  const cConFecha = informe.construirContenido({ auditoria: { ...aud, fecha_informe: '2026-10-08' }, perfil: perfilInf, hallazgos: hs, estadisticas: e, narrativa: n, generadoEn: '2026-10-09T15:00:00Z', version: 3, avisos: [] })
+  ok(cTarde.ficha.fecha_informe === '2026-10-04' && cConFecha.ficha.fecha_informe === '2026-10-08' && informe.fechaColombia('2026-10-12T04:59:00Z') === '2026-10-11',
+    'la fecha de creación del informe es la que registró el auditor o, si no la registró, la del día en que se genera (hora de Colombia)')
   ok(JSON.stringify(c.ficha.adjuntos) === '["acta.pdf (2 páginas)","registro-firmas.pdf (1 página)"]',
     'los PDF de evidencia (analizados y agregados al editar) van en «Archivos adjuntos», sin repetir', JSON.stringify(c.ficha.adjuntos))
   ok(c.objetivo === n.objetivo && n.objetivo.startsWith('Evaluar'), 'si la auditoría no trae objetivo, se redacta uno')
   const nOm = informe.narrativaRespaldo(aud, informe.calcularEstadisticas([{ ...base, id: 'x', consecutivo: 1, clasificacion: 'OPORTUNIDAD_DE_MEJORA', hallazgo_corregido: 'OM' }]))
   ok(n.objetivo.startsWith('Evaluar la conformidad del proceso de Urgencias') && nOm.oportunidades.startsWith('Se identificó una oportunidad de mejora')
     && nOm.oportunidades.endsWith('la eficacia del proceso de Urgencias.'), 'la plantilla de respaldo concuerda en número y contrae «de el» en «del»', `${n.objetivo} | ${nOm.oportunidades}`)
-  ok(c.version_estructura === 5 && !('recomendaciones' in c) && !('recomendaciones' in n), 'la plantilla vigente ya no tiene recomendaciones (versión 5 del contenido)')
+  ok(c.version_estructura === 6 && !('recomendaciones' in c) && !('recomendaciones' in n), 'la plantilla vigente no tiene recomendaciones y su Ficha trae las fechas nuevas (versión 6 del contenido)')
   const formato = await import('../src/lib/formato-informe.js')
   ok(JSON.stringify(c.indicadores) === '{"revisados":[]}' && formato.lineaIndicadores(c) === 'Revisión de indicadores priorizados en el proceso de'
     && formato.seccionesFormato(c).find((x) => x.titulo === 'Indicadores').contenido[0] === formato.SIN_INDICADORES,
@@ -257,11 +262,12 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const perfilExt = { ...perfilInf, tipo_evaluador: 'AUDITORES_EXTERNOS' }
   const nExt = informe.narrativaRespaldo(aud, e, 'AUDITORES_EXTERNOS')
   const cExt = informe.construirContenido({ auditoria: aud, perfil: perfilExt, hallazgos: hs, estadisticas: e, narrativa: nExt, generadoEn: '2026-10-13T10:00:00Z', version: 4, avisos: [] })
-  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoria Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoria externa de Urgencias'
-    && formato.tituloAuditoria({ encabezado: { ...cExt.encabezado, tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoria Interna - 2026 - Urgencias'
-    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Sistema de Seguridad y Salud en el Trabajo' } }) === 'Auditoria interna de Sistema de Seguridad y Salud en el Trabajo'
-    && formato.tituloAuditoria({ encabezado: { anio: '2026', objeto: 'Urgencias' } }) === 'Auditoria Interna - 2026 - Urgencias',
-    'con un auditor externo el informe dice «Auditoria Externa»; después de «Auditoria interna/externa de» va lo auditado (sin grupo, interna)')
+  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoría Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoría externa de Urgencias'
+    && formato.programaDe(cExt, formato.TEXTOS_FORMATO.programaListas) === 'Auditoría externa de: Urgencias'
+    && formato.tituloAuditoria({ encabezado: { ...cExt.encabezado, tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoría Interna - 2026 - Urgencias'
+    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Sistema de Seguridad y Salud en el Trabajo' } }) === 'Auditoría interna de Sistema de Seguridad y Salud en el Trabajo'
+    && formato.tituloAuditoria({ encabezado: { anio: '2026', objeto: 'Urgencias' } }) === 'Auditoría Interna - 2026 - Urgencias',
+    'con un auditor externo el informe dice «Auditoría Externa»; después de «Auditoría interna/externa de» (o «de:») va lo auditado (sin grupo, interna)')
   ok(nExt.observaciones.startsWith('La auditoría externa AI-2026-001') && nExt.criterios_seleccion_equipo.some((x) => x.includes('auditor externo'))
     && !JSON.stringify(nExt).includes('interna') && informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditoría externa')
     && !informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditor interno') && msg.includes('Tipo: auditoría externa'),
@@ -275,7 +281,7 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     && JSON.stringify(informe.faltanEnConclusion('Se cumplen los requisitos.')) === '["la adecuación","la conveniencia","la eficacia"]'
     && !informe.faltanEnConclusion('Presenta una adecuación parcial; su conveniencia se sustenta en fortalezas; y su eficacia depende de las acciones.').length,
     'se detecta la conclusión que no valora alguno de los tres conceptos (entonces va la de plantilla, con aviso)')
-  ok(formato.seccionesFormato(cInd).at(-1).titulo === 'Conclusiones' && !formato.esFormatoOficial({ version_estructura: 4 }) && formato.esFormatoOficial(cInd),
+  ok(formato.seccionesFormato(cInd).at(-1).titulo === 'Conclusiones' && !formato.esFormatoOficial({ version_estructura: 5 }) && formato.esFormatoOficial(cInd),
     'termina en Conclusiones; los informes de versiones anteriores (con meta y resultado de cada indicador) se regeneran')
   // Cada texto que el sistema busca en la plantilla tiene que estar en ella (avisa si el dueño la vuelve a cambiar)
   const { unzipSync, strFromU8 } = await import('fflate')
@@ -290,9 +296,11 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
     ...formato.LISTAS_HALLAZGOS.map((l) => l.titulo), ...formato.seccionesFormato(cInd).map((x) => x.titulo)]
   const faltan = buscados.filter((t) => !lineasPlantilla.some((l) => l === t || l.startsWith(`${t} `) || l.includes(t)))
   ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial (Word) tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
-  ok(lineasPlantilla.filter((l) => l === formato.TEXTOS_FORMATO.programa).length === 2 && lineasPlantilla.some((l) => /^Auditoria Interna - \d{4} - /.test(l))
-    && ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - ', 'Generado por ', 'Página'].every((t) => lineasEncabezadoPie.some((l) => l.startsWith(t))),
-  'la plantilla trae «Auditoria interna de» en la portada y antes de las listas, y el encabezado y el pie que se llenan')
+  const sinTildes = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  ok(lineasPlantilla.filter((l) => l.startsWith(formato.TEXTOS_FORMATO.programa)).length === 2 && lineasPlantilla.includes(formato.TEXTOS_FORMATO.programaListas)
+    && lineasPlantilla.some((l) => /^Auditor[ií]a Interna - \d{4} - /.test(l))
+    && ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - ', 'Generado por ', 'Página'].every((t) => lineasEncabezadoPie.some((l) => sinTildes(l).startsWith(sinTildes(t)))),
+  'la plantilla trae «Auditoría interna de» en la portada y «Auditoría interna de:» antes de las listas, y el encabezado y el pie que se llenan')
   ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
   // 0016: el equipo de la auditoría; si no tiene, el del perfil

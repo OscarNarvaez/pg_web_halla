@@ -100,8 +100,7 @@ export const esquemaAuditoria = z
     auditado_cargo: z.string().trim().optional().default(''),
     fecha_inicio: z.string().optional().default(''),
     fecha_fin: z.string().optional().default(''),
-    fecha_inicio_real: z.string().optional().default(''),
-    fecha_fin_real: z.string().optional().default(''),
+    fecha_auditoria: z.string().optional().default(''),
     // Equipo auditor de esta auditoría (0016): por defecto, el del perfil
     equipo_auditor: camposEquipoYAlcance.equipo_auditor,
   })
@@ -110,19 +109,19 @@ export const esquemaAuditoria = z
     if (d.fecha_inicio && d.fecha_fin && d.fecha_fin < d.fecha_inicio) {
       ctx.addIssue({ code: 'custom', path: ['fecha_fin'], message: 'La fecha final no puede ser anterior a la inicial' })
     }
-    validarFechasReales(d, ctx)
   })
 
-/** La terminación real no puede ser anterior al inicio real (check fechas_reales_coherentes, 0010). */
-export function validarFechasReales(d, ctx) {
-  if (d.fecha_inicio_real && d.fecha_fin_real && d.fecha_fin_real < d.fecha_inicio_real) {
-    ctx.addIssue({ code: 'custom', path: ['fecha_fin_real'], message: 'La terminación real no puede ser anterior al inicio real' })
-  }
-}
-
-export const esquemaFechasReales = z
-  .object({ fecha_inicio_real: z.string().optional().default(''), fecha_fin_real: z.string().optional().default('') })
-  .superRefine(validarFechasReales)
+/**
+ * «Fecha Auditoría» y «Fecha Creación del Informe» de la Ficha Técnica (0018): el informe se crea el día de la
+ * auditoría o después (check fecha_informe_coherente).
+ */
+export const esquemaFechasInforme = z
+  .object({ fecha_auditoria: z.string().optional().default(''), fecha_informe: z.string().optional().default('') })
+  .superRefine((d, ctx) => {
+    if (d.fecha_auditoria && d.fecha_informe && d.fecha_informe < d.fecha_auditoria) {
+      ctx.addIssue({ code: 'custom', path: ['fecha_informe'], message: 'La fecha de creación del informe no puede ser anterior a la fecha de la auditoría' })
+    }
+  })
 
 // Indicadores priorizados del proceso (0013, 0015): solo el nombre corto de cada uno. En el informe se agregan después
 // del texto de la plantilla, separados por comas y con «y» antes del último (los separadores los pone el sistema).

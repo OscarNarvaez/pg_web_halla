@@ -340,8 +340,10 @@ informe (§8). Se activa con al menos un hallazgo validado; los que sigan pendie
 El informe final sigue **exactamente** el formato oficial del hospital (el documento
 `Auditoria_interna.docx` que entregó la oficina de calidad). Con al menos un hallazgo validado:
 
-1. **Registre las fechas reales** de la auditoría en el recuadro «Fechas reales de la auditoría» (las fechas que
-   escribió al crear la auditoría son las planeadas). Si no las registra, quedan en blanco en la Ficha Técnica.
+1. **Registre las fechas** en el recuadro «Fechas del informe»: la **Fecha Auditoría** (el día en que se hizo la
+   auditoría) y la **Fecha Creación del Informe**, y pulse **Guardar fechas**. Van solas a la Ficha Técnica. Si no
+   registra la fecha de creación, el informe pone la del día en que lo genera; si no registra la de la auditoría, queda
+   en blanco y se le avisa.
 2. **Registre el líder del equipo auditor** en el recuadro «Líder del equipo auditor»: escriba su nombre y elija sus
    cargos de la lista de líderes, y pulse **Guardar líder**. Va como «Líder equipo» en la Ficha Técnica. El recuadro
    empieza vacío en cada auditoría y no toma su nombre del perfil, porque el líder no siempre es quien registra la
@@ -360,20 +362,21 @@ El informe final sigue **exactamente** el formato oficial del hospital (el docum
    **Generar nueva versión**, **Documento (editable)** y **PDF**, y la versión que está viendo.
 
 **Interna o externa.** Todo el informe se adapta al grupo de auditores de su perfil (el que eligió al registrarse o
-cambió después en **Mi perfil**): si es auditor externo, la portada, el encabezado de las páginas, «Auditoria externa
+cambió después en **Mi perfil**): si es auditor externo, la portada, el encabezado de las páginas, «Auditoría externa
 de…» y los textos que redacta la IA dicen «externa» en lugar de «interna». Se toma el grupo que tenga su perfil al
 generar el informe; si lo cambia, genere una nueva versión.
 
-**Lo auditado.** En la portada y en el título de las listas de hallazgos, después de «Auditoria interna de» va el proceso
-o el sistema de la auditoría: «Auditoria interna de Urgencias» (o «Auditoria externa de Cirugía»).
+**Lo auditado.** En la portada y en el título de las listas de hallazgos, después de «Auditoría interna de» va el proceso
+o el sistema de la auditoría: «Auditoría interna de Urgencias» en la portada y «Auditoría interna de: Urgencias» antes de
+las listas (o «Auditoría externa de Cirugía»).
 
 El informe tiene, en este orden:
 
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
-| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoria Interna - año - proceso» (o «Auditoria Externa…»), su grupo de auditores, el año y «Auditoria interna de <proceso o sistema>» (o «externa») | El sistema |
-| Ficha Técnica | Fechas planeadas y reales, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), el líder del equipo que registró y archivos adjuntos (los PDF de evidencia) | El sistema, con lo que usted registra |
-| Auditoria interna de <proceso o sistema> | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
+| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoría Interna - año - proceso» (o «Auditoría Externa…»), su grupo de auditores, el año y «Auditoría interna de <proceso o sistema>» (o «externa») | El sistema |
+| Ficha Técnica | Fecha Auditoría y Fecha Creación del Informe, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), el líder del equipo que registró y archivos adjuntos (los PDF de evidencia) | El sistema, con lo que usted registra |
+| Auditoría interna de: <proceso o sistema> | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |
 | Alcance, Criterios de selección equipo auditor, Priorización de procesos, Riesgos y oportunidades del programa auditoria, Oportunidades, Observaciones y Conclusiones | Texto redactado a partir de los hallazgos, los riesgos y el equipo | La IA |
 | Criterios de auditoría y Métodos a emplear | Las normas (con los numerales citados) y los métodos de la auditoría | El sistema |

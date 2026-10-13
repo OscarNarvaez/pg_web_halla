@@ -45,7 +45,7 @@ export function listaInicial(auditoria, perfil) {
       elaborada_por: perfil?.nombre_completo ?? '',
       proceso: objetoAuditado(auditoria) ?? '',
       auditados: [auditoria.auditado_cargo, auditoria.auditado_nombre].filter(Boolean).join(' - '),
-      fecha_ejecucion: auditoria.fecha_inicio_real || auditoria.fecha_inicio || '',
+      fecha_ejecucion: auditoria.fecha_auditoria || auditoria.fecha_inicio || '',
       lugar: auditoria.area_auditada ?? '',
     },
     secciones: [seccionVacia((objetoAuditado(auditoria) ?? '').toUpperCase())],
