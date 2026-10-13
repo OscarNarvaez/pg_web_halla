@@ -26,10 +26,12 @@ function simular(guiones) {
     llamadas.push({ modelo, cuerpo: JSON.parse(init.body) })
     const guion = guiones[modelo] ?? []
     const siguiente = guion.shift()
-    return siguiente ? siguiente() : error(500, 'sin guion')
+    return siguiente ? siguiente(init) : error(500, 'sin guion')
   }
   return { fetchImpl, llamadas }
 }
+// Un modelo que no responde: la petición solo termina cuando se cancela (como fetch con AbortSignal)
+const colgado = (init) => new Promise((_, rechazar) => init.signal?.addEventListener('abort', () => rechazar(new DOMException('cancelada', 'AbortError'))))
 const base = (modelos, fetchImpl) => ({ apiKey: 'k', modelos, maxTokens: 100, nivelRazonamiento: 'low', esperas: [0, 0, 0], fetchImpl })
 const pet = { sistema: 's', mensaje: 'm', esquema: {} }
 
@@ -68,6 +70,22 @@ ok(r.modelo === 'g1' && !s.llamadas[1].cuerpo.generationConfig.thinkingConfig, '
 s = simular({ h1: [() => new Response(JSON.stringify({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }] }), { status: 200 }), () => respuestaOk({ x: 1 }, 'h1')] })
 r = await llamarGemini(base(['h1'], s.fetchImpl), pet)
 ok(r.modelo === 'h1' && r.intentos === 2, 'respuesta cortada por MAX_TOKENS: reintenta')
+
+console.log('\n▸ Tiempo por intento y presupuesto (la respuesta debe llegar al navegador antes de ~100 s)')
+let t0 = Date.now()
+s = simular({ j1: [colgado], j2: [() => respuestaOk({ x: 1 }, 'j2')] })
+r = await llamarGemini({ ...base(['j1', 'j2'], s.fetchImpl), tiempoPorIntentoMs: 50, presupuestoMs: 2000 }, pet)
+ok(r.modelo === 'j2' && r.descartados.some((d) => d.modelo === 'j1' && d.motivo === 'tiempo agotado') && s.llamadas.filter((l) => l.modelo === 'j1').length === 1 && Date.now() - t0 < 1000,
+  'un modelo que no responde se corta a su tiempo por intento y pasa al respaldo, sin reintentarlo', `${Date.now() - t0} ms`)
+t0 = Date.now()
+s = simular({ k1: [colgado] })
+e = await llamarGemini({ ...base(['k1'], s.fetchImpl), tiempoPorIntentoMs: 5000, presupuestoMs: 150 }, pet).catch((x) => x)
+ok(e.codigo === 'tiempo_agotado' && e.estado === 504 && Date.now() - t0 < 1000,
+  'ninguna petición pasa del presupuesto total, aunque su tiempo por intento sea mayor', `${e.codigo} en ${Date.now() - t0} ms`)
+t0 = Date.now()
+s = simular({ l1: [() => error(503, 'x'), () => error(503, 'x')] })
+e = await llamarGemini({ ...base(['l1'], s.fetchImpl), esperas: [5000, 5000, 5000], presupuestoMs: 200 }, pet).catch((x) => x)
+ok(e.estado === 503 && Date.now() - t0 < 1000, 'las esperas entre reintentos tampoco pasan del presupuesto', `${e.estado} en ${Date.now() - t0} ms`)
 
 console.log('\n▸ Todos sin cuota')
 s = simular({ i1: [cuotaDiaria], i2: [cuotaDiaria] })

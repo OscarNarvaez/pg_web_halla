@@ -15,6 +15,11 @@ export interface ConfigGemini {
   esperas?: number[]
   /** Tiempo máximo total, para no pasar el límite de ejecución de la Edge Function. */
   presupuestoMs?: number
+  /**
+   * Tiempo máximo de UNA petición a Gemini (sin pasar del presupuesto restante). Por defecto 45 s. Sin él, una respuesta
+   * lenta podía alargar la llamada más allá del presupuesto, que solo se revisa entre intentos.
+   */
+  tiempoPorIntentoMs?: number
   fetchImpl?: typeof fetch
 }
 
@@ -100,7 +105,11 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
   const esperas = config.esperas ?? [1000, 4000, 10000]
   const hacerFetch = config.fetchImpl ?? fetch
   const presupuesto = config.presupuestoMs ?? 100_000
+  const tiempoPorIntento = config.tiempoPorIntentoMs ?? 45_000
   const inicio = Date.now()
+  const restante = () => presupuesto - (Date.now() - inicio)
+  // Las esperas entre intentos tampoco pasan del presupuesto
+  const esperar = (ms: number) => dormir(Math.max(0, Math.min(ms, restante())))
   const modelos = ordenarModelos(config.modelos.filter(Boolean))
   if (!modelos.length) throw new ErrorGemini('No hay modelos de IA configurados.', 500, 'sin_modelo', 0)
 
@@ -115,7 +124,7 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`
 
     for (let intento = 1; intento <= esperas.length + 1; intento++) {
-      if (Date.now() - inicio > presupuesto) {
+      if (restante() <= 0) {
         throw ultimo ?? new ErrorGemini('La IA tardó demasiado en responder.', 504, 'tiempo_agotado', intentosTotales)
       }
       intentosTotales++
@@ -128,7 +137,11 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
       }
       if (usarRazonamiento && config.nivelRazonamiento) generationConfig.thinkingConfig = { thinkingLevel: config.nivelRazonamiento }
 
+      // Cada petición (y la lectura de su respuesta) tiene su propio límite de tiempo
+      const control = new AbortController()
+      const reloj = setTimeout(() => control.abort(), Math.max(1, Math.min(tiempoPorIntento, restante())))
       let res: Response
+      let crudo: string
       try {
         res = await hacerFetch(url, {
           method: 'POST',
@@ -138,17 +151,27 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
             contents: [{ role: 'user', parts: [{ text: peticion.mensaje }] }],
             generationConfig,
           }),
+          signal: control.signal,
         })
+        crudo = await res.text()
       } catch (e) {
+        if (control.signal.aborted) {
+          // Un modelo lento no se reintenta: se pasa al siguiente con el tiempo que quede
+          ultimo = new ErrorGemini('La IA tardó demasiado en responder.', 504, 'tiempo_agotado', intentosTotales)
+          descartados.push({ modelo, motivo: 'tiempo agotado' })
+          if (hayRespaldo) marcarNoDisponible(modelo, ESPERA_SATURADO_MS)
+          break
+        }
         ultimo = new ErrorGemini(`Error de red con Gemini: ${(e as Error).message}`, 503, 'red', intentosTotales)
         if (intento <= esperas.length) {
-          await dormir(esperas[intento - 1])
+          await esperar(esperas[intento - 1])
           continue
         }
         break
+      } finally {
+        clearTimeout(reloj)
       }
 
-      const crudo = await res.text()
       if (!res.ok) {
         const detalle = leerError(crudo)
         // Cuota diaria agotada: reintentar el mismo modelo es inútil; se pasa al siguiente
@@ -179,7 +202,7 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
         // Con un modelo de respaldo disponible, un 503 «high demand» solo se reintenta una vez
         const maxIntentos = res.status >= 500 && hayRespaldo ? 2 : esperas.length + 1
         if (reintentable && intento < maxIntentos) {
-          await dormir(Math.max(esperas[intento - 1], Math.min(detalle.esperaSugeridaMs ?? 0, 15000)))
+          await esperar(Math.max(esperas[intento - 1], Math.min(detalle.esperaSugeridaMs ?? 0, 15000)))
           continue
         }
         descartados.push({ modelo, motivo: res.status === 429 ? 'límite por minuto' : `error ${res.status}` })
@@ -212,7 +235,7 @@ export async function llamarGemini(config: ConfigGemini, peticion: PeticionGemin
           intentosTotales,
         )
         if (intento <= 1) {
-          await dormir(esperas[0])
+          await esperar(esperas[0])
           continue
         }
         descartados.push({ modelo, motivo: codigo })

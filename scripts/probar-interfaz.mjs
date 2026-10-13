@@ -225,6 +225,9 @@ async function postgrest(route) {
 }
 
 // ─── Edge Functions simuladas (con la salida real del motor) ───────────────
+// Simula que la conexión se corta antes de que llegue la respuesta de «generar-informe» (el informe sí se guarda)
+let cortarRespuestaInforme = false
+
 async function funciones(route) {
   const nombre = new URL(route.request().url()).pathname.split('/').pop()
   const cuerpo = JSON.parse(route.request().postData() ?? '{}')
@@ -259,6 +262,10 @@ async function funciones(route) {
     const contenido = construirContenido({ auditoria: a, perfil, hallazgos: lista, estadisticas, narrativa, generadoEn: new Date().toISOString(), version, avisos: [] })
     const informe = { id: crypto.randomUUID(), auditoria_id: a.id, user_id: USUARIO, version, resumen_ejecutivo: narrativa.observaciones, conclusiones: narrativa.conclusiones, recomendaciones: null, estadisticas, contenido, modelo_ia: 'gemini-3.8-flash', prompt_version: '1.1.0', generado_en: new Date().toISOString() }
     db.informes.push(informe)
+    if (cortarRespuestaInforme) {
+      cortarRespuestaInforme = false
+      return route.fulfill({ status: 524, contentType: 'text/html', body: '<html><body>524: A timeout occurred</body></html>' })
+    }
     return json({ ok: true, informe, meta: { modelo: 'gemini-3.8-flash', ia: true } })
   }
   return json({ ok: false, error: 'función desconocida' }, 404)
@@ -992,6 +999,17 @@ execSync(`pdftoppm -r 60 -png "${rutaPdf}" "${CAPTURAS}pdf-pagina"`)
     && /<dc:title>Auditoría Externa - 2026 - Urgencias/.test(textoExt) && /La auditoría externa AI-2026-001/.test(hojaExt),
     'con un auditor externo, la vista y el Word dicen «Auditoría Externa» en todas partes (portada, «…externa de SIG», encabezado, «…externa de: Urgencias», metadatos y narrativa)')
   perfil.tipo_evaluador = 'AUDITORES_INTERNOS'
+}
+
+// Si la respuesta se corta en el camino (tardó demasiado) pero el informe se guardó, la página lo encuentra y lo muestra
+{
+  const siguienteVersion = db.informes.filter((i) => i.auditoria_id === A1).length + 1
+  cortarRespuestaInforme = true
+  await p.getByRole('button', { name: 'Generar nueva versión' }).click()
+  await p.getByText(`Informe versión ${siguienteVersion} generado`).waitFor({ timeout: 15000 })
+  const barra = await p.getByRole('region', { name: 'Acciones del informe' }).innerText()
+  ok(barra.includes(`Versión ${siguienteVersion} · generada`) && (await p.getByRole('alert').filter({ hasText: /No se pudo completar/ }).count()) === 0,
+    'si la respuesta de la IA se corta en el camino pero el informe se guardó, la página lo muestra en lugar de un error', barra)
 }
 
 // Un informe generado con el formato anterior pide generar una nueva versión

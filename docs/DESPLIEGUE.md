@@ -362,6 +362,15 @@ supabase functions deploy clasificar-hallazgo completar-auditoria generar-inform
 git push origin main
 ```
 
+**Tiempos de la IA (13/10/2026):** el 13/10 Gemini respondía «503 high demand» en todos los modelos y un informe tardó
+2 min 11 s: el navegador mostró un error aunque el informe se guardó. Ahora cada petición a Gemini tiene su límite y el
+informe sale en menos de ~65 s (con narrativa de plantilla si la IA no responde a tiempo). Cambia `_shared/gemini.ts`:
+
+```bash
+supabase functions deploy clasificar-hallazgo completar-auditoria generar-informe
+git push origin main
+```
+
 **Fecha Auditoría y Fecha Creación del Informe (12/10/2026):** plantilla nueva del dueño. El frontend y `generar-informe`
 usan las columnas nuevas, así que la 0018 va antes:
 

@@ -98,8 +98,13 @@ Deno.serve(async (req) => {
   }
   try {
     if ('error' in reserva) throw new ErrorGemini('límite de uso de la IA', 429, reserva.error, 0)
+    // La respuesta debe llegar al navegador antes de ~100 s (después, la conexión se corta aunque el informe se guarde):
+    // la IA tiene 60 s y cada petición, 40 s; si no alcanza, el informe sale con la narrativa de plantilla
     const r = await llamarGemini(
-      { apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento, presupuestoMs: 110_000 },
+      {
+        apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento,
+        presupuestoMs: 60_000, tiempoPorIntentoMs: 40_000,
+      },
       { sistema: sistemaInforme(p.tipo_evaluador), mensaje: construirMensajeInforme(auditoriaIa, paraIa, estadisticas, equipoIa), esquema: ESQUEMA_INFORME, temperatura: 0.3 },
     )
     modelo = r.modelo

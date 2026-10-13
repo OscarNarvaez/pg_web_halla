@@ -158,6 +158,11 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   (`src/lib/estructura.js`, aviso en vivo al editar o corregir la clasificación, sin bloquear) usan las MISMAS reglas:
   `probar:validacion` las compara. `ESTRUCTURAS` (catalogos.js) = mismas fórmulas y ejemplos.
 - Ámbar de observación `#b7791f` (no `#94620a`): el del prototipo no se distinguía del rojo con deuteranopía.
+- Tiempos de la IA (13/10/2026): la respuesta de una Edge Function debe llegar al navegador antes de ~100 s (después la
+  conexión se corta aunque el servidor termine). `llamarGemini` corta cada petición a `tiempoPorIntentoMs` (45 s por
+  defecto) y nunca pasa de `presupuestoMs`, tampoco en las esperas. `generar-informe`: 60 s para la IA y 40 s por petición
+  (sin respuesta, narrativa de plantilla con aviso). `clasificar-hallazgo`: 85 s compartidos por la clasificación y su
+  reparación. Si la respuesta igual no llega, la página del informe busca la versión nueva (`buscarVersionNueva`).
 - Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
 - V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).
 

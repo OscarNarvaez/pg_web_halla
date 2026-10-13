@@ -99,10 +99,15 @@ Deno.serve(async (req) => {
     recuperacion = { criterios: [] as Criterio[], consulta: '', filtrado: false } // se continúa sin criterios
   }
 
-  // 5-7. Prompt, llamada a Gemini y validación
+  // 5-7. Prompt, llamada a Gemini y validación. La clasificación y su reparación (V4) comparten un límite de 85 s, para
+  // que la respuesta llegue al navegador antes de ~100 s; la reparación usa lo que quede (si no alcanza, se omite)
+  const limiteIa = Date.now() + 85_000
   const llamar = (mensaje: string) =>
     llamarGemini(
-      { apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento, presupuestoMs: 110_000 },
+      {
+        apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: cfg.geminiMaxTokens, nivelRazonamiento: cfg.geminiNivelRazonamiento,
+        presupuestoMs: limiteIa - Date.now(), tiempoPorIntentoMs: 45_000,
+      },
       { sistema: PROMPT_SISTEMA_EXPERTO, mensaje, esquema: ESQUEMA_SALIDA },
     )
 

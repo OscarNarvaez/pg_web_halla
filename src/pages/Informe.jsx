@@ -154,6 +154,9 @@ function IndicadoresRevisados({ auditoria, alGuardar }) {
   )
 }
 
+// Revisiones de una versión nueva cuando la respuesta no llega: de inmediato y luego cada pocos segundos (≈ 50 s en total)
+const ESPERAS_VERSION_NUEVA = [0, 5000, 10000, 15000, 20000]
+
 export default function Informe() {
   const { id } = useParams()
   const { notificar } = useToast()
@@ -185,14 +188,33 @@ export default function Informe() {
   const sinLider = !a.lider_auditor?.nombre
   const puedeGenerar = confirmados.datos > 0 && !sinLider
 
+  /**
+   * La respuesta puede no llegar aunque el informe se guarde (la conexión se corta si tarda demasiado, o el servidor
+   * falla después de guardarlo): antes de mostrar el error se revisa unas veces si apareció una versión nueva.
+   */
+  const buscarVersionNueva = async (anterior) => {
+    for (const espera of ESPERAS_VERSION_NUEVA) {
+      await new Promise((r) => setTimeout(r, espera))
+      const { data } = await supabase.from('informes').select('*').eq('auditoria_id', id).gt('version', anterior)
+        .order('version', { ascending: false }).limit(1).maybeSingle()
+      if (data) return data
+    }
+    return null
+  }
+
   const generar = async () => {
+    const anterior = lista[0]?.version ?? 0
     setGenerando(true)
     const { data, error } = await invocarFuncion('generar-informe', { auditoria_id: id })
+    // Sin respuesta o con error del servidor (no por datos faltantes ni sesión), el informe pudo guardarse igual
+    const recuperado = error && (!error.estado || error.estado >= 500) ? await buscarVersionNueva(anterior) : null
     setGenerando(false)
-    if (error) return notificar(error.mensaje, 'error')
-    informes.setDatos([data.informe, ...lista])
-    setVersionElegida(data.informe.version)
-    notificar(data.meta?.ia ? `Informe versión ${data.informe.version} generado` : 'Informe generado con plantilla: la IA no estuvo disponible', data.meta?.ia ? 'exito' : 'aviso')
+    if (error && !recuperado) return notificar(error.mensaje, 'error')
+    const nuevo = data?.informe ?? recuperado
+    const conIa = data ? Boolean(data.meta?.ia) : Boolean(nuevo.modelo_ia)
+    informes.setDatos([nuevo, ...lista.filter((i) => i.version !== nuevo.version)])
+    setVersionElegida(nuevo.version)
+    notificar(conIa ? `Informe versión ${nuevo.version} generado` : 'Informe generado con plantilla: la IA no estuvo disponible', conIa ? 'exito' : 'aviso')
   }
 
   const exportar = async (formato) => {
@@ -259,7 +281,7 @@ export default function Informe() {
           alGuardar={guardarAuditoria('Indicadores guardados. Genera una nueva versión para incluirlos en el informe.')} />
       </div>
 
-      {generando && !informe && <PantallaCarga mensaje="Generando el informe: calculando estadísticas y redactando conclusiones…" />}
+      {generando && !informe && <PantallaCarga mensaje="Generando el informe: calculando estadísticas y redactando conclusiones. Puede tardar hasta un minuto…" />}
       {!informe && !generando && (
         <EstadoVacio
           icono={FileText}
@@ -279,9 +301,13 @@ export default function Informe() {
       {/* Con el informe generado, sus acciones quedan siempre a la vista mientras se recorre la página */}
       {informe && (
         <BarraFija como="section" aria-label="Acciones del informe">
-          <p className="text-xs text-tinta-500">
-            Versión {informe.version} · generada {fechaHora(informe.generado_en)}{informe.modelo_ia ? ` · narrativa: ${informe.modelo_ia}` : ' · narrativa: plantilla'}
-            {!oficial && ' · formato anterior: genera una nueva versión para descargarlo'}
+          <p className="text-xs text-tinta-500" aria-live="polite">
+            {generando ? 'Generando una nueva versión: puede tardar hasta un minuto…' : (
+              <>
+                Versión {informe.version} · generada {fechaHora(informe.generado_en)}{informe.modelo_ia ? ` · narrativa: ${informe.modelo_ia}` : ' · narrativa: plantilla'}
+                {!oficial && ' · formato anterior: genera una nueva versión para descargarlo'}
+              </>
+            )}
           </p>
           <div className="ml-auto flex flex-wrap gap-2">
             <Boton icono={RefreshCw} onClick={generar} cargando={generando} disabled={!puedeGenerar}>Generar nueva versión</Boton>
