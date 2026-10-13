@@ -136,12 +136,12 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   nombres (anonimizados) para nombrarlos bien si los menciona, sin metas ni resultados.
 - Interna o externa (decisión del dueño, 13/10/2026): TODO texto que diga «interna/interno» se adapta a
   `profiles.tipo_evaluador` con `textosAuditoria()` (`TEXTOS_TIPO_AUDITORIA` en catalogos.js = _shared/catalogos.ts):
-  portada, encabezado, «Auditoría interna de <lo auditado>» (`programaDe`), metadatos, narrativa e instrucciones de la IA del informe
+  portada, encabezado, «Auditoría interna de SIG» (`programaDe`), «Auditoría interna de: <lo auditado>» (`tituloListas`), metadatos, narrativa e instrucciones de la IA del informe
   (`sistemaInforme`), «Sugerir con IA», código AI-/AE-, ejemplo del título y autorización de datos. El informe guarda el
   grupo en `encabezado.tipo_evaluador` (sin grupo → interna). La plantilla sigue diciendo «interna»: se reemplaza al llenar.
-  Decisión del dueño (12/10/2026): en la portada y en el título de las listas, justo después de «de» va lo auditado, el
-  proceso o el sistema, aunque la plantilla traiga ahí «SIG»: «Auditoría interna de Urgencias» en la portada y
-  «Auditoría interna de: Urgencias» antes de las listas (con los dos puntos de la plantilla, `programaListas`). Todo el
+  Decisión del dueño (12/10/2026, la última): la portada dice «Auditoría interna de SIG» TAL CUAL la plantilla (solo
+  cambia «interna» por «externa» si corresponde); el título de las listas es «Auditoría interna de:» y, justo después,
+  lo auditado, el proceso o el sistema: «Auditoría interna de: Urgencias» (`programaListas`, `tituloListas`). Todo el
   informe escribe «Auditoría» con tilde, como el cuerpo de la plantilla (los cuadros del encabezado la traen sin tilde).
   Excepción: el prompt del sistema de clasificación (ANEXO A literal, «auditor interno») no se toca.
   Las cifras de la auditoría (`cifrasAuditoria`) ya no van en el informe: solo son contexto para la IA.

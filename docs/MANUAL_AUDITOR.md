@@ -366,15 +366,15 @@ cambió después en **Mi perfil**): si es auditor externo, la portada, el encabe
 de…» y los textos que redacta la IA dicen «externa» en lugar de «interna». Se toma el grupo que tenga su perfil al
 generar el informe; si lo cambia, genere una nueva versión.
 
-**Lo auditado.** En la portada y en el título de las listas de hallazgos, después de «Auditoría interna de» va el proceso
-o el sistema de la auditoría: «Auditoría interna de Urgencias» en la portada y «Auditoría interna de: Urgencias» antes de
-las listas (o «Auditoría externa de Cirugía»).
+**Lo auditado.** La portada dice «Auditoría interna de SIG», como la plantilla (o «Auditoría externa de SIG»). En el
+título de las listas de hallazgos, después de «Auditoría interna de:» va el proceso o el sistema de la auditoría:
+«Auditoría interna de: Urgencias» (o «Auditoría externa de: Cirugía»).
 
 El informe tiene, en este orden:
 
 | Parte | Qué lleva | Quién lo llena |
 |---|---|---|
-| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoría Interna - año - proceso» (o «Auditoría Externa…»), su grupo de auditores, el año y «Auditoría interna de <proceso o sistema>» (o «externa») | El sistema |
+| Portada | Logo, «HOSPITAL INFANTIL LOS ANGELES», «Auditoría Interna - año - proceso» (o «Auditoría Externa…»), su grupo de auditores, el año y «Auditoría interna de SIG» (o «externa») | El sistema |
 | Ficha Técnica | Fecha Auditoría y Fecha Creación del Informe, sistema de referencia (normas de la auditoría), evaluador, equipo auditor de esta auditoría (con nombres y cargos), el líder del equipo que registró y archivos adjuntos (los PDF de evidencia) | El sistema, con lo que usted registra |
 | Auditoría interna de: <proceso o sistema> | Las listas FORTALEZAS IDENTIFICADAS, OPORTUNIDADES DE MEJORA, OBSERVACIONES y NO CONFORMIDADES, con la redacción validada de cada hallazgo | El sistema |
 | Objetivo | El objetivo de la auditoría (si no lo escribió, lo redacta la IA) | Usted / la IA |

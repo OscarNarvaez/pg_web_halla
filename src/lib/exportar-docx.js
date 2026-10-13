@@ -7,7 +7,7 @@
 import { strFromU8, strToU8, zipSync } from 'fflate'
 import { saveAs } from 'file-saver'
 import { cargarPlantilla } from './plantilla-informe'
-import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria } from './formato-informe'
+import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria, tituloListas } from './formato-informe'
 import { nombreArchivo } from './exportar-comun'
 
 const NS = {
@@ -161,15 +161,14 @@ function llenarCuerpo(doc, c) {
   reemplazarTexto(titulo, `${tituloAuditoria(c)} ${c.encabezado.evaluador}`.trim())
   const anio = parrafosCuerpo().find((x) => /^\d{4}$/.test(normal(textoDe(x))))
   if (anio) reemplazarTexto(anio, c.encabezado.anio)
-  // «Auditoría interna de» (portada) y «Auditoría interna de:» (título de las listas): «interna» o «externa» y, después
-  // de «de», lo auditado, aunque la plantilla traiga ahí «SIG» (decisión del dueño, 12/10/2026)
-  const programa = comparable(TEXTOS_FORMATO.programa)
-  const programas = parrafosCuerpo().filter((x) => comparable(textoDe(x)).startsWith(programa))
-  if (!programas.length) throw new ErrorPlantilla(`La plantilla del informe no tiene «${TEXTOS_FORMATO.programa}».`)
-  for (const x of programas) {
-    const conDosPuntos = comparable(textoDe(x)).startsWith(`${programa}:`)
-    reemplazarTexto(x, programaDe(c, conDosPuntos ? TEXTOS_FORMATO.programaListas : TEXTOS_FORMATO.programa))
-  }
+  // Portada: «Auditoría interna de SIG», tal cual la plantilla («externa» si corresponde). Título de las listas:
+  // «Auditoría interna de:» y, después, lo auditado (decisiones del dueño, 12/10/2026)
+  const portada = parrafosCuerpo().find((x) => !esTitulo(x) && comparable(textoDe(x)) === comparable(TEXTOS_FORMATO.programa))
+  const listas = parrafosCuerpo().find((x) => comparable(textoDe(x)).startsWith(comparable(TEXTOS_FORMATO.programaListas)))
+  if (!portada) throw new ErrorPlantilla(`La plantilla del informe no tiene «${TEXTOS_FORMATO.programa}» en la portada.`)
+  if (!listas) throw new ErrorPlantilla(`La plantilla del informe no tiene «${TEXTOS_FORMATO.programaListas}».`)
+  reemplazarTexto(portada, programaDe(c))
+  reemplazarTexto(listas, tituloListas(c))
 
   // Formato de los párrafos de texto que se agregan donde la plantilla no trae renglón vacío
   const alcance = buscar('Alcance', { titulo: true })

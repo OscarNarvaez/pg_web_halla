@@ -262,12 +262,13 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const perfilExt = { ...perfilInf, tipo_evaluador: 'AUDITORES_EXTERNOS' }
   const nExt = informe.narrativaRespaldo(aud, e, 'AUDITORES_EXTERNOS')
   const cExt = informe.construirContenido({ auditoria: aud, perfil: perfilExt, hallazgos: hs, estadisticas: e, narrativa: nExt, generadoEn: '2026-10-13T10:00:00Z', version: 4, avisos: [] })
-  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoría Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoría externa de Urgencias'
-    && formato.programaDe(cExt, formato.TEXTOS_FORMATO.programaListas) === 'Auditoría externa de: Urgencias'
+  ok(cExt.encabezado.tipo_evaluador === 'AUDITORES_EXTERNOS' && formato.tituloAuditoria(cExt) === 'Auditoría Externa - 2026 - Urgencias' && formato.programaDe(cExt) === 'Auditoría externa de SIG'
+    && formato.tituloListas(cExt) === 'Auditoría externa de: Urgencias'
+    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Urgencias' } }) === 'Auditoría interna de SIG'
     && formato.tituloAuditoria({ encabezado: { ...cExt.encabezado, tipo_evaluador: 'AUDITORES_INTERNOS' } }) === 'Auditoría Interna - 2026 - Urgencias'
-    && formato.programaDe({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Sistema de Seguridad y Salud en el Trabajo' } }) === 'Auditoría interna de Sistema de Seguridad y Salud en el Trabajo'
+    && formato.tituloListas({ encabezado: { tipo_evaluador: 'AUDITORES_INTERNOS', objeto: 'Sistema de Seguridad y Salud en el Trabajo' } }) === 'Auditoría interna de: Sistema de Seguridad y Salud en el Trabajo'
     && formato.tituloAuditoria({ encabezado: { anio: '2026', objeto: 'Urgencias' } }) === 'Auditoría Interna - 2026 - Urgencias',
-    'con un auditor externo el informe dice «Auditoría Externa»; después de «Auditoría interna/externa de» (o «de:») va lo auditado (sin grupo, interna)')
+    'con un auditor externo el informe dice «Auditoría Externa»; la portada dice «…de SIG» y el título de las listas, «…de:» y lo auditado (sin grupo, interna)')
   ok(nExt.observaciones.startsWith('La auditoría externa AI-2026-001') && nExt.criterios_seleccion_equipo.some((x) => x.includes('auditor externo'))
     && !JSON.stringify(nExt).includes('interna') && informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditoría externa')
     && !informe.sistemaInforme('AUDITORES_EXTERNOS').includes('auditor interno') && msg.includes('Tipo: auditoría externa'),
@@ -297,10 +298,10 @@ console.log('\n▸ Informe final con el formato oficial (version_estructura 5)')
   const faltan = buscados.filter((t) => !lineasPlantilla.some((l) => l === t || l.startsWith(`${t} `) || l.includes(t)))
   ok(!faltan.length && !lineasPlantilla.includes('RECOMENDACIONES:'), 'la plantilla oficial (Word) tiene todos los textos que el sistema busca (y ya no RECOMENDACIONES:)', faltan.join(' | '))
   const sinTildes = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  ok(lineasPlantilla.filter((l) => l.startsWith(formato.TEXTOS_FORMATO.programa)).length === 2 && lineasPlantilla.includes(formato.TEXTOS_FORMATO.programaListas)
+  ok(lineasPlantilla.includes(formato.TEXTOS_FORMATO.programa) && lineasPlantilla.includes(formato.TEXTOS_FORMATO.programaListas)
     && lineasPlantilla.some((l) => /^Auditor[ií]a Interna - \d{4} - /.test(l))
     && ['HOSPITAL INFANTIL LOS ANGELES', 'Auditoria Interna - ', 'Generado por ', 'Página'].every((t) => lineasEncabezadoPie.some((l) => sinTildes(l).startsWith(sinTildes(t)))),
-  'la plantilla trae «Auditoría interna de» en la portada y «Auditoría interna de:» antes de las listas, y el encabezado y el pie que se llenan')
+  'la plantilla trae «Auditoría interna de SIG» en la portada y «Auditoría interna de:» antes de las listas, y el encabezado y el pie que se llenan')
   ok(JSON.stringify(informe.cifrasNoRastreables({ ...n, conclusiones: 'Se revisaron 37 historias.' }, aud, hs, e)) === '["37"]', 'una cifra inventada en la narrativa se detecta')
   ok(!informe.perfilIncompletoInforme(perfilInf) && informe.perfilIncompletoInforme({ ...perfilInf, tipo_evaluador: null }), 'sin grupo de evaluador el informe no se puede generar')
   // 0016: el equipo de la auditoría; si no tiene, el del perfil

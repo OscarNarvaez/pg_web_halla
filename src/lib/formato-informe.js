@@ -5,8 +5,9 @@ import { textosAuditoria } from './catalogos.js'
 
 export const TEXTOS_FORMATO = {
   institucion: 'HOSPITAL INFANTIL LOS ANGELES',
-  // Portada y título de las listas (plantilla del 12/10/2026): después de «de» (o «de:») va lo auditado, con programaDe(c)
-  programa: 'Auditoría interna de',
+  // Portada: tal cual la plantilla, con «SIG» (decisión del dueño, 12/10/2026); «externa» si corresponde, con programaDe(c)
+  programa: 'Auditoría interna de SIG',
+  // Título de las listas: después de «de:» va lo auditado, con tituloListas(c)
   programaListas: 'Auditoría interna de:',
   fichaTecnica: 'Ficha Técnica',
   // Fechas de la Ficha Técnica (plantilla del 12/10/2026): las registra el auditor antes de generar el informe (0018)
@@ -90,12 +91,14 @@ const tipoDe = (c) => textosAuditoria(c.encabezado?.tipo_evaluador)
 /** «Auditoría Interna - 2026 - Hospitalización» (o «Auditoría Externa…»), como en la portada y el encabezado. */
 export const tituloAuditoria = (c) => `Auditoría ${tipoDe(c).Tipo} - ${c.encabezado.anio} - ${c.encabezado.objeto}`
 
+/** «Auditoría interna de SIG» de la portada, tal cual la plantilla (o «Auditoría externa de SIG»). */
+export const programaDe = (c) => TEXTOS_FORMATO.programa.replace('interna', tipoDe(c).tipo)
+
 /**
- * «Auditoría interna de Urgencias» (o «Auditoría externa de…»): justo después de «de» va lo auditado, el proceso o el
- * sistema (decisión del dueño, 12/10/2026), aunque la plantilla traiga ahí «SIG». En la portada es `programa`; como
- * título de las listas, `programaListas` («Auditoría interna de: Urgencias», con los dos puntos de la plantilla).
+ * «Auditoría interna de: Urgencias» (o «Auditoría externa de: …»): título de las listas de hallazgos; justo después de
+ * «de:» va lo auditado, el proceso o el sistema (decisión del dueño, 12/10/2026).
  */
-export const programaDe = (c, base = TEXTOS_FORMATO.programa) => `${base.replace('interna', tipoDe(c).tipo)} ${c.encabezado.objeto ?? ''}`.trimEnd()
+export const tituloListas = (c) => `${TEXTOS_FORMATO.programaListas.replace('interna', tipoDe(c).tipo)} ${c.encabezado.objeto ?? ''}`.trimEnd()
 
 /** «2026-10-04 12:14 PM» en la hora de Colombia, como el pie de la plantilla. */
 export function fechaHoraFormato(iso) {

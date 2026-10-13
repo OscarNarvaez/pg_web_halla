@@ -6,7 +6,7 @@
 // (licencia OFL, con las mismas medidas de Arial) para que el PDF se vea igual en cualquier equipo.
 import { jsPDF } from 'jspdf'
 import { logoDePlantilla } from './plantilla-informe'
-import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria } from './formato-informe'
+import { LISTAS_HALLAZGOS, TEXTOS_FORMATO, lineaGenerado, parrafos, personaFicha, programaDe, seccionesFormato, tituloAuditoria, tituloListas } from './formato-informe'
 import { hexARgb, nombreArchivo } from './exportar-comun'
 import { registrarFuentes } from './fuentes-pdf'
 
@@ -167,7 +167,7 @@ export async function exportarPdf(informe) {
 
   // ─── Hallazgos ─────────────────────────────────────────────────────────────
   y += 2
-  parrafo(programaDe(c, TEXTOS_FORMATO.programaListas), { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
+  parrafo(tituloListas(c), { estilo: 'bold', escala: ESCALA_TITULO, subrayado: true })
   for (const lista of LISTAS_HALLAZGOS) {
     parrafo(lista.titulo, { escala: ESCALA_ROTULO })
     const items = c.hallazgos.find((g) => g.clasificacion === lista.clasificacion)?.items ?? []
