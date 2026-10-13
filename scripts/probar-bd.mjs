@@ -173,6 +173,30 @@ const errFechasReales = await fijarFechasReales('2026-10-10', '2026-10-01')
 ok(errFechasReales?.includes('fechas_reales_coherentes'), 'la terminación real no puede ser anterior al inicio real (0010)', errFechasReales)
 const errFechasRealesOk = await fijarFechasReales('2026-10-01', '2026-10-03')
 ok(errFechasRealesOk === null, 'el auditor registra las fechas reales de su auditoría', errFechasRealesOk)
+// 0016: equipo auditor por auditoría; por defecto, el del perfil
+const personas = (equipo) => JSON.stringify((equipo ?? []).map((m) => [m.nombre, m.cargos, Object.keys(m).sort().join()]))
+const { rows: [equipoAudA] } = await db.query('select equipo_auditor from public.auditorias where id = $1', [audA.id])
+ok(personas(equipoAudA.equipo_auditor) === JSON.stringify([['Laura Gómez', ['Enfermera'], 'cargos,nombre']]),
+  'al crear una auditoría sin equipo, toma el equipo auditor del perfil (0016)', JSON.stringify(equipoAudA.equipo_auditor))
+const { rows: [audEquipo] } = await comoUsuario(db, como(A), (tx) => tx.query(
+  `insert into public.auditorias (user_id, codigo, titulo, alcance, proceso, equipo_auditor) values ($1,'AI-2026-050','Con su equipo','PROCESOS','Urgencias',$2) returning equipo_auditor`,
+  [A, JSON.stringify([{ nombre: ' Marta Ruiz ', cargos: ['Médico', 'Médico'], extra: 'x' }, { nombre: 'Pedro Pérez', cargos: ['Auxiliar'] }])]))
+ok(personas(audEquipo.equipo_auditor) === JSON.stringify([['Marta Ruiz', ['Médico'], 'cargos,nombre'], ['Pedro Pérez', ['Auxiliar'], 'cargos,nombre']]),
+  'una auditoría puede tener su propio equipo (normalizado: sin espacios, cargos repetidos ni campos extra)', JSON.stringify(audEquipo.equipo_auditor))
+const ponerEquipo = (equipo) => falla(comoUsuario(db, como(A), (tx) => tx.query(`update public.auditorias set equipo_auditor = $2 where id = $1`, [audA.id, JSON.stringify(equipo)])))
+const errEquipoVacio = await ponerEquipo([])
+const errEquipoCargo = await ponerEquipo([{ nombre: 'Marta Ruiz', cargos: ['Gerente general'] }])
+const errEquipoNombre = await ponerEquipo([{ nombre: 'MR', cargos: ['Médico'] }])
+const errEquipoMuchos = await ponerEquipo(Array.from({ length: 11 }, (_, i) => ({ nombre: `Persona ${i + 1}`, cargos: ['Médico'] })))
+ok(errEquipoVacio?.includes('entre 1 y 10') && errEquipoCargo?.includes('no permitido') && errEquipoNombre?.includes('3 a 120') && errEquipoMuchos?.includes('entre 1 y 10'),
+  'el equipo de la auditoría sigue las reglas del perfil: de 1 a 10 personas, nombre de 3 a 120 caracteres y cargos de la lista',
+  [errEquipoVacio, errEquipoCargo, errEquipoNombre, errEquipoMuchos].join(' | '))
+const errEquipoOk = await ponerEquipo([{ nombre: 'Laura Gómez', cargos: ['Enfermera'] }, { nombre: 'Marta Ruiz', cargos: ['Médico'] }])
+const { rows: [perfilTrasEquipo] } = await db.query('select equipo_auditor from public.profiles where id = $1', [A])
+ok(errEquipoOk === null && perfilTrasEquipo.equipo_auditor.length === 1, 'cambiar el equipo de una auditoría no cambia el del perfil ni el de otras auditorías', errEquipoOk)
+const errEquipoAjeno = await comoUsuario(db, como(B), (tx) => tx.query(`update public.auditorias set equipo_auditor = '[]' where id = $1`, [audA.id]))
+ok(errEquipoAjeno.affectedRows === 0, 'B no puede cambiar el equipo de una auditoría de A')
+
 // 0013 y 0015: indicadores priorizados del proceso (solo el nombre corto de cada uno)
 const ponerIndicadores = (como_, lista) => falla(comoUsuario(db, como(como_), (tx) => tx.query(
   `update public.auditorias set indicadores_revisados = $2 where id = $1`, [audA.id, JSON.stringify(lista)])))
@@ -454,6 +478,21 @@ ok(updAdmin.affectedRows === 0, 'un admin lee pero no modifica hallazgos ajenos'
 await db.query(`update public.profiles set aprobado = false where id = $1`, [B])
 const { rows: adminInactivo } = await comoUsuario(db, como(B), (tx) => tx.query('select id from public.hallazgos'))
 ok(adminInactivo.length === 0, 'un admin desactivado pierde el acceso')
+
+console.log('\n▸ Auditorías existentes al aplicar la 0016 (toman el equipo del perfil)')
+{
+  const vieja = await crearBaseLocal({ hasta: '0016', silencioso: true })
+  const usuario = await registrarUsuario(vieja, 'eq@hila.test', {
+    nombre_completo: 'Eva Equipo', cedula: '1085000016', celular: '3001234567', tipo_evaluador: 'AUDITORES_INTERNOS', cargos: ['Coordinadora'],
+    equipo_auditor: [{ nombre: 'Laura Gómez', cargos: ['Enfermería'] }], alcance: 'PROCESOS', proceso: 'Urgencias', sistema: '', acepto_tratamiento_datos: 'true',
+  })
+  const { rows: [aud] } = await vieja.query(`insert into public.auditorias (user_id, codigo, titulo, alcance, proceso) values ($1, 'AI-2026-016', 'Anterior a la 0016', 'PROCESOS', 'Urgencias') returning id`, [usuario])
+  await aplicarMigraciones(vieja, { desde: '0016', silencioso: true })
+  const { rows: [conEquipo] } = await vieja.query('select equipo_auditor from public.auditorias where id = $1', [aud.id])
+  ok(conEquipo.equipo_auditor[0]?.nombre === 'Laura Gómez' && conEquipo.equipo_auditor.length === 1,
+    'las auditorías anteriores a la 0016 conservan el equipo que sus informes mostraban (el del perfil)', JSON.stringify(conEquipo.equipo_auditor))
+  await vieja.close()
+}
 
 console.log('\n▸ Indicadores registrados con la 0013 al aplicar la 0015 (solo el nombre)')
 {

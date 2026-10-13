@@ -19,6 +19,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0013_indicadores_revisados.sql` | `auditorias.indicadores_revisados`: indicadores priorizados del proceso que revisó el auditor (hasta 15 × nombre, meta, resultado y observación, validados por trigger), para la sección «Indicadores» del informe |
 | `0014_quitar_pdf_analizado.sql` | El PDF analizado (`evidencia_archivo`) se puede quitar —no reemplazar— y entra en el historial y en la regla «editar un validado lo devuelve a pendiente» |
 | `0015_indicadores_solo_nombre.sql` | Cada indicador revisado es solo un nombre corto (1 a 60 caracteres, sin comas; hasta 15): el informe los une con comas y «y». Los registrados con la 0013 conservan solo su nombre |
+| `0016_equipo_por_auditoria.sql` | `auditorias.equipo_auditor`: el equipo de cada auditoría (mismas reglas que el del perfil). Al crearla sin equipo se copia el del perfil; las auditorías existentes tomaron el del perfil |
 
 ## Modelo
 
