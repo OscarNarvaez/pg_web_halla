@@ -196,6 +196,31 @@ const { rows: [perfilTrasEquipo] } = await db.query('select equipo_auditor from 
 ok(errEquipoOk === null && perfilTrasEquipo.equipo_auditor.length === 1, 'cambiar el equipo de una auditoría no cambia el del perfil ni el de otras auditorías', errEquipoOk)
 const errEquipoAjeno = await comoUsuario(db, como(B), (tx) => tx.query(`update public.auditorias set equipo_auditor = '[]' where id = $1`, [audA.id]))
 ok(errEquipoAjeno.affectedRows === 0, 'B no puede cambiar el equipo de una auditoría de A')
+// 0017: líder del equipo auditor por auditoría, escrito a mano; empieza vacío y nunca se toma del perfil
+const { rows: [liderAudA] } = await db.query('select lider_auditor from public.auditorias where id = $1', [audA.id])
+ok(liderAudA.lider_auditor === null, 'al crear una auditoría el líder del equipo empieza vacío: no se copia el dueño de la cuenta (0017)', JSON.stringify(liderAudA.lider_auditor))
+const ponerLider = (lider, quien = A) => falla(comoUsuario(db, como(quien), (tx) => tx.query(
+  `update public.auditorias set lider_auditor = $2 where id = $1`, [audA.id, lider === null ? null : JSON.stringify(lider)])))
+const erroresLider = [
+  await ponerLider({ nombre: 'Carlos Mora', cargos: ['Auxiliar'] }), // cargo de la lista del equipo, no de la de líderes
+  await ponerLider({ nombre: 'CM', cargos: ['Coordinadora'] }),
+  await ponerLider({ nombre: 'Carlos Mora', cargos: [] }),
+  await ponerLider({ nombre: 'Carlos Mora', cargos: ['Auditor médico', 'Coordinadora', 'Enfermera', 'Líder equipo', 'Nutricionista', 'Asesora PAMEC'] }),
+  await ponerLider('Carlos Mora'),
+]
+ok(erroresLider[0]?.includes('no permitido') && erroresLider[1]?.includes('3 a 120') && erroresLider[2]?.includes('entre 1 y 5')
+  && erroresLider[3]?.includes('entre 1 y 5') && erroresLider[4]?.includes('nombre y cargos'),
+  'el líder sigue las reglas: nombre de 3 a 120 caracteres y de 1 a 5 cargos de la lista de líderes', erroresLider.join(' | '))
+const leerPerfilA = async () => JSON.stringify((await db.query('select nombre_completo, cargos, equipo_auditor from public.profiles where id = $1', [A])).rows[0])
+const perfilAntesLider = await leerPerfilA()
+const errLiderOk = await ponerLider({ nombre: '  Carlos Mora Díaz ', cargos: ['Coordinadora', 'Coordinadora', 'Líder equipo'], extra: 'x' })
+const { rows: [conLider] } = await db.query('select lider_auditor from public.auditorias where id = $1', [audA.id])
+ok(errLiderOk === null && conLider.lider_auditor?.nombre === 'Carlos Mora Díaz' && JSON.stringify(conLider.lider_auditor.cargos) === '["Coordinadora","Líder equipo"]'
+  && Object.keys(conLider.lider_auditor).sort().join() === 'cargos,nombre',
+  'el auditor registra a mano el líder de su auditoría (normalizado: sin espacios, cargos repetidos ni campos extra)', errLiderOk ?? JSON.stringify(conLider.lider_auditor))
+ok(await leerPerfilA() === perfilAntesLider, 'registrar el líder no cambia el perfil del dueño de la cuenta')
+const errLiderAjeno = await comoUsuario(db, como(B), (tx) => tx.query(`update public.auditorias set lider_auditor = null where id = $1`, [audA.id]))
+ok(errLiderAjeno.affectedRows === 0, 'B no puede cambiar el líder de una auditoría de A')
 
 // 0013 y 0015: indicadores priorizados del proceso (solo el nombre corto de cada uno)
 const ponerIndicadores = (como_, lista) => falla(comoUsuario(db, como(como_), (tx) => tx.query(
@@ -491,6 +516,8 @@ console.log('\n▸ Auditorías existentes al aplicar la 0016 (toman el equipo de
   const { rows: [conEquipo] } = await vieja.query('select equipo_auditor from public.auditorias where id = $1', [aud.id])
   ok(conEquipo.equipo_auditor[0]?.nombre === 'Laura Gómez' && conEquipo.equipo_auditor.length === 1,
     'las auditorías anteriores a la 0016 conservan el equipo que sus informes mostraban (el del perfil)', JSON.stringify(conEquipo.equipo_auditor))
+  const { rows: [sinLider] } = await vieja.query('select lider_auditor from public.auditorias where id = $1', [aud.id])
+  ok(sinLider.lider_auditor === null, 'con la 0017 las auditorías existentes quedan sin líder: se registra a mano antes del próximo informe')
   await vieja.close()
 }
 

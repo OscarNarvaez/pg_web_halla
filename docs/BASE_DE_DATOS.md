@@ -20,6 +20,7 @@ PostgreSQL de Supabase con RLS en todas las tablas. Migraciones en `supabase/mig
 | `0014_quitar_pdf_analizado.sql` | El PDF analizado (`evidencia_archivo`) se puede quitar —no reemplazar— y entra en el historial y en la regla «editar un validado lo devuelve a pendiente» |
 | `0015_indicadores_solo_nombre.sql` | Cada indicador revisado es solo un nombre corto (1 a 60 caracteres, sin comas; hasta 15): el informe los une con comas y «y». Los registrados con la 0013 conservan solo su nombre |
 | `0016_equipo_por_auditoria.sql` | `auditorias.equipo_auditor`: el equipo de cada auditoría (mismas reglas que el del perfil). Al crearla sin equipo se copia el del perfil; las auditorías existentes tomaron el del perfil |
+| `0017_lider_por_auditoria.sql` | `auditorias.lider_auditor`: el líder del equipo de cada auditoría, escrito a mano (nombre de 3 a 120 caracteres y 1 a 5 cargos de la lista de líderes). Empieza vacío y nunca se copia del perfil: el líder no siempre es el dueño de la cuenta. El informe lo exige |
 
 ## Modelo
 
@@ -59,6 +60,8 @@ erDiagram
     estado_auditoria estado
     date fecha_inicio_real "0010"
     date fecha_fin_real "0010"
+    jsonb equipo_auditor "1 a 10 personas; por defecto, el del perfil (0016)"
+    jsonb lider_auditor "nombre y 1 a 5 cargos de líder; vacío hasta registrarlo (0017)"
   }
   HALLAZGOS {
     uuid id PK
