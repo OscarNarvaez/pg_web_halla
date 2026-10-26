@@ -301,6 +301,14 @@ async function sinDesborde(pagina, nombre) {
   ok(ancho <= vista, `${nombre}: sin desborde horizontal a ${vista}px`, `scrollWidth ${ancho} · ${culpable}`)
 }
 
+// Pie de página: «Desarrollado por: ZOKY», con ZOKY enlazado al portafolio en una pestaña nueva
+async function creditoEnPie(pagina) {
+  const pie = pagina.getByRole('contentinfo')
+  const enlace = pie.getByRole('link', { name: /^ZOKY/ })
+  if (!(await pie.getByText('Desarrollado por:').isVisible()) || (await enlace.count()) !== 1) return false
+  return enlace.evaluate((a) => a.href === 'https://oscarnarvaez.github.io/personalPortfolio/' && a.target === '_blank' && /noopener/.test(a.rel))
+}
+
 // Elige cargos con el selector (botón → buscador → casillas → Listo)
 async function elegirCargos(pagina, nombreBoton, cargos) {
   await pagina.getByRole('button', { name: nombreBoton }).click()
@@ -334,9 +342,11 @@ console.log('\n▸ Páginas públicas')
   })
   ok(favicon.ok && /image\/png/.test(favicon.tipo), `el favicon es el logo y existe (${favicon.href})`)
   await p.screenshot({ path: `${CAPTURAS}01-landing.png`, fullPage: true })
+  ok(await creditoEnPie(p), 'landing: el pie dice «Desarrollado por: ZOKY» y enlaza al portafolio en otra pestaña')
 
   await p.goto(`${BASE}/registro`)
   ok(await fachadaCarga(p), 'registro: la foto de la fachada carga de fondo')
+  ok(await creditoEnPie(p), 'pantallas de acceso: pie con «Desarrollado por: ZOKY»')
   await p.getByLabel('Correo electrónico').fill('ana@hila.test')
   await p.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('corta123')
   await p.getByLabel('Confirma la contraseña').fill('corta123')
@@ -472,6 +482,7 @@ p.on('console', (m) => (m.type() === 'error' || /Content Security Policy/i.test(
 await p.goto(`${BASE}/app`)
 await p.getByRole('heading', { name: /Hola, Ana/ }).waitFor()
 ok(true, 'el panel saluda con el nombre del auditor')
+ok(await creditoEnPie(p), 'aplicación: pie con «Desarrollado por: ZOKY»')
 ok(await p.getByText('Proceso: Urgencias').isVisible(), 'muestra el proceso del perfil')
 await p.locator('.recharts-bar-rectangle').first().waitFor()
 ok((await p.locator('.recharts-bar-rectangle').count()) >= 3, 'gráfica de distribución por clasificación dibujada')

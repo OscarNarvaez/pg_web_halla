@@ -6,6 +6,7 @@ import { RutaAnteriorProvider } from '../../contexts/RutaAnteriorContext'
 import { cx } from '../../lib/cx'
 import { objetoAuditado } from '../../lib/catalogos'
 import { perfilIncompleto } from '../../lib/esquemas'
+import { Creditos } from './Creditos'
 import { Marca } from './Marca'
 
 const NAVEGACION = [
@@ -77,7 +78,7 @@ export function AppShell() {
   }, [menuAbierto])
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className="flex min-h-screen flex-col lg:flex-row">
       <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2">
         Saltar al contenido
       </a>
@@ -124,17 +125,23 @@ export function AppShell() {
         </div>
       )}
 
-      <main id="contenido" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        {perfilIncompleto(perfil) && location.pathname !== '/app/perfil' && (
-          <p role="status" className="no-imprimir mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
-            Completa tu perfil: elige tu grupo de auditores, tus cargos y los de tu equipo auditor. Aparecen en la Ficha
-            Técnica del informe y sin ellos no se puede generar. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
-          </p>
-        )}
-        <RutaAnteriorProvider>
-          <Outlet />
-        </RutaAnteriorProvider>
-      </main>
+      {/* El pie queda al fondo de la pantalla aunque la página sea corta */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <main id="contenido" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+          {perfilIncompleto(perfil) && location.pathname !== '/app/perfil' && (
+            <p role="status" className="no-imprimir mb-6 rounded-md border border-obs-borde bg-obs-bg px-4 py-3 text-sm text-obs-texto">
+              Completa tu perfil: elige tu grupo de auditores, tus cargos y los de tu equipo auditor. Aparecen en la Ficha
+              Técnica del informe y sin ellos no se puede generar. <Link to="/app/perfil" className="font-semibold underline">Ir a Mi perfil</Link>
+            </p>
+          )}
+          <RutaAnteriorProvider>
+            <Outlet />
+          </RutaAnteriorProvider>
+        </main>
+        <footer className="no-imprimir border-t border-tinta-100 px-4 py-3 sm:px-6 lg:px-10">
+          <Creditos />
+        </footer>
+      </div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { BookCheck, FileText, PenLine, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { CLASIFICACIONES, DOCUMENTOS, ESTRUCTURAS, INSTITUCION, MARCADOR_PENDIENTE, TONOS } from '../lib/catalogos'
+import { Creditos } from '../components/layout/Creditos'
 import { Marca } from '../components/layout/Marca'
 import { FondoFachada } from '../components/layout/FondoFachada'
 
@@ -125,6 +126,7 @@ export default function Landing() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-xs text-tinta-500">
           <span>halla.ink · {INSTITUCION.nombre}, {INSTITUCION.ciudad}</span>
           <span>Herramienta de apoyo: el juicio profesional sigue siendo del auditor.</span>
+          <Creditos />
         </div>
       </footer>
     </div>
