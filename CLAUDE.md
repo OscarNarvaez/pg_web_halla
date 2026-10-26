@@ -163,6 +163,10 @@ pnpm verificar-rls       # requiere un proyecto Supabase real
   defecto) y nunca pasa de `presupuestoMs`, tampoco en las esperas. `generar-informe`: 60 s para la IA y 40 s por petición
   (sin respuesta, narrativa de plantilla con aviso). `clasificar-hallazgo`: 85 s compartidos por la clasificación y su
   reparación. Si la respuesta igual no llega, la página del informe busca la versión nueva (`buscarVersionNueva`).
+  Respaldo en paralelo (25/10/2026): cuando Google está saturado, los modelos más nuevos se quedan colgados o tardan en
+  devolver un 503. Si el modelo en curso no termina en `esperaRespaldoMs` (12 s; 15 s en `completar-auditoria`, que
+  tarda 13–20 s aun sin saturación, con 70 s de presupuesto), arranca el siguiente SIN cancelar el primero; gana el
+  primero que responda bien, los demás se cancelan y quedan como «lento» por 60 s en la instancia. Un 400 termina todo.
 - Fragmentos normativos de máximo 2 400 caracteres: `buscar_criterios` entrega 2 500 a la IA.
 - V1/V2 aceptan un sub-numeral (4.4.2) solo si aparece literalmente en el texto del fragmento verificado (4.4).
 

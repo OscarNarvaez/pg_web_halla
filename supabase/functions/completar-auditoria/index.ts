@@ -89,8 +89,13 @@ Deno.serve(async (req) => {
   ].filter(Boolean).join('\n')
 
   try {
+    // Esta llamada tarda 13 a 20 s aun con la IA disponible: el respaldo en paralelo arranca a los 15 s, y los 70 s
+    // alcanzan para llegar al cuarto modelo si los primeros están colgados (la respuesta llega antes de ~100 s)
     const r = await llamarGemini(
-      { apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: 1024, nivelRazonamiento: cfg.geminiNivelRazonamiento, presupuestoMs: 45_000 },
+      {
+        apiKey: cfg.geminiApiKey, modelos: cfg.geminiModelos, maxTokens: 1024, nivelRazonamiento: cfg.geminiNivelRazonamiento,
+        presupuestoMs: 70_000, esperaRespaldoMs: 15_000,
+      },
       { sistema: sistema(t), mensaje, esquema: esquemaCompletarAuditoria(aplicables), temperatura: 0.3 },
     )
     const s = r.json as { objetivo?: string; area_auditada?: string; criterios?: string[] }

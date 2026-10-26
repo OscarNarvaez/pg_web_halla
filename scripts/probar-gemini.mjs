@@ -32,6 +32,14 @@ function simular(guiones) {
 }
 // Un modelo que no responde: la petición solo termina cuando se cancela (como fetch con AbortSignal)
 const colgado = (init) => new Promise((_, rechazar) => init.signal?.addEventListener('abort', () => rechazar(new DOMException('cancelada', 'AbortError'))))
+// Un modelo que responde tras `ms` (o se cancela antes, si otro modelo ya respondió)
+const demorado = (ms, respuesta) => (init) => new Promise((listo, rechazar) => {
+  const t = setTimeout(() => listo(respuesta()), ms)
+  init.signal?.addEventListener('abort', () => {
+    clearTimeout(t)
+    rechazar(new DOMException('cancelada', 'AbortError'))
+  })
+})
 const base = (modelos, fetchImpl) => ({ apiKey: 'k', modelos, maxTokens: 100, nivelRazonamiento: 'low', esperas: [0, 0, 0], fetchImpl })
 const pet = { sistema: 's', mensaje: 'm', esquema: {} }
 
@@ -86,6 +94,23 @@ t0 = Date.now()
 s = simular({ l1: [() => error(503, 'x'), () => error(503, 'x')] })
 e = await llamarGemini({ ...base(['l1'], s.fetchImpl), esperas: [5000, 5000, 5000], presupuestoMs: 200 }, pet).catch((x) => x)
 ok(e.estado === 503 && Date.now() - t0 < 1000, 'las esperas entre reintentos tampoco pasan del presupuesto', `${e.estado} en ${Date.now() - t0} ms`)
+
+console.log('\n▸ Respaldo en paralelo (25/10/2026: los modelos más nuevos se quedaban colgados y la cascada no llegaba a los que respondían)')
+t0 = Date.now()
+s = simular({ n1: [colgado], n2: [colgado], n3: [colgado], n4: [demorado(20, () => respuestaOk({ x: 1 }, 'n4'))] })
+r = await llamarGemini({ ...base(['n1', 'n2', 'n3', 'n4'], s.fetchImpl), esperaRespaldoMs: 40, tiempoPorIntentoMs: 5000, presupuestoMs: 2000 }, pet)
+ok(r.modelo === 'n4' && Date.now() - t0 < 600 && ['n1', 'n2', 'n3'].every((m) => r.descartados.some((d) => d.modelo === m && d.motivo === 'lento')),
+  'con tres modelos colgados, el cuarto arranca en paralelo y responde (los colgados se cancelan y quedan para después)', `${r.modelo} en ${Date.now() - t0} ms · ${JSON.stringify(r.descartados)}`)
+s = simular({ o1: [demorado(30, () => respuestaOk({ x: 1 }, 'o1'))], o2: [() => respuestaOk({ x: 2 }, 'o2')] })
+r = await llamarGemini({ ...base(['o1', 'o2'], s.fetchImpl), esperaRespaldoMs: 1000 }, pet)
+ok(r.modelo === 'o1' && !s.llamadas.some((l) => l.modelo === 'o2'), 'si el modelo principal responde a tiempo, el respaldo ni siquiera arranca (no gasta cuota)')
+s = simular({ p1: [demorado(200, () => respuestaOk({ x: 1 }, 'p1'))], p2: [colgado] })
+r = await llamarGemini({ ...base(['p1', 'p2'], s.fetchImpl), esperaRespaldoMs: 40 }, pet)
+ok(r.modelo === 'p1' && r.descartados.some((d) => d.modelo === 'p2' && d.motivo === 'lento'),
+  'si el principal termina primero aunque el respaldo ya haya arrancado, gana el principal y el respaldo se cancela')
+s = simular({ q1: [colgado], q2: [() => error(400, 'Invalid JSON schema')] })
+e = await llamarGemini({ ...base(['q1', 'q2'], s.fetchImpl), esperaRespaldoMs: 30, presupuestoMs: 2000 }, pet).catch((x) => x)
+ok(e.estado === 400, 'un 400 (el mismo error se repetiría en cualquier modelo) termina la llamada aunque otro modelo siga en curso')
 
 console.log('\n▸ Todos sin cuota')
 s = simular({ i1: [cuotaDiaria], i2: [cuotaDiaria] })
